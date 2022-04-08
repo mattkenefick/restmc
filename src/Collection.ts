@@ -182,6 +182,7 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 		// The timeout is required because the property on model
 		// won't exist until it's instantiated. Essentially a little
 		// race condition here.
+		// @critical, fix me. this won't work
 		setTimeout(() => {
 			if (!this.endpoint || this.endpoint === '') {
 				this.endpoint = new this.model().endpoint;
@@ -427,7 +428,7 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 			return void 0;
 		}
 
-		return this.where({ [this.modelId]: query instanceof Model ? query.cid : query }, true) as Model;
+		return this.where({ [this.modelId]: query instanceof Model ? query.id : query }, true) as Model;
 	}
 
 	/**
@@ -436,7 +437,7 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	 * @param  Model | object  obj
 	 * @return boolean
 	 */
-	public has(obj: Model | string | number): boolean {
+	public has(obj: Model | number | string): boolean {
 		return this.get(obj) != undefined;
 	}
 
@@ -472,38 +473,38 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	}
 
 	/**
-	 * Get last item
-	 *
-	 * @return {Model}
+	 * @return Model
 	 */
 	public last(): Model {
 		return this.at(this.length - 1);
 	}
 
-	public next() {
-		// We have reached the end
-		// if (this.index >= this.length) {
-		//     return false;
-		// }
+	/**
+	 * @return Model | undefined
+	 */
+	public next(): Model | undefined {
+		if (this.index + 1 >= this.length) {
+			return undefined;
+		}
 
-		// Get model
-		let model = this.at(++this.index);
-
-		return model;
+		return this.at(++this.index);
 	}
 
-	public previous() {
-		// We have reached the beginning
-		// if (this.index <= 0) {
-		//     return false;
-		// }
+	/**
+	 * @return Model
+	 */
+	public previous(): Model | undefined {
+		if (this.index <= 0) {
+			return undefined;
+		}
 
-		// Advance
 		return this.at(--this.index);
 	}
 
+	/**
+	 * @return Model
+	 */
 	public current() {
-		// Advance
 		return this.at(this.index);
 	}
 
