@@ -7,10 +7,10 @@
 
 import axios from 'axios';
 import { expect } from 'chai';
-import UserModel from './models/UserModel';
-import FilmModel from './models/FilmModel';
-import FilmCollection from './collections/FilmCollection';
-import { ActiveRecord, Collection, Model, Request as EloquentRequest } from '../src/index';
+import UserModel from '../mock/models/UserModel';
+import FilmModel from '../mock/models/FilmModel';
+import FilmCollection from '../mock/collections/FilmCollection';
+import { ActiveRecord, Collection, Model, Request as EloquentRequest } from '../../src/index';
 
 // -----------------------------------------------------------------------------
 

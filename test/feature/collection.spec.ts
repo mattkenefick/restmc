@@ -1,9 +1,7 @@
-// 'use strict';
-
 import { expect } from 'chai';
-import FilmModel from './models/FilmModel';
-import FilmCollection from './collections/FilmCollection';
-import { ActiveRecord, Collection, Model } from '../src/index';
+import FilmModel from '../mock/models/FilmModel';
+import FilmCollection from '../mock/collections/FilmCollection';
+import { ActiveRecord, Collection, Model } from '../../src/index';
 
 // -----------------------------------------------------------------------------
 

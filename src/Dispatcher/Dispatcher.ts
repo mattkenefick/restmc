@@ -16,10 +16,13 @@ export default class Dispatcher {
 	 * If duplicate event is passed, will attempt to bubble the data rather
 	 * than duplicating the event entirely.
 	 *
+	 * Returns true if there are any events to broadcast to
+	 *
 	 * @param string eventName
 	 * @param any eventData
+	 * @return boolean
 	 */
-	public dispatch(name: string, data: any = {}): void {
+	public dispatch(name: string, data: any = {}): boolean {
 		const event: DispatcherEvent = this.events[name] as DispatcherEvent;
 		const eventData: any = name === data.event?.name && data.eventData ? data.eventData : data;
 
@@ -29,7 +32,20 @@ export default class Dispatcher {
 				eventData: eventData,
 				target: this,
 			});
+
+			return true;
 		}
+
+		return false;
+	}
+
+	/**
+	 * Check if we have an event registered
+	 *
+	 * @return boolean
+	 */
+	public hasEvent(eventName: string): boolean {
+		return !!this.events[eventName];
 	}
 
 	/**
@@ -78,7 +94,7 @@ export default class Dispatcher {
 	 * @param string eventName
 	 * @param any eventData
 	 */
-	public trigger(eventName: string, eventData: IDispatcherEventData): void {
-		this.dispatch(eventName, eventData);
+	public trigger(eventName: string, eventData: IDispatcherEventData): boolean {
+		return this.dispatch(eventName, eventData);
 	}
 }

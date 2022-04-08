@@ -10,7 +10,7 @@ describe('Dispatcher DispatcherEvent', () => {
 	const event: DispatcherEvent = new DispatcherEvent('myEvent', { foo: 'bar' });
 
 	it('should instantiate with a name and data', () => {
-		expect(event.eventName).to.equal(name);
-		expect(event.eventData).to.equal(data);
+		expect(event.eventName).to.equal('myEvent');
+		expect(event.eventData.foo).to.equal('bar');
 	});
 });
