@@ -1,0 +1,37 @@
+{
+	"data": [
+		{
+			"active_at": "2020-08-23T05:27:31+00:00",
+			"first_name": "matt",
+			"id": 1,
+			"last_name": "kenefick",
+			"username": "mattkenefick"
+		},
+		{
+			"active_at": "2020-08-23T05:27:31+00:00",
+			"first_name": "john",
+			"id": 2,
+			"last_name": "doe",
+			"username": "johndoe"
+		},
+		{
+			"active_at": "2020-08-23T05:27:31+00:00",
+			"first_name": "jane",
+			"id": 3,
+			"last_name": "doe",
+			"username": "janedoe"
+		}
+	],
+	"meta": {
+		"pagination": {
+			"current_page": 1,
+			"from": 1,
+			"last_page": 6,
+			"pages": [1, 2, 3, 4, 5, 6],
+			"per_page": 32,
+			"to": 32,
+			"total": 3,
+			"total_pages": 1
+		}
+	}
+}
