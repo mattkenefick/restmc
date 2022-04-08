@@ -39,6 +39,30 @@ export default class DispatcherEvent {
 	}
 
 	/**
+	 * @param IDispatcherEventData eventData
+	 * @return number
+	 */
+	public fire(eventData: IDispatcherEventData = {}): number {
+		const callbacks = this.callbacks.slice(0);
+		let fires: number = 0;
+
+		callbacks.forEach((callback: IDispatcherCallbackFunction) => {
+			callback(Object.assign({}, this.eventData, eventData));
+			fires++;
+		});
+
+		return fires;
+	}
+
+	/**
+	 * @param IDispatcherCallbackFunction callback
+	 * @return boolean
+	 */
+	public hasCallback(callback: IDispatcherCallbackFunction): boolean {
+		return !!this.callbacks.find((value: IDispatcherCallbackFunction) => value === callback);
+	}
+
+	/**
 	 * @param IDispatcherEventData callback
 	 * @return void
 	 */
@@ -48,25 +72,16 @@ export default class DispatcherEvent {
 
 	/**
 	 * @param IDispatcherCallbackFunction callback
-	 * @return void
+	 * @return boolean
 	 */
-	public unregisterCallback(callback: IDispatcherCallbackFunction): void {
+	public unregisterCallback(callback: IDispatcherCallbackFunction): boolean {
 		const index = this.callbacks.indexOf(callback);
 
 		if (index > -1) {
 			this.callbacks.splice(index, 1);
+			return true;
 		}
-	}
 
-	/**
-	 * @param IDispatcherEventData eventData
-	 * @return void
-	 */
-	public fire(eventData: IDispatcherEventData = {}): void {
-		const callbacks = this.callbacks.slice(0);
-
-		callbacks.forEach((callback: IDispatcherCallbackFunction) => {
-			callback(Object.assign({}, this.eventData, eventData));
-		});
+		return false;
 	}
 }
