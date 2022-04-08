@@ -21,5 +21,9 @@
 	},
 	"id": 1,
 	"last_name": "kenefick",
+	"location": {
+		"city": "New York",
+		"state": "NY"
+	},
 	"username": "mattkenefick"
 }

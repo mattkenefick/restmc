@@ -1,4 +1,5 @@
 import CollectionUser from '../collections/User';
+import ModelLocation from '../models/Location';
 import { Model } from '../../../src/index';
 
 /**
@@ -19,5 +20,35 @@ export default class ModelUser extends Model {
 		return this.hasMany('friends', CollectionUser);
 	}
 
+	public get location(): ModelLocation {
+		return this.hasOne('location', ModelLocation);
+	}
+
 	// endregion: Relationships
+
+	// region: Getters
+	// ---------------------------------------------------------------------------
+
+	/**
+	 * @return string
+	 */
+	public getFirstName(): string {
+		return this.attr('first_name');
+	}
+
+	/**
+	 * @return string
+	 */
+	public getLastName(): string {
+		return this.attr('last_name');
+	}
+
+	/**
+	 * @return string
+	 */
+	public getUsername(): string {
+		return this.attr('username');
+	}
+
+	// endregion: Getters
 }

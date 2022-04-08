@@ -222,8 +222,9 @@ export default class Model extends ActiveRecord<Model> {
 			return this.relationshipCache[relationshipName];
 		}
 
-		const content: any = this.getRelationship(relationshipName) || { [this.dataKey || 'data']: [] };
-		const collection: any = relationshipClass.hydrate((this.dataKey ? content[this.dataKey] : content) || content);
+		const dataKey: string | undefined = new relationshipClass().dataKey;
+		const content: Collection | Model | undefined = this.getRelationship(relationshipName);
+		const collection: any = relationshipClass.hydrate((dataKey ? content[dataKey] : null) || content);
 
 		// Reference relationship parent
 		collection.parent = this;

@@ -73,6 +73,17 @@ export default class ActiveRecord<T> extends Core {
 	public cid: string = '';
 
 	/**
+	 * The key that collection data exists on, e.g.
+	 *
+	 * {
+	 *     data: [ .. ]
+	 * }
+	 *
+	 * @type string
+	 */
+	public dataKey: string | undefined = 'data';
+
+	/**
 	 * https://api.example.com/v1/{endpoint}
 	 *
 	 * @type string
@@ -182,17 +193,6 @@ export default class ActiveRecord<T> extends Core {
 	 * @type string
 	 */
 	protected cidPrefix: string = 'c';
-
-	/**
-	 * The key that collection data exists on, e.g.
-	 *
-	 * {
-	 *     data: [ .. ]
-	 * }
-	 *
-	 * @type string
-	 */
-	protected dataKey: string | undefined = 'data';
 
 	/**
 	 * Saves fetch arguments from our last request:
