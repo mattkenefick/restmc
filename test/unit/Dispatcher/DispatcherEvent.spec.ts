@@ -6,7 +6,7 @@ import { DispatcherEvent } from '../../../src/index';
  * @package Test\Unit\Dispatcher
  * @project RestMC
  */
-describe('Dispatcher DispatcherEvent', () => {
+describe('Dispatcher/DispatcherEvent', () => {
 	/**
 	 * @return Dispatcher
 	 */

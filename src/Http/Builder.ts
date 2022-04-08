@@ -91,7 +91,9 @@ export default class Builder<T> {
 		}
 
 		// Separate query string
-		urlBuilder += '?' + queryParamStr;
+		if (queryParamStr) {
+			urlBuilder += '?' + queryParamStr;
+		}
 
 		// Clean URL
 		// mk: We tried split/join at first but that created errors
@@ -139,19 +141,24 @@ export default class Builder<T> {
 	public getQueryParamsAsString(): string {
 		let str: string = '';
 
-		// Combine query params
-		for (let key in this.queryParams) {
-			let value = this.queryParams[key];
+		Object.entries(this.queryParams)
+			.sort((entryA, entryB) => entryA[0].localeCompare(entryB[0]))
+			.forEach((entry, index) => {
+				const key: string = entry[0];
+				const value = entry[1];
 
-			if (value != null && value != '') {
-				str += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(value);
-			}
-		}
+				if (value != null && value != '') {
+					str += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(value);
+				}
+			});
 
 		// Add includes
 		if (this.includeKey && this.includes.length) {
 			str += '&' + this.includeKey + '=' + this.includes.join(this.includeJoinBy);
 		}
+
+		// Remove preceding ampersand
+		str = str.replace(/^&/, '');
 
 		return str;
 	}

@@ -304,7 +304,7 @@ export default class ActiveRecord<T> extends Core {
 
 		// Check for ID
 		if (attributes && attributes['id']) {
-			this.id = attributes.id;
+			this.setId(attributes.id);
 		}
 
 		// Trigger
@@ -796,6 +796,7 @@ export default class ActiveRecord<T> extends Core {
 	 */
 	public setId(id: number | string): ActiveRecord<T> {
 		this.id = typeof id === 'number' ? id.toString() : id;
+		this.b.identifier(this.id);
 
 		return this;
 	}

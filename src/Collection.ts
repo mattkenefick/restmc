@@ -177,6 +177,16 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 		if (options.atRelationship) {
 			this.atRelationship = options.atRelationship;
 		}
+
+		// Set endpoint, if not exists
+		// The timeout is required because the property on model
+		// won't exist until it's instantiated. Essentially a little
+		// race condition here.
+		setTimeout(() => {
+			if (!this.endpoint || this.endpoint === '') {
+				this.endpoint = new this.model().endpoint;
+			}
+		}, 1);
 	}
 
 	/**
