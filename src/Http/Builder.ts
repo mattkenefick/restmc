@@ -145,7 +145,7 @@ export default class Builder<T> {
 			.sort((entryA, entryB) => entryA[0].localeCompare(entryB[0]))
 			.forEach((entry, index) => {
 				const key: string = entry[0];
-				const value = entry[1];
+				const value: string = (entry[1] || '') + '';
 
 				if (value != null && value != '') {
 					str += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(value);

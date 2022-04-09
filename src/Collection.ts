@@ -185,6 +185,7 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 		// @critical, fix me. this won't work
 		setTimeout(() => {
 			if (!this.endpoint || this.endpoint === '') {
+				// @ts-ignore (replace me)
 				this.endpoint = new this.model().endpoint;
 			}
 		}, 1);

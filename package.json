@@ -34,11 +34,9 @@
 	},
 	"scripts": {
 		"build": "tsc -p tsconfig.json",
-		"test": "ts-mocha -p tsconfig.json test/unit/**/*.spec.ts",
-		"test-one": "ts-mocha -p tsconfig.json test/unit/Collection.spec.ts",
-		"test:server": "cd test/mock/server; node index.js",
-		"version": "npm run format && git add -A src"
+		"test": "ts-mocha -p tsconfig.json test/unit/**/*.spec.ts test/unit/*.spec.ts ",
+		"test-one": "ts-mocha -p tsconfig.json test/unit/Collection.spec.ts"
 	},
 	"types": "build/index.d.ts",
-	"version": "1.0.0"
+	"version": "1.0.1"
 }
