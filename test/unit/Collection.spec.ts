@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { Collection } from '../../src/index';
+import { configureServer } from '../mock/server/test';
 import CollectionUser from '../mock/collections/User.ts';
 import ModelUser from '../mock/models/User.ts';
 
@@ -9,6 +10,8 @@ import ModelUser from '../mock/models/User.ts';
  * @project RestMC
  */
 describe('Collection', () => {
+	configureServer(before, after);
+
 	function getCollection(): CollectionUser {
 		return new CollectionUser({
 			baseUrl: 'http://localhost:3000/v1',

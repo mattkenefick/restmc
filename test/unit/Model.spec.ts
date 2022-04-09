@@ -1,3 +1,4 @@
+import { configureServer } from '../mock/server/test';
 import { expect } from 'chai';
 import CollectionUser from '../mock/collections/User.ts';
 import ModelUser from '../mock/models/User.ts';
@@ -8,6 +9,8 @@ import ModelUser from '../mock/models/User.ts';
  * @project RestMC
  */
 describe('Model', () => {
+	configureServer(before, after);
+
 	function getModel(): ModelUser {
 		return new ModelUser({ id: '1' }, { baseUrl: 'http://localhost:3000/v1' });
 	}
