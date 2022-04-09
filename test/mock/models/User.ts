@@ -21,7 +21,7 @@ export default class ModelUser extends Model {
 	}
 
 	public get location(): ModelLocation {
-		return this.hasOne('location', ModelLocation);
+		return this.hasOne<ModelLocation>('location', ModelLocation);
 	}
 
 	// endregion: Relationships

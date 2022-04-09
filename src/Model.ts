@@ -187,7 +187,7 @@ export default class Model extends ActiveRecord<Model> {
 	 * @param any relationshipClass
 	 * @return ActiveRecord
 	 */
-	public hasOne(relationshipName: string, relationshipClass: any): Model | undefined {
+	public hasOne<T>(relationshipName: string, relationshipClass: any): T {
 		// Return cached relationship, if exists
 		if (this.relationshipCache[relationshipName]) {
 			return this.relationshipCache[relationshipName];
@@ -206,7 +206,7 @@ export default class Model extends ActiveRecord<Model> {
 			model.useModifiedEndpoint(this);
 		}
 
-		return (this.relationshipCache[relationshipName] = model);
+		return (this.relationshipCache[relationshipName] = model) as T;
 	}
 
 	/**
