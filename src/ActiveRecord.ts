@@ -630,7 +630,7 @@ export default class ActiveRecord<T> extends Core {
 	 */
 	public getUrlByMethod(method: string): string {
 		let url: string = '';
-		let originalEndpoint: string = this.endpoint;
+		let originalEndpoint: string = this.getEndpoint();
 
 		// Use a modified endpoint, if one exists
 		if (method === 'delete' && this.endpointDelete) {
@@ -708,22 +708,22 @@ export default class ActiveRecord<T> extends Core {
 		if (!activeRecord || (!activeRecord.id && this.modifiedEndpointPosition == 'before')) {
 			console.warn(
 				'Modified ActiveRecord [`'
-					+ activeRecord.endpoint
+					+ activeRecord.getEndpoint()
 					+ '.'
-					+ this.endpoint
+					+ this.getEndpoint()
 					+ '] usually has an ID signature. [ar/this]',
 				this,
 			);
 
-			return this.endpoint;
+			return this.getEndpoint();
 		}
 
 		// Set modified endpoint
 		// e.g. content / 1 / test
 		// e.g. test / x / content
 		return this.modifiedEndpointPosition == 'before'
-			? [activeRecord.endpoint, activeRecord.id, this.endpoint].join('/')
-			: [this.endpoint, this.id, activeRecord.endpoint].join('/');
+			? [activeRecord.getEndpoint(), activeRecord.id, this.getEndpoint()].join('/')
+			: [this.getEndpoint(), this.id, activeRecord.getEndpoint()].join('/');
 	}
 
 	/**
@@ -734,11 +734,6 @@ export default class ActiveRecord<T> extends Core {
 	 * @return ActiveRecord
 	 */
 	public useModifiedEndpoint(activeRecord: ActiveRecord<any>, position: string = 'before'): ActiveRecord<T> {
-		// @todo, we shouldn't actually mutate this
-		// we should turn the endpoint that we actually use into a getter
-		// then have a way of modifying that so we maintain the original class endpoint
-		// this.setEndpoint(activeRecord.endpoint + '/' + activeRecord.id + '/' + this.endpoint);
-
 		// Object we reference for modified
 		this.referenceForModifiedEndpoint = activeRecord;
 		this.modifiedEndpointPosition = position;
@@ -754,6 +749,13 @@ export default class ActiveRecord<T> extends Core {
 		this.body = value;
 
 		return this;
+	}
+
+	/**
+	 * @return string
+	 */
+	public getEndpoint(): string {
+		return this.endpoint;
 	}
 
 	/**

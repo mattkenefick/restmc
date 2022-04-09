@@ -126,7 +126,7 @@ export default class Builder<T> {
 	public getEndpoint(): string {
 		return this.activeRecord.isUsingModifiedEndpoint()
 			? this.activeRecord.getModifiedEndpoint()
-			: this.activeRecord.endpoint;
+			: this.activeRecord.getEndpoint();
 	}
 
 	/**

@@ -13,16 +13,13 @@ describe('Collection', () => {
 	configureServer(before, after);
 
 	function getCollection(): CollectionUser {
-		return new CollectionUser({
-			baseUrl: 'http://localhost:3000/v1',
-			endpoint: 'user',
-		});
+		return new CollectionUser({ baseUrl: 'http://localhost:3000/v1' });
 	}
 
 	it('should absord the endpoint from model', () => {
 		const userCollection: CollectionUser = getCollection();
 
-		expect(userCollection.endpoint).to.equal('user');
+		expect(userCollection.getEndpoint()).to.equal('user');
 	});
 
 	it('should fetch data and have 3 models', async () => {

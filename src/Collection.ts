@@ -219,6 +219,14 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	}
 
 	/**
+	 * @return string
+	 */
+	public getEndpoint(): string {
+		// @ts-ignore
+		return new this.model().endpoint || super.getEndpoint();
+	}
+
+	/**
 	 * Add or prepend Model(s) to our list. Set `prepend` = true on options
 	 * if you'd like to prepend the models
 	 *
