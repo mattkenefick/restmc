@@ -223,7 +223,7 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	 */
 	public getEndpoint(): string {
 		// @ts-ignore
-		return new this.model().endpoint || super.getEndpoint();
+		return super.getEndpoint() || new this.model().endpoint;
 	}
 
 	/**

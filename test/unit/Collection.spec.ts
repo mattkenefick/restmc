@@ -12,14 +12,20 @@ import ModelUser from '../mock/models/User.ts';
 describe('Collection', () => {
 	configureServer(before, after);
 
-	function getCollection(): CollectionUser {
-		return new CollectionUser({ baseUrl: 'http://localhost:3000/v1' });
+	function getCollection(options: any = {}): CollectionUser {
+		return new CollectionUser(Object.assign(options, { baseUrl: 'http://localhost:3000/v1' }));
 	}
 
 	it('should absord the endpoint from model', () => {
 		const userCollection: CollectionUser = getCollection();
 
 		expect(userCollection.getEndpoint()).to.equal('user');
+	});
+
+	it('should use explicitly defined endpoint', () => {
+		const userCollection: CollectionUser = getCollection({ endpoint: 'custom-endpoint' });
+
+		expect(userCollection.getEndpoint()).to.equal('custom-endpoint');
 	});
 
 	it('should fetch data and have 3 models', async () => {
