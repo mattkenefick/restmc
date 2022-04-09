@@ -6,9 +6,9 @@ import ModelUser from '../models/User';
  * @package Test\Mock\Collection
  * @project RestMC
  */
-export default class CollectionUser extends Collection {
+export default class CollectionUser extends Collection<ModelUser> {
 	/**
 	 * @type ModelUser
 	 */
-	public model: ModelUser = ModelUser;
+	public model: ModelUser = new ModelUser();
 }

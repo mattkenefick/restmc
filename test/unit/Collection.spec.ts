@@ -28,6 +28,18 @@ describe('Collection', () => {
 		expect(userCollection.getEndpoint()).to.equal('custom-endpoint');
 	});
 
+	it('should have withCredentials', () => {
+		const userCollection: CollectionUser = getCollection();
+
+		expect(userCollection.options.withCredentials).to.equal(true);
+	});
+
+	it('should not have withCredentials', () => {
+		const userCollection: CollectionUser = getCollection({ withCredentials: false });
+
+		expect(userCollection.options.withCredentials).to.equal(false);
+	});
+
 	it('should fetch data and have 3 models', async () => {
 		const userCollection: CollectionUser = getCollection();
 

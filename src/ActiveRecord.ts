@@ -162,6 +162,14 @@ export default class ActiveRecord<T> extends Core {
 	public modifiedEndpointPosition: string = 'before';
 
 	/**
+	 * @type IAttributes
+	 */
+	public options: IAttributes = {
+		dataKey: 'data',
+		withCredentials: true,
+	};
+
+	/**
 	 * @type number
 	 */
 	public page: number = 1;
@@ -265,7 +273,7 @@ export default class ActiveRecord<T> extends Core {
 		this.builder = new Builder<T>(this);
 
 		// Set options
-		this.options(options);
+		this.setOptions(options);
 	}
 
 	/**
@@ -336,7 +344,9 @@ export default class ActiveRecord<T> extends Core {
 	 * @param IAttributes options
 	 * @return ActiveRecord
 	 */
-	public options(options: IAttributes = {}): ActiveRecord<T> {
+	public setOptions(options: IAttributes = {}): ActiveRecord<T> {
+		this.options = Object.assign(this.options, options);
+
 		// Override baseUrl
 		if (options.baseUrl) {
 			this.baseUrl = options.baseUrl;
@@ -720,7 +730,7 @@ export default class ActiveRecord<T> extends Core {
 
 		// Set modified endpoint
 		// e.g. content / 1 / test
-		// e.g. test / x / content
+		// e.g. test / x / contentf
 		return this.modifiedEndpointPosition == 'before'
 			? [activeRecord.getEndpoint(), activeRecord.id, this.getEndpoint()].join('/')
 			: [this.getEndpoint(), this.id, activeRecord.getEndpoint()].join('/');
@@ -895,7 +905,7 @@ export default class ActiveRecord<T> extends Core {
 		}
 
 		// Set options
-		this.options(Object.assign({}, options, { meta: remoteJson.meta }));
+		this.setOptions(Object.assign({}, options, { meta: remoteJson.meta }));
 
 		// Events
 		this.dispatch('parse:after', this);
@@ -955,7 +965,10 @@ export default class ActiveRecord<T> extends Core {
 		this.loading = true;
 
 		// Setup request
-		let request = (this.request = new HttpRequest(url, { dataKey: this.dataKey }));
+		let request = (this.request = new HttpRequest(url, {
+			dataKey: this.dataKey,
+			withCredentials: this.options.withCredentials,
+		}));
 
 		// note: this *should* be set by fetch as well, but
 		// we have an issue right now we're working out

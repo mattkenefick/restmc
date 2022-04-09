@@ -22,7 +22,7 @@ export default class Model extends ActiveRecord<Model> {
 		model.set(attributes);
 
 		// Set options to model
-		model.options(options);
+		model.setOptions(options);
 
 		return model;
 	}
@@ -99,7 +99,7 @@ export default class Model extends ActiveRecord<Model> {
 		this.set(attributes);
 
 		// Set options
-		this.options(options);
+		this.setOptions(options);
 	}
 
 	/**
@@ -216,14 +216,14 @@ export default class Model extends ActiveRecord<Model> {
 	 * @param any relationshipClass
 	 * @return Collection
 	 */
-	public hasMany(relationshipName: string, relationshipClass: any): Collection | undefined {
+	public hasMany(relationshipName: string, relationshipClass: any): Collection<any> | undefined {
 		// Return cached relationship, if exists
 		if (this.relationshipCache[relationshipName]) {
 			return this.relationshipCache[relationshipName];
 		}
 
 		const dataKey: string | undefined = new relationshipClass().dataKey;
-		const content: Collection | Model | undefined = this.getRelationship(relationshipName);
+		const content: Collection<any> | Model | undefined = this.getRelationship(relationshipName);
 		const collection: any = relationshipClass.hydrate((dataKey && content ? content[dataKey] : null) || content);
 
 		// Reference relationship parent

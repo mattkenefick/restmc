@@ -1,7 +1,7 @@
 import ActiveRecord from './ActiveRecord';
 import CollectionIterator from './CollectionIterator';
-import Model from './Model';
 import HttpRequest from './Http/Request';
+import Model from './Model';
 import {
 	IAttributes,
 	IAxiosResponse,
@@ -38,7 +38,9 @@ type FetchResponse = Promise<Response | HttpRequest | null>;
  * @package RestMC
  * @project RestMC
  */
-export default class Collection extends ActiveRecord<Collection> implements Iterable<Model> {
+export default class Collection<GenericModel extends Model>
+	extends ActiveRecord<Collection<GenericModel>>
+	implements Iterable<GenericModel> {
 	/**
 	 * This static function could be overridden globally depending on the
 	 * structure of your API. By default, we assume it's within .meta
@@ -46,7 +48,7 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	 * @param Collection collection
 	 * @return object
 	 */
-	public static paginator(collection: Collection): IPagination {
+	public static paginator(collection: any): IPagination {
 		return collection.meta.pagination;
 	}
 
@@ -57,7 +59,7 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	 * @param object options
 	 * @type Collection
 	 */
-	public static hydrate<T>(models: Model[] = [], options: object = {}): Collection {
+	public static hydrate<T>(models: Model[] = [], options: object = {}): any {
 		// Instantiate collection
 		const collection = new this(options);
 
@@ -65,7 +67,7 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 		collection.add(models);
 
 		// Add options to collection
-		collection.options(options);
+		collection.setOptions(options);
 
 		return collection;
 	}
@@ -138,15 +140,14 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	 * Model object instantiated by this collection
 	 * This should be replaced by subclass
 	 *
-	 * @type Model
+	 * @type GenericModel
 	 */
-	// @ts-ignore Because webpack attempts to autoload this
-	public model: Model = Model;
+	public model!: GenericModel;
 
 	/**
-	 * @type Model[]
+	 * @type GenericModel[]
 	 */
-	public models: Model[] = [];
+	public models: GenericModel[] = [];
 
 	/**
 	 * @type string
@@ -168,7 +169,7 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 		this.dataKey = 'data';
 
 		// Set options
-		this.options(options);
+		this.setOptions(options);
 
 		// Default builder
 		this.builder.qp('limit', options.limit || this.limit).qp('page', options.page || this.page);
@@ -177,18 +178,6 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 		if (options.atRelationship) {
 			this.atRelationship = options.atRelationship;
 		}
-
-		// Set endpoint, if not exists
-		// The timeout is required because the property on model
-		// won't exist until it's instantiated. Essentially a little
-		// race condition here.
-		// @critical, fix me. this won't work
-		setTimeout(() => {
-			if (!this.endpoint || this.endpoint === '') {
-				// @ts-ignore (replace me)
-				this.endpoint = new this.model().endpoint;
-			}
-		}, 1);
 	}
 
 	/**
@@ -222,8 +211,7 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	 * @return string
 	 */
 	public getEndpoint(): string {
-		// @ts-ignore
-		return super.getEndpoint() || new this.model().endpoint;
+		return super.getEndpoint() || this.model.endpoint;
 	}
 
 	/**
@@ -234,7 +222,7 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	 * @param  IAttributes options
 	 * @return Collection
 	 */
-	public add(data: Model[] | Model | object, options: IAttributes = {}): Collection {
+	public add(data: GenericModel[] | GenericModel | object, options: IAttributes = {}): Collection<GenericModel> {
 		if (data == undefined) {
 			return this;
 		}
@@ -243,11 +231,11 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 		const models: any = Array.isArray(data) ? data : [data];
 
 		// Iterate through supplied models
-		models.forEach((model: Model) => {
+		models.forEach((model: GenericModel) => {
 			// Data supplied is an object that must be instantiated
 			if (!(model instanceof Model)) {
 				// @ts-ignore
-				model = new this.model(model);
+				model = new this.model.constructor(model);
 				model.parent = this;
 				model.headers = this.headers;
 
@@ -278,7 +266,7 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	 * @param  Model[] | Model | object model
 	 * @return Collection
 	 */
-	public remove(model: Model[] | Model | object): Collection {
+	public remove(model: Model[] | Model | object): Collection<GenericModel> {
 		let i: number = 0;
 		let ii: number = 0;
 		const items: any = Array.isArray(model) ? model : [model];
@@ -313,7 +301,7 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	 * @param IAttributes options
 	 * @return Collection
 	 */
-	public set(model: Model[] | Model | object, options: IAttributes = {}): Collection {
+	public set(model: Model[] | Model | object, options: IAttributes = {}): Collection<GenericModel> {
 		if (!options || (options && options.merge != true)) {
 			this.reset();
 		}
@@ -330,7 +318,7 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	/**
 	 * @return Collection
 	 */
-	public clear(): Collection {
+	public clear(): Collection<GenericModel> {
 		return this.reset();
 	}
 
@@ -363,11 +351,19 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	}
 
 	/**
+	 * Iterate over the models list
+	 * @return void
+	 */
+	public each(callback: any): void {
+		this.models.forEach(callback);
+	}
+
+	/**
 	 * @param Model[] | Model | object model
 	 * @param object = {} options
 	 * @return Collection
 	 */
-	public push(model: Model[] | Model | object, options: object = {}): Collection {
+	public push(model: Model[] | Model | object, options: object = {}): Collection<GenericModel> {
 		this.add(model, options);
 
 		return this;
@@ -376,8 +372,8 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	/**
 	 * @return Collection
 	 */
-	public pop(): Collection {
-		const model: Model = this.at(this.length - 1);
+	public pop(): Collection<GenericModel> {
+		const model: GenericModel = this.at(this.length - 1);
 
 		return this.remove(model);
 	}
@@ -386,7 +382,7 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	 * @todo Might want to do more with this
 	 * @return Collection
 	 */
-	public reset(): Collection {
+	public reset(): Collection<GenericModel> {
 		this.models = [];
 
 		this.dispatch('change', { from: 'reset' });
@@ -402,7 +398,7 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	 * @param  IAttributes options
 	 * @return Collection
 	 */
-	public unshift(model: Model[] | Model | object, options: IAttributes = {}): Collection {
+	public unshift(model: GenericModel[] | GenericModel | object, options: IAttributes = {}): Collection<GenericModel> {
 		return this.add(model, Object.assign({ prepend: true }, options));
 	}
 
@@ -411,8 +407,8 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	 *
 	 * @return Collection
 	 */
-	public shift(): Collection {
-		const model: Model = this.at(0);
+	public shift(): Collection<GenericModel> {
+		const model: GenericModel = this.at(0);
 
 		return this.remove(model);
 	}
@@ -432,31 +428,31 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	 * @param  string | number  id
 	 * @return Model | undefined
 	 */
-	public get(query: Model | number | string): Model | undefined {
+	public get(query: GenericModel | number | string): Model | undefined {
 		if (query == null) {
 			return void 0;
 		}
 
-		return this.where({ [this.modelId]: query instanceof Model ? query.id : query }, true) as Model;
+		return this.where({ [this.modelId]: query instanceof Model ? query.id : query }, true) as GenericModel;
 	}
 
 	/**
 	 * Checks if we have an object or Model
 	 *
-	 * @param  Model | object  obj
+	 * @param  GenericModel | object  obj
 	 * @return boolean
 	 */
-	public has(obj: Model | number | string): boolean {
+	public has(obj: GenericModel | number | string): boolean {
 		return this.get(obj) != undefined;
 	}
 
 	/**
 	 * Get model at index
 	 *
-	 * @param  {number = 0} index
-	 * @return Model
+	 * @param number index
+	 * @return GenericModel
 	 */
-	public at(index: number = 0): Model {
+	public at(index: number = 0): GenericModel {
 		if (index < 0) {
 			index += this.length;
 		}
@@ -475,23 +471,23 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	/**
 	 * Get first item
 	 *
-	 * @return {Model}
+	 * @return GenericModel
 	 */
-	public first(): Model {
+	public first(): GenericModel {
 		return this.at(0);
 	}
 
 	/**
-	 * @return Model
+	 * @return GenericModel
 	 */
-	public last(): Model {
+	public last(): GenericModel {
 		return this.at(this.length - 1);
 	}
 
 	/**
-	 * @return Model | undefined
+	 * @return GenericModel | undefined
 	 */
-	public next(): Model | undefined {
+	public next(): GenericModel | undefined {
 		if (this.index + 1 >= this.length) {
 			return undefined;
 		}
@@ -500,9 +496,9 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	}
 
 	/**
-	 * @return Model
+	 * @return GenericModel
 	 */
-	public previous(): Model | undefined {
+	public previous(): GenericModel | undefined {
 		if (this.index <= 0) {
 			return undefined;
 		}
@@ -511,9 +507,9 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	}
 
 	/**
-	 * @return Model
+	 * @return GenericModel
 	 */
-	public current() {
+	public current(): GenericModel {
 		return this.at(this.index);
 	}
 
@@ -524,7 +520,10 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	 * @param  boolean first
 	 * @return Collection | Model
 	 */
-	public where(attributes: IAttributes = {}, first: boolean = false): Collection | Model | undefined {
+	public where(
+		attributes: IAttributes = {},
+		first: boolean = false,
+	): Collection<GenericModel> | GenericModel | undefined {
 		const constructor: any = this.constructor;
 		const collection = new constructor();
 
@@ -546,15 +545,15 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	 * @param  IAttributes attributes
 	 * @return Model
 	 */
-	public findWhere(attributes: IAttributes = {}): Model | undefined {
-		return this.where(attributes, true) as Model;
+	public findWhere(attributes: IAttributes = {}): GenericModel | undefined {
+		return this.where(attributes, true) as GenericModel;
 	}
 
 	/**
 	 * @param  string cid
 	 * @return Model | undefined
 	 */
-	public findByCid(cid: string): Model | undefined {
+	public findByCid(cid: string): GenericModel | undefined {
 		return this.findWhere({ cid });
 	}
 
@@ -567,7 +566,7 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	 * @param  IAttributes options
 	 * @return Collection
 	 */
-	public sort(options: IAttributes = {}): Collection {
+	public sort(options: IAttributes = {}): Collection<GenericModel> {
 		let key: string = this.sortKey;
 
 		// Sort options
@@ -615,8 +614,8 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	 *
 	 * @return CollectionIterator
 	 */
-	public values(): CollectionIterator {
-		return new CollectionIterator(this, CollectionIterator.ITERATOR_VALUES);
+	public values(): CollectionIterator<GenericModel> {
+		return new CollectionIterator<GenericModel>(this, CollectionIterator.ITERATOR_VALUES);
 	}
 
 	/**
@@ -624,8 +623,8 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	 *
 	 * @return CollectionIterator
 	 */
-	public keys(attributes: IAttributes = {}): CollectionIterator {
-		return new CollectionIterator(this, CollectionIterator.ITERATOR_KEYS);
+	public keys(attributes: IAttributes = {}): CollectionIterator<GenericModel> {
+		return new CollectionIterator<GenericModel>(this, CollectionIterator.ITERATOR_KEYS);
 	}
 
 	/**
@@ -633,8 +632,8 @@ export default class Collection extends ActiveRecord<Collection> implements Iter
 	 *
 	 * @return CollectionIterator
 	 */
-	public entries(attributes: IAttributes = {}): CollectionIterator {
-		return new CollectionIterator(this, CollectionIterator.ITERATOR_KEYSVALUES);
+	public entries(attributes: IAttributes = {}): CollectionIterator<GenericModel> {
+		return new CollectionIterator<GenericModel>(this, CollectionIterator.ITERATOR_KEYSVALUES);
 	}
 
 	/**

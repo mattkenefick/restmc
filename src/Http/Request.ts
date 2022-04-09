@@ -87,6 +87,11 @@ export default class Request extends Core implements IRequest {
 	public url: string;
 
 	/**
+	 * @type boolean
+	 */
+	public withCredentials: boolean = true;
+
+	/**
 	 * @param string url
 	 * @param IAttributes options
 	 */
@@ -95,6 +100,9 @@ export default class Request extends Core implements IRequest {
 
 		// Set url and datakey
 		this.dataKey = options.dataKey || this.dataKey;
+
+		// Set withCredentials
+		this.withCredentials = options.hasOwnProperty('withCredentials') ? options.withCredentials : true;
 
 		// Set URL and remove common mistakes
 		this.url = url;
@@ -128,7 +136,7 @@ export default class Request extends Core implements IRequest {
 		params.method = this.method;
 		params.redirect = 'follow';
 		params.url = this.url;
-		params.withCredentials = true;
+		params.withCredentials = this.withCredentials;
 		params.onUploadProgress = (progressEvent: any) => {
 			this.dispatch('progress', {
 				loaded: progressEvent.loaded,
@@ -327,7 +335,7 @@ export default class Request extends Core implements IRequest {
 		};
 
 		// Send cookies
-		xhr.withCredentials = true;
+		xhr.withCredentials = this.withCredentials;
 
 		return xhr.send(params.body);
 	}
