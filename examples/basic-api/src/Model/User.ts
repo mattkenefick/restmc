@@ -5,7 +5,7 @@ import Model from './Core';
  * @package BasicApi\Model
  * @project RestMC
  */
-export default class User extends Model {
+export default class ModelUser extends Model {
 	/**
 	 * @type string
 	 */
@@ -14,7 +14,7 @@ export default class User extends Model {
 	/**
 	 * @return string
 	 */
-	public getUsername(): void {
-		return this.attr('username');
+	public getUsername(): string {
+		return this.attr('username') as string;
 	}
 }

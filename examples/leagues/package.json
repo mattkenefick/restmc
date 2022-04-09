@@ -4,7 +4,7 @@
 		"@types/node-fetch": "^2.5.7",
 		"restmc": "link:../.."
 	},
-	"description": "Example running a basic API",
+	"description": "Example fetching a collection on a different entry key",
 	"devDependencies": {
 		"express": "^4.17.3",
 		"ts-loader": "^9.2.8",
@@ -18,7 +18,7 @@
 	],
 	"license": "ISC",
 	"main": "public/script/index.js",
-	"name": "restmc-example-basic-api",
+	"name": "restmc-example-data-key",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/mattkenefick/restmc.git"

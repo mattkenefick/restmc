@@ -39,6 +39,10 @@ class ActiveRecord extends Core_1.default {
         this.loading = false;
         this.meta = {};
         this.modifiedEndpointPosition = 'before';
+        this.options = {
+            dataKey: 'data',
+            withCredentials: true,
+        };
         this.page = 1;
         this.requestTime = -1;
         this.cidPrefix = 'c';
@@ -50,7 +54,7 @@ class ActiveRecord extends Core_1.default {
         this.parent = undefined;
         this.setHeader('Content-Type', 'application/json; charset=utf8');
         this.builder = new Builder_1.default(this);
-        this.options(options);
+        this.setOptions(options);
     }
     get b() {
         return this.builder;
@@ -81,7 +85,8 @@ class ActiveRecord extends Core_1.default {
         delete this.attributes[key];
         return this;
     }
-    options(options = {}) {
+    setOptions(options = {}) {
+        this.options = Object.assign(this.options, options);
         if (options.baseUrl) {
             this.baseUrl = options.baseUrl;
         }
@@ -326,7 +331,7 @@ class ActiveRecord extends Core_1.default {
             let data = this.dataKey !== undefined ? remoteJson[this.dataKey] : remoteJson.responseData || request.responseData;
             this.set(data, options);
         }
-        this.options(Object.assign({}, options, { meta: remoteJson.meta }));
+        this.setOptions(Object.assign({}, options, { meta: remoteJson.meta }));
         this.dispatch('parse:after', this);
     }
     _fetch(options = {}, queryParams = {}, method = 'get', body = {}, headers = {}) {
@@ -351,7 +356,10 @@ class ActiveRecord extends Core_1.default {
         this.dispatch('requesting', this.lastRequest);
         this.hasFetched = true;
         this.loading = true;
-        let request = (this.request = new Request_1.default(url, { dataKey: this.dataKey }));
+        let request = (this.request = new Request_1.default(url, {
+            dataKey: this.dataKey,
+            withCredentials: this.options.withCredentials,
+        }));
         this.request.method = method;
         request.on('complete:delete', (e) => {
             this.dispatch('complete:delete', e.target);
@@ -469,7 +477,7 @@ class Collection extends ActiveRecord_1.default {
         this.models = [];
         this.sortKey = 'id';
         this.dataKey = 'data';
-        this.options(options);
+        this.setOptions(options);
         this.builder.qp('limit', options.limit || this.limit).qp('page', options.page || this.page);
         if (options.atRelationship) {
             this.atRelationship = options.atRelationship;
@@ -481,7 +489,7 @@ class Collection extends ActiveRecord_1.default {
     static hydrate(models = [], options = {}) {
         const collection = new this(options);
         collection.add(models);
-        collection.options(options);
+        collection.setOptions(options);
         return collection;
     }
     get length() {
@@ -1022,7 +1030,9 @@ class Request extends Core_1.default {
         this.method = 'get';
         this.mode = 'cors';
         this.responseData = {};
+        this.withCredentials = true;
         this.dataKey = options.dataKey || this.dataKey;
+        this.withCredentials = options.hasOwnProperty('withCredentials') ? options.withCredentials : true;
         this.url = url;
         this.url = this.url.replace(/\?$/, '');
         this.url = this.url.replace(/\?&/, '?');
@@ -1036,7 +1046,7 @@ class Request extends Core_1.default {
         params.method = this.method;
         params.redirect = 'follow';
         params.url = this.url;
-        params.withCredentials = true;
+        params.withCredentials = this.withCredentials;
         params.onUploadProgress = (progressEvent) => {
             this.dispatch('progress', {
                 loaded: progressEvent.loaded,
@@ -1119,7 +1129,7 @@ class Request extends Core_1.default {
                 xhrSend.apply(xhr, xhrArguments);
             });
         };
-        xhr.withCredentials = true;
+        xhr.withCredentials = this.withCredentials;
         return xhr.send(params.body);
     }
     setHeader(header, value) {
@@ -1241,12 +1251,12 @@ class Model extends ActiveRecord_1.default {
         this.relationshipCache = {};
         this.dataKey = undefined;
         this.set(attributes);
-        this.options(options);
+        this.setOptions(options);
     }
     static hydrate(attributes = {}, options = {}) {
         const model = new this(options);
         model.set(attributes);
-        model.options(options);
+        model.setOptions(options);
         return model;
     }
     get isModel() {
@@ -1363,17 +1373,18 @@ Object.defineProperty(exports, "Request", ({ enumerable: true, get: function () 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const restmc_1 = __webpack_require__(/*! restmc */ "../../build/esm/index.js");
 class CollectionCore extends restmc_1.Collection {
-    baseUrl = 'https://api.shortverse.com/v1';
+    baseUrl = 'https://api-football-standings.azharimm.site';
+    options = { withCredentials: false };
 }
 exports["default"] = CollectionCore;
 
 
 /***/ }),
 
-/***/ "./src/Collection/User.ts":
-/*!********************************!*\
-  !*** ./src/Collection/User.ts ***!
-  \********************************/
+/***/ "./src/Collection/League.ts":
+/*!**********************************!*\
+  !*** ./src/Collection/League.ts ***!
+  \**********************************/
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -1383,10 +1394,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const Core_1 = __importDefault(__webpack_require__(/*! ./Core */ "./src/Collection/Core.ts"));
-const User_1 = __importDefault(__webpack_require__(/*! ../Model/User */ "./src/Model/User.ts"));
+const League_1 = __importDefault(__webpack_require__(/*! ../Model/League */ "./src/Model/League.ts"));
 class CollectionUser extends Core_1.default {
-    endpoint = 'user';
-    model = new User_1.default();
+    model = new League_1.default();
 }
 exports["default"] = CollectionUser;
 
@@ -1404,17 +1414,17 @@ exports["default"] = CollectionUser;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const restmc_1 = __webpack_require__(/*! restmc */ "../../build/esm/index.js");
 class ModelCore extends restmc_1.Model {
-    baseUrl = 'https://api.shortverse.com/v1';
+    baseUrl = 'https://api-football-standings.azharimm.site';
 }
 exports["default"] = ModelCore;
 
 
 /***/ }),
 
-/***/ "./src/Model/User.ts":
-/*!***************************!*\
-  !*** ./src/Model/User.ts ***!
-  \***************************/
+/***/ "./src/Model/Image.ts":
+/*!****************************!*\
+  !*** ./src/Model/Image.ts ***!
+  \****************************/
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -1424,13 +1434,49 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const Core_1 = __importDefault(__webpack_require__(/*! ./Core */ "./src/Model/Core.ts"));
-class ModelUser extends Core_1.default {
-    endpoint = 'user';
-    getUsername() {
-        return this.attr('username');
+class ModelLeague extends Core_1.default {
+    getDark() {
+        return this.attr('dark');
+    }
+    getLight() {
+        return this.attr('light');
     }
 }
-exports["default"] = ModelUser;
+exports["default"] = ModelLeague;
+
+
+/***/ }),
+
+/***/ "./src/Model/League.ts":
+/*!*****************************!*\
+  !*** ./src/Model/League.ts ***!
+  \*****************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const Core_1 = __importDefault(__webpack_require__(/*! ./Core */ "./src/Model/Core.ts"));
+const Image_1 = __importDefault(__webpack_require__(/*! ./Image */ "./src/Model/Image.ts"));
+class ModelLeague extends Core_1.default {
+    endpoint = 'leagues';
+    get logo() {
+        return this.hasOne('logos', Image_1.default);
+    }
+    getAbbreviation() {
+        return this.attr('abbr');
+    }
+    getName() {
+        return this.attr('name');
+    }
+    getSlug() {
+        return this.attr('slug');
+    }
+}
+exports["default"] = ModelLeague;
 
 
 /***/ }),
@@ -1447,19 +1493,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const User_1 = __importDefault(__webpack_require__(/*! ./Collection/User */ "./src/Collection/User.ts"));
-function addUser(userModel, parentElement) {
+const League_1 = __importDefault(__webpack_require__(/*! ./Collection/League */ "./src/Collection/League.ts"));
+function addUser(entryModel, parentElement) {
     const element = document.createElement('div');
-    element.innerHTML = [`<h1>${userModel.getUsername()}</h1>`].join('');
+    element.innerHTML = [
+        `<img src="${entryModel.logo.getDark()}" width="75" />`,
+        `<h2>${entryModel.getName()}</h2>`,
+        '<hr />',
+    ].join('');
     parentElement.appendChild(element);
 }
-async function fetchUsers() {
+async function fetchLeague() {
     const parentElement = document.querySelector('#app');
-    const userCollection = new User_1.default();
-    await userCollection.fetch();
-    userCollection.each((model) => addUser(model, parentElement));
+    const leagueCollection = new League_1.default();
+    await leagueCollection.fetch();
+    leagueCollection.each((model) => addUser(model, parentElement));
 }
-fetchUsers();
+fetchLeague();
 
 
 /***/ }),

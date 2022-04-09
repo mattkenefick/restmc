@@ -5,7 +5,7 @@ import { Collection, Model } from 'restmc';
  * @package BasicApi\Collection
  * @project RestMC
  */
-export default class Core extends Collection {
+export default class CollectionCore<T extends Model> extends Collection<T> {
 	/**
 	 * @type string
 	 */
