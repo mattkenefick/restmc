@@ -11,7 +11,7 @@
         "moduleResolution": "node",
         "noImplicitAny": false,
         "noImplicitThis": false,
-        "outDir": "build",
+        "outDir": "build/esm",
         "paths": {
             "*": [
                 "types/*"

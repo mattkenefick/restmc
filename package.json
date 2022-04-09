@@ -26,17 +26,19 @@
 		"README.md"
 	],
 	"license": "ISC",
-	"main": "build/index.js",
+	"main": "./build/cjs/index.js",
+	"module": "./build/esm/index.js",
 	"name": "restmc",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/mattkenefick/restmc.git"
 	},
 	"scripts": {
-		"build": "tsc -p tsconfig.json",
+		"build": "tsc -p tsconfig.json && tsc -p tsconfig-cjs.json",
+		"prepublish": "npm run tsc",
 		"test": "ts-mocha -p tsconfig.json test/unit/**/*.spec.ts test/unit/*.spec.ts ",
 		"test-one": "ts-mocha -p tsconfig.json test/unit/Collection.spec.ts"
 	},
 	"types": "build/index.d.ts",
-	"version": "1.0.1"
+	"version": "0.5.1"
 }
