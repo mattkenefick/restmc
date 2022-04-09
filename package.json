@@ -39,6 +39,6 @@
 		"test": "ts-mocha -p tsconfig.json test/unit/**/*.spec.ts test/unit/*.spec.ts ",
 		"test-one": "ts-mocha -p tsconfig.json test/unit/Collection.spec.ts"
 	},
-	"types": "build/index.d.ts",
+	"types": "build/esm/index.d.ts",
 	"version": "0.5.1"
 }
