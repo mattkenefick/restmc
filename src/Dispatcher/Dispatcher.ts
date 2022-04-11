@@ -1,4 +1,4 @@
-import { IDispatcherCallbackFunction, IDispatcherEventData } from '@/Interfaces';
+import { IDispatcherCallbackFunction, IDispatcherEventData } from '../Interfaces';
 import DispatcherEvent from './DispatcherEvent';
 
 /**
