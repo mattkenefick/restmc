@@ -520,7 +520,7 @@ export default class Collection<GenericModel extends Model>
 	 * @param  boolean first
 	 * @return Collection | Model
 	 */
-	public where(attributes: IAttributes = {}, first: boolean = false): Collection<GenericModel> | GenericModel {
+	public where(attributes: IAttributes = {}, first: boolean = false): this | Collection<GenericModel> | GenericModel {
 		const constructor: any = this.constructor;
 		const collection = new constructor();
 

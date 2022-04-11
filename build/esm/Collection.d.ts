@@ -40,7 +40,7 @@ export default class Collection<GenericModel extends Model> extends ActiveRecord
     next(): GenericModel | undefined;
     previous(): GenericModel | undefined;
     current(): GenericModel;
-    where(attributes?: IAttributes, first?: boolean): Collection<GenericModel> | GenericModel;
+    where(attributes?: IAttributes, first?: boolean): this | Collection<GenericModel> | GenericModel;
     findWhere(attributes?: IAttributes): GenericModel;
     findByCid(cid: string): GenericModel;
     sort(options?: IAttributes): Collection<GenericModel>;
