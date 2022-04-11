@@ -40,6 +40,28 @@ describe('Collection', () => {
 		expect(userCollection.options.withCredentials).to.equal(false);
 	});
 
+	it('should correctly handle empty firstWhere', async () => {
+		const userCollection: CollectionUser = getCollection();
+		const model: ModelUser = userCollection.findWhere({ foo: 'bar' });
+
+		expect(model).to.equal(undefined);
+	});
+
+	it('should correctly handle empty where', async () => {
+		const userCollection: CollectionUser = getCollection();
+		const collection: CollectionUser = userCollection.where({ foo: 'bar' });
+
+		expect(collection instanceof CollectionUser).to.equal(true);
+		expect(collection.length).to.equal(0);
+	});
+
+	it('should correctly handle empty firstWhere', async () => {
+		const userCollection: CollectionUser = getCollection();
+		const model: ModelUser = userCollection.findWhere({ foo: 'bar' });
+
+		expect(model).to.equal(undefined);
+	});
+
 	it('should fetch data and have 3 models', async () => {
 		const userCollection: CollectionUser = getCollection();
 

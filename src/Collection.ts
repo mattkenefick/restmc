@@ -520,10 +520,7 @@ export default class Collection<GenericModel extends Model>
 	 * @param  boolean first
 	 * @return Collection | Model
 	 */
-	public where(
-		attributes: IAttributes = {},
-		first: boolean = false,
-	): Collection<GenericModel> | GenericModel | undefined {
+	public where(attributes: IAttributes = {}, first: boolean = false): Collection<GenericModel> | GenericModel {
 		const constructor: any = this.constructor;
 		const collection = new constructor();
 
@@ -545,7 +542,7 @@ export default class Collection<GenericModel extends Model>
 	 * @param  IAttributes attributes
 	 * @return Model
 	 */
-	public findWhere(attributes: IAttributes = {}): GenericModel | undefined {
+	public findWhere(attributes: IAttributes = {}): GenericModel {
 		return this.where(attributes, true) as GenericModel;
 	}
 
@@ -553,7 +550,7 @@ export default class Collection<GenericModel extends Model>
 	 * @param  string cid
 	 * @return Model | undefined
 	 */
-	public findByCid(cid: string): GenericModel | undefined {
+	public findByCid(cid: string): GenericModel {
 		return this.findWhere({ cid });
 	}
 
