@@ -1,5 +1,4 @@
 import ActiveRecord from './ActiveRecord';
-import Collection from './Collection';
 import Request from './Http/Request';
 import { IAttributes, IModelRequestOptions, IModelRequestQueryParams } from './Interfaces';
 export default class Model extends ActiveRecord<Model> {
@@ -13,6 +12,6 @@ export default class Model extends ActiveRecord<Model> {
     set(attributes?: IAttributes): Model;
     fetch(options?: IModelRequestOptions, queryParams?: IModelRequestQueryParams): Promise<Request>;
     hasOne<T>(relationshipName: string, relationshipClass: any): T;
-    hasMany(relationshipName: string, relationshipClass: any): Collection<any> | undefined;
+    hasMany<T>(relationshipName: string, relationshipClass: any): T;
     protected getRelationship(relationshipName: string): any;
 }

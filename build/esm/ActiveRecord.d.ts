@@ -47,7 +47,7 @@ export default class ActiveRecord<T> extends Core {
     delete(attributes?: IAttributes): FetchResponse;
     post(attributes?: IAttributes): FetchResponse;
     put(attributes: IAttributes): FetchResponse;
-    save(attributes: IAttributes): FetchResponse;
+    save(attributes?: IAttributes): FetchResponse;
     add(attributes: IAttributes): ActiveRecord<T>;
     reset(): ActiveRecord<T>;
     addLoadingHooks(view: any, preHook?: IDispatcherCallbackFunction | undefined, postHook?: IDispatcherCallbackFunction | undefined): ActiveRecord<T>;

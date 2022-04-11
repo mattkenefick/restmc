@@ -124,7 +124,7 @@ class ActiveRecord extends Core_1.default {
         const url = this.builder.getUrl();
         return this._fetch(null, {}, 'PUT', attributes, this.headers);
     }
-    save(attributes) {
+    save(attributes = {}) {
         const method = this.id ? 'PUT' : 'POST';
         return this._fetch(null, {}, method, attributes, this.headers);
     }
