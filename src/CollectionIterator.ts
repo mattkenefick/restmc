@@ -6,7 +6,7 @@ import Model from './Model';
  * @package RestMC
  * @project RestMC
  */
-export default class CollectionIterator<GenericModel> {
+export default class CollectionIterator<GenericModel extends Model> {
 	/**
 	 * @type number
 	 */
@@ -30,7 +30,7 @@ export default class CollectionIterator<GenericModel> {
 	/**
 	 * @type Collection<any>
 	 */
-	protected collection: Collection<any> | undefined;
+	protected collection: Collection<GenericModel> | undefined;
 
 	/**
 	 * @type number
@@ -41,7 +41,7 @@ export default class CollectionIterator<GenericModel> {
 	 * @param Collection collection
 	 * @param number kind
 	 */
-	constructor(collection: Collection<any>, kind: number = 0) {
+	constructor(collection: Collection<GenericModel>, kind: number = 0) {
 		this.collection = collection;
 		this.index = 0;
 		this.kind = kind;
@@ -62,7 +62,7 @@ export default class CollectionIterator<GenericModel> {
 		if (this.index < this.collection.length) {
 			let value;
 
-			const model: Model = this.collection.at(++this.index);
+			const model: GenericModel = this.collection.at(++this.index);
 
 			// Return model as value
 			if (this.kind === CollectionIterator.ITERATOR_VALUES) {

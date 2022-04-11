@@ -1,12 +1,13 @@
 import Collection from './Collection';
-export default class CollectionIterator<GenericModel> {
+import Model from './Model';
+export default class CollectionIterator<GenericModel extends Model> {
     static ITERATOR_VALUES: number;
     static ITERATOR_KEYS: number;
     static ITERATOR_KEYSVALUES: number;
     index: number;
-    protected collection: Collection<any> | undefined;
+    protected collection: Collection<GenericModel> | undefined;
     protected kind: number;
-    constructor(collection: Collection<any>, kind?: number);
+    constructor(collection: Collection<GenericModel>, kind?: number);
     next(): {
         done: boolean;
         value: any;

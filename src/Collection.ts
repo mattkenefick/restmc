@@ -721,7 +721,7 @@ export default class Collection<GenericModel extends Model>
 	 * @type Iterator<any>
 	 */
 	// @ts-ignore
-	[Symbol.iterator](): CollectionIterator {
-		return new CollectionIterator(this, CollectionIterator.ITERATOR_VALUES);
+	[Symbol.iterator](): CollectionIterator<GenericModel> {
+		return new CollectionIterator<GenericModel>(this, CollectionIterator.ITERATOR_VALUES);
 	}
 }
