@@ -453,7 +453,7 @@ export default class ActiveRecord<T> extends Core {
 	 * @param IAttributes attributes
 	 * @return FetchResponse
 	 */
-	public save(attributes: IAttributes): FetchResponse {
+	public save(attributes: IAttributes = {}): FetchResponse {
 		const method: string = this.id ? 'PUT' : 'POST';
 
 		return this._fetch(null, {}, method, attributes, this.headers);
