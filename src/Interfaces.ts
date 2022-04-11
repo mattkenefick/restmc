@@ -73,7 +73,7 @@ export interface IDispatcher {
 }
 
 export interface IDispatcherCallbackFunction {
-	(eventData?: Record<string, unknown>): any;
+	(eventData?: IDispatcherEvent): any;
 }
 
 export interface IDispatcherEventEvent {
@@ -81,9 +81,10 @@ export interface IDispatcherEventEvent {
 }
 
 export interface IDispatcherEvent {
-	eventData: any; // data set by dispatch('', ...)
-	event: IDispatcherEventEvent;
-	target: any; // class executing event
+	[key: string]: unknown;
+	eventData?: any; // data set by dispatch('', ...)
+	event?: IDispatcherEventEvent;
+	target?: any; // class executing event
 }
 
 export interface IDispatcherEventData {

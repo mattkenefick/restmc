@@ -63,15 +63,16 @@ export interface IDispatcher {
     trigger: (eventName: string, data?: any) => any;
 }
 export interface IDispatcherCallbackFunction {
-    (eventData?: Record<string, unknown>): any;
+    (eventData?: IDispatcherEvent): any;
 }
 export interface IDispatcherEventEvent {
     name: string;
 }
 export interface IDispatcherEvent {
-    eventData: any;
-    event: IDispatcherEventEvent;
-    target: any;
+    [key: string]: unknown;
+    eventData?: any;
+    event?: IDispatcherEventEvent;
+    target?: any;
 }
 export interface IDispatcherEventData {
     [key: string]: unknown;
