@@ -67,7 +67,7 @@ class ActiveRecord extends Core_1.default {
             this.setId(attributes.id);
         }
         if (trigger) {
-            this.dispatch('set');
+            this.dispatch('set', { attributes });
         }
         return this;
     }
@@ -182,7 +182,7 @@ class ActiveRecord extends Core_1.default {
             this.unsetHeader('Content-Type');
             formData.append(name, file);
             return this._fetch(null, {}, 'POST', formData).then((request) => {
-                this.dispatch('file:complete', this);
+                this.dispatch('file:complete');
                 return request;
             });
         });
@@ -309,20 +309,22 @@ class ActiveRecord extends Core_1.default {
         this.setHeader('Authorization', 'Bearer ' + token);
         return this;
     }
-    setAfterResponse(request, options = {}) {
+    setAfterResponse(e, options = {}) {
+        const request = e.detail.request;
+        const response = e.detail.response;
         let method = request.method || 'get';
-        let remoteJson = request.responseData;
+        let remoteJson = response.data;
         if (method.toLowerCase() === 'post' && !this.isModel) {
-            this.add((this.dataKey ? remoteJson[this.dataKey] : remoteJson) || request.responseData);
+            this.add((this.dataKey ? remoteJson[this.dataKey] : remoteJson) || response.data);
         }
         else if (method.toLowerCase() === 'delete') {
         }
         else {
-            let data = this.dataKey !== undefined ? remoteJson[this.dataKey] : remoteJson.responseData || request.responseData;
+            let data = this.dataKey !== undefined ? remoteJson[this.dataKey] : remoteJson.responseData || response.data;
             this.set(data, options);
         }
         this.setOptions(Object.assign({}, options, { meta: remoteJson.meta }));
-        this.dispatch('parse:after', this);
+        this.dispatch('parse:after', e.detail);
     }
     _fetch(options = {}, queryParams = {}, method = 'get', body = {}, headers = {}) {
         method = method ? method.toLowerCase() : 'get';
@@ -343,7 +345,7 @@ class ActiveRecord extends Core_1.default {
             this.builder.identifier(options.id);
         }
         const url = this.getUrlByMethod(method);
-        this.dispatch('requesting', this.lastRequest);
+        this.dispatch('requesting', { request: this.lastRequest });
         this.hasFetched = true;
         this.loading = true;
         let request = (this.request = new Request_1.default(url, {
@@ -352,19 +354,19 @@ class ActiveRecord extends Core_1.default {
         }));
         this.request.method = method;
         request.on('complete:delete', (e) => {
-            this.dispatch('complete:delete', e.target);
+            this.dispatch('complete:delete', e.detail);
             this.builder.identifier('');
         });
-        request.on('complete:get', (e) => this.dispatch('complete:get', e.target));
-        request.on('complete:post', (e) => this.dispatch('complete:post', e.target));
-        request.on('complete:put', (e) => this.dispatch('complete:put', e.target));
-        request.on('complete', (e) => this.FetchComplete(e.target));
-        request.on('error:delete', (e) => this.dispatch('error:delete', e.target));
-        request.on('error:get', (e) => this.dispatch('error:get', e.target));
-        request.on('error:post', (e) => this.dispatch('error:post', e.target));
-        request.on('error:put', (e) => this.dispatch('error:put', e.target));
-        request.on('error', (e) => this.dispatch('error', e.target));
-        request.on('parse:after', (e) => this.FetchParseAfter(e.target, options || {}));
+        request.on('complete:get', (e) => this.dispatch('complete:get', e.detail));
+        request.on('complete:post', (e) => this.dispatch('complete:post', e.detail));
+        request.on('complete:put', (e) => this.dispatch('complete:put', e.detail));
+        request.on('complete', (e) => this.FetchComplete(e));
+        request.on('error:delete', (e) => this.dispatch('error:delete', e.detail));
+        request.on('error:get', (e) => this.dispatch('error:get', e.detail));
+        request.on('error:post', (e) => this.dispatch('error:post', e.detail));
+        request.on('error:put', (e) => this.dispatch('error:put', e.detail));
+        request.on('error', (e) => this.dispatch('error', e.detail));
+        request.on('parse:after', (e) => this.FetchParseAfter(e, options || {}));
         request.on('progress', (e) => this.FetchProgress(e));
         return request.fetch(method, body || this.body, headers || this.headers);
     }
@@ -405,21 +407,21 @@ class ActiveRecord extends Core_1.default {
         const cache = this.getCache(key);
         cache.subscribers = [];
     }
-    FetchComplete(request) {
+    FetchComplete(e) {
         this.hasLoaded = true;
         this.loading = false;
-        this.dispatch('complete', request);
+        this.dispatch('complete', e.detail);
     }
-    FetchProgress(progress) {
-        this.dispatch('progress', progress);
+    FetchProgress(e) {
+        this.dispatch('progress', e.detail);
     }
-    FetchParseAfter(request, options = {}) {
-        const response = request.response;
-        const code = response ? response.status : 0;
+    FetchParseAfter(e, options = {}) {
+        var _a, _b;
+        const code = ((_b = (_a = e.detail) === null || _a === void 0 ? void 0 : _a.response) === null || _b === void 0 ? void 0 : _b.status) || 0;
         if (code < 400) {
-            this.setAfterResponse(request, options);
+            this.setAfterResponse(e, options);
         }
-        this.dispatch('fetched', request);
+        this.dispatch('fetched', e.detail);
     }
 }
 exports.default = ActiveRecord;

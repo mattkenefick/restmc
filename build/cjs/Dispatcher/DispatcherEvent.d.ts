@@ -1,11 +1,11 @@
-import { IDispatcherCallbackFunction, IDispatcherEventData } from '../Interfaces';
+import { IDispatcherCallbackFunction, IDispatchData } from '../Interfaces';
 export default class DispatcherEvent {
     callbacks: IDispatcherCallbackFunction[];
-    eventData: IDispatcherEventData;
+    detail: IDispatchData;
     eventName: string;
-    constructor(eventName: string, eventData?: IDispatcherEventData);
+    constructor(eventName: string, detail?: IDispatchData);
     clearCallbacks(): void;
-    fire(eventData?: IDispatcherEventData): number;
+    fire(detail: IDispatchData): number;
     hasCallback(callback: IDispatcherCallbackFunction): boolean;
     registerCallback(callback: IDispatcherCallbackFunction): void;
     unregisterCallback(callback: IDispatcherCallbackFunction): boolean;

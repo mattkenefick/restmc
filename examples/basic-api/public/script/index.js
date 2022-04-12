@@ -39,6 +39,10 @@ class ActiveRecord extends Core_1.default {
         this.loading = false;
         this.meta = {};
         this.modifiedEndpointPosition = 'before';
+        this.options = {
+            dataKey: 'data',
+            withCredentials: true,
+        };
         this.page = 1;
         this.requestTime = -1;
         this.cidPrefix = 'c';
@@ -50,7 +54,7 @@ class ActiveRecord extends Core_1.default {
         this.parent = undefined;
         this.setHeader('Content-Type', 'application/json; charset=utf8');
         this.builder = new Builder_1.default(this);
-        this.options(options);
+        this.setOptions(options);
     }
     get b() {
         return this.builder;
@@ -73,7 +77,7 @@ class ActiveRecord extends Core_1.default {
             this.setId(attributes.id);
         }
         if (trigger) {
-            this.dispatch('set');
+            this.dispatch('set', { attributes });
         }
         return this;
     }
@@ -81,7 +85,8 @@ class ActiveRecord extends Core_1.default {
         delete this.attributes[key];
         return this;
     }
-    options(options = {}) {
+    setOptions(options = {}) {
+        this.options = Object.assign(this.options, options);
         if (options.baseUrl) {
             this.baseUrl = options.baseUrl;
         }
@@ -129,7 +134,7 @@ class ActiveRecord extends Core_1.default {
         const url = this.builder.getUrl();
         return this._fetch(null, {}, 'PUT', attributes, this.headers);
     }
-    save(attributes) {
+    save(attributes = {}) {
         const method = this.id ? 'PUT' : 'POST';
         return this._fetch(null, {}, method, attributes, this.headers);
     }
@@ -187,7 +192,7 @@ class ActiveRecord extends Core_1.default {
             this.unsetHeader('Content-Type');
             formData.append(name, file);
             return this._fetch(null, {}, 'POST', formData).then((request) => {
-                this.dispatch('file:complete', this);
+                this.dispatch('file:complete');
                 return request;
             });
         });
@@ -314,20 +319,22 @@ class ActiveRecord extends Core_1.default {
         this.setHeader('Authorization', 'Bearer ' + token);
         return this;
     }
-    setAfterResponse(request, options = {}) {
+    setAfterResponse(e, options = {}) {
+        const request = e.detail.request;
+        const response = e.detail.response;
         let method = request.method || 'get';
-        let remoteJson = request.responseData;
+        let remoteJson = response.data;
         if (method.toLowerCase() === 'post' && !this.isModel) {
-            this.add((this.dataKey ? remoteJson[this.dataKey] : remoteJson) || request.responseData);
+            this.add((this.dataKey ? remoteJson[this.dataKey] : remoteJson) || response.data);
         }
         else if (method.toLowerCase() === 'delete') {
         }
         else {
-            let data = this.dataKey !== undefined ? remoteJson[this.dataKey] : remoteJson.responseData || request.responseData;
+            let data = this.dataKey !== undefined ? remoteJson[this.dataKey] : remoteJson.responseData || response.data;
             this.set(data, options);
         }
-        this.options(Object.assign({}, options, { meta: remoteJson.meta }));
-        this.dispatch('parse:after', this);
+        this.setOptions(Object.assign({}, options, { meta: remoteJson.meta }));
+        this.dispatch('parse:after', e.detail);
     }
     _fetch(options = {}, queryParams = {}, method = 'get', body = {}, headers = {}) {
         method = method ? method.toLowerCase() : 'get';
@@ -348,25 +355,28 @@ class ActiveRecord extends Core_1.default {
             this.builder.identifier(options.id);
         }
         const url = this.getUrlByMethod(method);
-        this.dispatch('requesting', this.lastRequest);
+        this.dispatch('requesting', { request: this.lastRequest });
         this.hasFetched = true;
         this.loading = true;
-        let request = (this.request = new Request_1.default(url, { dataKey: this.dataKey }));
+        let request = (this.request = new Request_1.default(url, {
+            dataKey: this.dataKey,
+            withCredentials: this.options.withCredentials,
+        }));
         this.request.method = method;
         request.on('complete:delete', (e) => {
-            this.dispatch('complete:delete', e.target);
+            this.dispatch('complete:delete', e.detail);
             this.builder.identifier('');
         });
-        request.on('complete:get', (e) => this.dispatch('complete:get', e.target));
-        request.on('complete:post', (e) => this.dispatch('complete:post', e.target));
-        request.on('complete:put', (e) => this.dispatch('complete:put', e.target));
-        request.on('complete', (e) => this.FetchComplete(e.target));
-        request.on('error:delete', (e) => this.dispatch('error:delete', e.target));
-        request.on('error:get', (e) => this.dispatch('error:get', e.target));
-        request.on('error:post', (e) => this.dispatch('error:post', e.target));
-        request.on('error:put', (e) => this.dispatch('error:put', e.target));
-        request.on('error', (e) => this.dispatch('error', e.target));
-        request.on('parse:after', (e) => this.FetchParseAfter(e.target, options || {}));
+        request.on('complete:get', (e) => this.dispatch('complete:get', e.detail));
+        request.on('complete:post', (e) => this.dispatch('complete:post', e.detail));
+        request.on('complete:put', (e) => this.dispatch('complete:put', e.detail));
+        request.on('complete', (e) => this.FetchComplete(e));
+        request.on('error:delete', (e) => this.dispatch('error:delete', e.detail));
+        request.on('error:get', (e) => this.dispatch('error:get', e.detail));
+        request.on('error:post', (e) => this.dispatch('error:post', e.detail));
+        request.on('error:put', (e) => this.dispatch('error:put', e.detail));
+        request.on('error', (e) => this.dispatch('error', e.detail));
+        request.on('parse:after', (e) => this.FetchParseAfter(e, options || {}));
         request.on('progress', (e) => this.FetchProgress(e));
         return request.fetch(method, body || this.body, headers || this.headers);
     }
@@ -407,21 +417,21 @@ class ActiveRecord extends Core_1.default {
         const cache = this.getCache(key);
         cache.subscribers = [];
     }
-    FetchComplete(request) {
+    FetchComplete(e) {
         this.hasLoaded = true;
         this.loading = false;
-        this.dispatch('complete', request);
+        this.dispatch('complete', e.detail);
     }
-    FetchProgress(progress) {
-        this.dispatch('progress', progress);
+    FetchProgress(e) {
+        this.dispatch('progress', e.detail);
     }
-    FetchParseAfter(request, options = {}) {
-        const response = request.response;
-        const code = response ? response.status : 0;
+    FetchParseAfter(e, options = {}) {
+        var _a, _b;
+        const code = ((_b = (_a = e.detail) === null || _a === void 0 ? void 0 : _a.response) === null || _b === void 0 ? void 0 : _b.status) || 0;
         if (code < 400) {
-            this.setAfterResponse(request, options);
+            this.setAfterResponse(e, options);
         }
-        this.dispatch('fetched', request);
+        this.dispatch('fetched', e.detail);
     }
 }
 exports["default"] = ActiveRecord;
@@ -469,7 +479,7 @@ class Collection extends ActiveRecord_1.default {
         this.models = [];
         this.sortKey = 'id';
         this.dataKey = 'data';
-        this.options(options);
+        this.setOptions(options);
         this.builder.qp('limit', options.limit || this.limit).qp('page', options.page || this.page);
         if (options.atRelationship) {
             this.atRelationship = options.atRelationship;
@@ -481,7 +491,7 @@ class Collection extends ActiveRecord_1.default {
     static hydrate(models = [], options = {}) {
         const collection = new this(options);
         collection.add(models);
-        collection.options(options);
+        collection.setOptions(options);
         return collection;
     }
     get length() {
@@ -699,14 +709,25 @@ class Collection extends ActiveRecord_1.default {
         return (super
             ._fetch(options, queryParams, method, body, headers)
             .then((request) => {
-            var _a, _b;
-            const data = request.responseData;
+            var _a, _b, _c;
+            const data = (_a = request.response) === null || _a === void 0 ? void 0 : _a.data;
             const method = request.method || 'get';
             this.cache(cacheKey, request, true);
-            (_b = (_a = this.getCache(cacheKey)) === null || _a === void 0 ? void 0 : _a.subscribers) === null || _b === void 0 ? void 0 : _b.forEach((subscriber) => {
-                subscriber.collection.setAfterResponse(request);
-                subscriber.collection.dispatch('complete', request);
-                subscriber.collection.dispatch('complete:' + method, request);
+            (_c = (_b = this.getCache(cacheKey)) === null || _b === void 0 ? void 0 : _b.subscribers) === null || _c === void 0 ? void 0 : _c.forEach((subscriber) => {
+                subscriber.collection.setAfterResponse({
+                    detail: {
+                        request: request,
+                        response: request.response,
+                    },
+                });
+                subscriber.collection.dispatch('complete', {
+                    request: request,
+                    response: request.response,
+                });
+                subscriber.collection.dispatch('complete:' + method, {
+                    request: request,
+                    response: request.response,
+                });
                 subscriber.resolve(request);
             });
             this.clearCacheSubscribers(cacheKey);
@@ -714,7 +735,10 @@ class Collection extends ActiveRecord_1.default {
         })
             .catch((request) => {
             var _a, _b;
-            this.dispatch('error', request);
+            this.dispatch('error', {
+                request: request,
+                response: request.response,
+            });
             this.cache(cacheKey, request, true);
             (_b = (_a = this.getCache(cacheKey)) === null || _a === void 0 ? void 0 : _a.subscribers) === null || _b === void 0 ? void 0 : _b.forEach((subscriber) => subscriber.reject(request));
             this.clearCacheSubscribers(cacheKey);
@@ -817,16 +841,10 @@ class Dispatcher {
     constructor() {
         this.events = {};
     }
-    dispatch(name, data = {}) {
-        var _a;
+    dispatch(name, detail = {}) {
         const event = this.events[name];
-        const eventData = name === ((_a = data.event) === null || _a === void 0 ? void 0 : _a.name) && data.eventData ? data.eventData : data;
         if (event) {
-            event.fire({
-                event: { name },
-                eventData: eventData,
-                target: this,
-            });
+            event.fire(detail);
             return true;
         }
         return false;
@@ -850,13 +868,13 @@ class Dispatcher {
     on(eventName, callback) {
         let event = this.events[eventName];
         if (!event) {
-            event = new DispatcherEvent_1.default(eventName);
+            event = new DispatcherEvent_1.default(eventName, {});
             this.events[eventName] = event;
         }
         event.registerCallback(callback);
     }
-    trigger(eventName, eventData) {
-        return this.dispatch(eventName, eventData);
+    trigger(eventName, detail = {}) {
+        return this.dispatch(eventName, detail);
     }
 }
 exports["default"] = Dispatcher;
@@ -874,19 +892,23 @@ exports["default"] = Dispatcher;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 class DispatcherEvent {
-    constructor(eventName, eventData = {}) {
+    constructor(eventName, detail = {}) {
         this.callbacks = [];
-        this.eventData = eventData;
+        this.detail = detail;
         this.eventName = eventName;
     }
     clearCallbacks() {
         this.callbacks = [];
     }
-    fire(eventData = {}) {
+    fire(detail) {
         const callbacks = this.callbacks.slice(0);
         let fires = 0;
+        const event = {
+            detail: Object.assign({}, this.detail, detail),
+            name: this.eventName,
+        };
         callbacks.forEach((callback) => {
-            callback(Object.assign({}, this.eventData, eventData));
+            callback(event);
             fires++;
         });
         return fires;
@@ -1022,13 +1044,21 @@ class Request extends Core_1.default {
         this.method = 'get';
         this.mode = 'cors';
         this.responseData = {};
+        this.withCredentials = true;
         this.dataKey = options.dataKey || this.dataKey;
+        this.withCredentials = options.hasOwnProperty('withCredentials') ? options.withCredentials : true;
         this.url = url;
         this.url = this.url.replace(/\?$/, '');
         this.url = this.url.replace(/\?&/, '?');
     }
     fetch(method = 'GET', body = {}, headers = {}) {
-        let params = {};
+        const params = {};
+        const requestEvent = {
+            body,
+            headers,
+            method,
+            params,
+        };
         this.method = (method || 'GET').toUpperCase();
         headers = Object.assign(this.headers, headers);
         params.data = body;
@@ -1036,31 +1066,25 @@ class Request extends Core_1.default {
         params.method = this.method;
         params.redirect = 'follow';
         params.url = this.url;
-        params.withCredentials = true;
-        params.onUploadProgress = (progressEvent) => {
-            this.dispatch('progress', {
-                loaded: progressEvent.loaded,
-                ratio: progressEvent.loaded / progressEvent.total,
-                total: progressEvent.total,
-            });
+        params.withCredentials = this.withCredentials;
+        params.onUploadProgress = (event) => {
+            const progressEvent = {
+                loaded: event.loaded,
+                ratio: event.loaded / event.total,
+                total: event.total,
+            };
+            this.dispatch('progress', { progress: progressEvent });
         };
-        this.dispatch('fetch:before', {
-            body,
-            headers,
-            method,
-            params,
-        });
+        this.dispatch('fetch:before', { request: requestEvent });
         this.loading = true;
-        this.dispatch('requesting', {
-            body,
-            headers,
-            method,
-            params,
-        });
+        this.dispatch('requesting', { request: requestEvent });
         return new Promise((resolve, reject) => {
             (0, axios_1.default)(params)
                 .then((response) => {
                 this.response = response;
+                if (!this.response) {
+                    return;
+                }
                 this.beforeParse(this.response);
                 this.parse(this.response);
                 this.afterParse(this.response);
@@ -1071,7 +1095,10 @@ class Request extends Core_1.default {
             })
                 .catch((error) => {
                 this.response = error.response;
-                this.afterAll(error);
+                if (!this.response) {
+                    return;
+                }
+                this.afterAllError(error);
                 reject(this);
                 return error;
             });
@@ -1089,20 +1116,15 @@ class Request extends Core_1.default {
             const xhrArguments = arguments;
             return new Promise(function (resolve, reject) {
                 xhr.upload.onprogress = function (e) {
+                    const progressEvent = {
+                        loaded: e.loaded,
+                        ratio: 1,
+                        total: e.total,
+                    };
                     if (e.lengthComputable) {
-                        self.dispatch('progress', {
-                            loaded: e.loaded,
-                            ratio: e.loaded / e.total,
-                            total: e.total,
-                        });
+                        progressEvent.ratio = e.loaded / e.total;
                     }
-                    else {
-                        self.dispatch('progress', {
-                            loaded: e.loaded,
-                            ratio: 1,
-                            total: e.total,
-                        });
-                    }
+                    self.dispatch('progress', { progress: progressEvent });
                 };
                 xhr.onload = function () {
                     let blob = new Blob([xhr.response], { type: 'application/json' });
@@ -1119,7 +1141,7 @@ class Request extends Core_1.default {
                 xhrSend.apply(xhr, xhrArguments);
             });
         };
-        xhr.withCredentials = true;
+        xhr.withCredentials = this.withCredentials;
         return xhr.send(params.body);
     }
     setHeader(header, value) {
@@ -1131,62 +1153,77 @@ class Request extends Core_1.default {
         return this;
     }
     beforeParse(response) {
-        this.log('before parse');
-        this.dispatch('parse:before', response);
-        return response;
+        this.dispatch('parse:before', {
+            request: this,
+            response: response,
+        });
     }
     parse(response) {
-        this.log('parse');
-        this.dispatch('parse:parsing', response);
+        this.dispatch('parse:parsing', {
+            request: this,
+            response: response,
+        });
         if (response.status != 204) {
             this.responseData = response.data;
         }
-        this.dispatch('parse', this.responseData);
-        return response;
+        this.dispatch('parse', {
+            request: this,
+            response: response,
+        });
     }
     afterParse(response) {
         var _a, _b;
-        this.log('after parse');
         if (response.status >= 400 && ((_a = response.data) === null || _a === void 0 ? void 0 : _a.status)) {
             const message = ((_b = response.data) === null || _b === void 0 ? void 0 : _b.message) || response.data || '';
             throw new RequestError_1.default(response.status, message);
         }
-        this.dispatch('parse:after', response);
-        return response;
+        this.dispatch('parse:after', {
+            request: this,
+            response: response,
+        });
     }
     afterFetch(response) {
-        this.log('after fetch');
-        this.dispatch('fetch', response);
-        this.dispatch('fetch:after', response);
+        this.dispatch('fetch', {
+            request: this,
+            response: response,
+        });
+        this.dispatch('fetch:after', {
+            request: this,
+            response: response,
+        });
         this.loading = false;
-        return response;
     }
     afterAll(e) {
-        var _a, _b;
-        function isError(e) {
-            return 'name' in e;
+        var _a;
+        if (e === undefined) {
+            return;
         }
-        const data = isError(e)
-            ? ((_a = e.response) === null || _a === void 0 ? void 0 : _a.data) || e.message
-            : e.data;
-        const status = isError(e)
-            ? (_b = e.response) === null || _b === void 0 ? void 0 : _b.status
-            : e.status;
-        const method = (e.config.method || 'get').toLowerCase();
-        const event = e;
-        this.log('after all: ' + method + ' / ' + status);
-        if (status < 400) {
-            this.dispatch('complete', event);
-            this.dispatch('complete:' + method, event);
-        }
-        else {
-            this.responseData = data;
-            this.dispatch('error', event);
-            this.dispatch('error:' + method, event);
-        }
-        return e;
+        const data = e.data;
+        const status = e.status;
+        const method = (((_a = e.config) === null || _a === void 0 ? void 0 : _a.method) || 'get').toLowerCase();
+        this.dispatch('complete', {
+            request: this,
+            response: e,
+        });
+        this.dispatch('complete:' + method, {
+            request: this,
+            response: e,
+        });
     }
-    log(msg = '') {
+    afterAllError(e) {
+        var _a;
+        const data = e.message;
+        const status = e.response.status;
+        const method = (((_a = e.config) === null || _a === void 0 ? void 0 : _a.method) || 'get').toLowerCase();
+        this.responseData = data;
+        this.dispatch('error', {
+            request: this,
+            response: e,
+        });
+        this.dispatch('error:' + method, {
+            request: this,
+            response: e,
+        });
     }
 }
 exports["default"] = Request;
@@ -1241,12 +1278,12 @@ class Model extends ActiveRecord_1.default {
         this.relationshipCache = {};
         this.dataKey = undefined;
         this.set(attributes);
-        this.options(options);
+        this.setOptions(options);
     }
     static hydrate(attributes = {}, options = {}) {
         const model = new this(options);
         model.set(attributes);
-        model.options(options);
+        model.setOptions(options);
         return model;
     }
     get isModel() {
@@ -1254,7 +1291,7 @@ class Model extends ActiveRecord_1.default {
     }
     set(attributes = {}) {
         let key;
-        this.dispatch('set:before', attributes);
+        this.dispatch('set:before', { attributes });
         super.set(attributes, {}, false);
         if (this.dataKey && this.attributes[this.dataKey] && this.attributes[this.dataKey].length) {
             console.warn([
@@ -1268,7 +1305,7 @@ class Model extends ActiveRecord_1.default {
                 this.relationshipCache[key].set(attributes[key]);
             }
         }
-        this.dispatch('set', attributes);
+        this.dispatch('set', { attributes });
         return this;
     }
     fetch(options = {}, queryParams = {}) {
@@ -1456,6 +1493,9 @@ function addUser(userModel, parentElement) {
 async function fetchUsers() {
     const parentElement = document.querySelector('#app');
     const userCollection = new User_1.default();
+    userCollection.on('complete', (e) => {
+        console.log('oh ok ', e);
+    });
     await userCollection.fetch();
     userCollection.each((model) => addUser(model, parentElement));
 }

@@ -30,7 +30,7 @@ class Model extends ActiveRecord_1.default {
     }
     set(attributes = {}) {
         let key;
-        this.dispatch('set:before', attributes);
+        this.dispatch('set:before', { attributes });
         super.set(attributes, {}, false);
         if (this.dataKey && this.attributes[this.dataKey] && this.attributes[this.dataKey].length) {
             console.warn([
@@ -44,7 +44,7 @@ class Model extends ActiveRecord_1.default {
                 this.relationshipCache[key].set(attributes[key]);
             }
         }
-        this.dispatch('set', attributes);
+        this.dispatch('set', { attributes });
         return this;
     }
     fetch(options = {}, queryParams = {}) {

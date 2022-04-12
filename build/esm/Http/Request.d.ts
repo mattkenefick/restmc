@@ -22,5 +22,5 @@ export default class Request extends Core implements IRequest {
     private afterParse;
     private afterFetch;
     private afterAll;
-    private log;
+    private afterAllError;
 }

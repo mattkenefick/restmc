@@ -21,7 +21,12 @@ async function fetchUsers(): Promise<void> {
 	const parentElement: HTMLElement = document.querySelector('#app') as HTMLElement;
 	const userCollection: CollectionUser = new CollectionUser();
 
+	userCollection.on('complete', (e) => {
+		console.log('oh ok ', e);
+	});
+
 	// Fetch remotely
+	// await userCollection.fetch();
 	await userCollection.fetch();
 
 	// Iterate through collection

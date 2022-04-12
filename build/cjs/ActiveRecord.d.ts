@@ -1,4 +1,4 @@
-import { IAttributes, ICachedResponse, ICachedResponses, IDispatcherCallbackFunction, IModelRequestOptions, IModelRequestQueryParams, IProgressEvent } from './Interfaces';
+import { IAttributes, ICachedResponse, ICachedResponses, IDispatcherCallbackFunction, IDispatcherEvent, IModelRequestOptions, IModelRequestQueryParams } from './Interfaces';
 import Builder from './Http/Builder';
 import Core from './Core';
 import HttpRequest from './Http/Request';
@@ -75,7 +75,7 @@ export default class ActiveRecord<T> extends Core {
     setQueryParams(params: Record<string, number | string>): ActiveRecord<T>;
     unsetQueryParam(param: string): ActiveRecord<T>;
     setToken(token: string): ActiveRecord<T>;
-    setAfterResponse(request: HttpRequest, options?: any): void;
+    setAfterResponse(e: IDispatcherEvent, options?: any): void;
     protected _fetch(options?: IModelRequestOptions | null, queryParams?: IModelRequestQueryParams, method?: string, body?: IAttributes, headers?: IAttributes): FetchResponse;
     protected static cachedResponses: ICachedResponses;
     protected cache(key: string, value: any, isComplete?: boolean, ttl?: number): void;
@@ -84,8 +84,8 @@ export default class ActiveRecord<T> extends Core {
     protected getCache(key: string): ICachedResponse;
     protected addCacheSubscriber(key: string, resolve: any, reject: any, collection: any): void;
     protected clearCacheSubscribers(key: string): void;
-    protected FetchComplete(request: HttpRequest): void;
-    protected FetchProgress(progress: IProgressEvent): void;
-    protected FetchParseAfter(request: HttpRequest, options?: IAttributes): void;
+    protected FetchComplete(e: IDispatcherEvent): void;
+    protected FetchProgress(e: IDispatcherEvent): void;
+    protected FetchParseAfter(e: IDispatcherEvent, options?: IAttributes): void;
 }
 export {};

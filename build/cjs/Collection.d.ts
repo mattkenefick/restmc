@@ -50,5 +50,5 @@ export default class Collection<GenericModel extends Model> extends ActiveRecord
     keys(attributes?: IAttributes): CollectionIterator<GenericModel>;
     entries(attributes?: IAttributes): CollectionIterator<GenericModel>;
     protected _fetch(options?: IModelRequestOptions | null, queryParams?: IModelRequestQueryParams, method?: string, body?: IAttributes, headers?: IAttributes): any;
-    [Symbol.iterator](): CollectionIterator<GenericModel>;
+    [Symbol.iterator](): any;
 }

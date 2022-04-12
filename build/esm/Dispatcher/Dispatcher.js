@@ -5,16 +5,10 @@ class Dispatcher {
     constructor() {
         this.events = {};
     }
-    dispatch(name, data = {}) {
-        var _a;
+    dispatch(name, detail = {}) {
         const event = this.events[name];
-        const eventData = name === ((_a = data.event) === null || _a === void 0 ? void 0 : _a.name) && data.eventData ? data.eventData : data;
         if (event) {
-            event.fire({
-                event: { name },
-                eventData: eventData,
-                target: this,
-            });
+            event.fire(detail);
             return true;
         }
         return false;
@@ -38,13 +32,13 @@ class Dispatcher {
     on(eventName, callback) {
         let event = this.events[eventName];
         if (!event) {
-            event = new DispatcherEvent_1.default(eventName);
+            event = new DispatcherEvent_1.default(eventName, {});
             this.events[eventName] = event;
         }
         event.registerCallback(callback);
     }
-    trigger(eventName, eventData) {
-        return this.dispatch(eventName, eventData);
+    trigger(eventName, detail = {}) {
+        return this.dispatch(eventName, detail);
     }
 }
 exports.default = Dispatcher;
