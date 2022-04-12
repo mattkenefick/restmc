@@ -114,19 +114,19 @@ class ActiveRecord extends Core_1.default {
     }
     delete(attributes = {}) {
         const url = this.builder.identifier(this.id || (attributes === null || attributes === void 0 ? void 0 : attributes.id) || '').getUrl();
-        return this._fetch(null, {}, 'DELETE', attributes, this.headers);
+        return this._fetch(null, {}, 'DELETE', Object.assign(attributes || {}, this.attributes), this.headers);
     }
     post(attributes = {}) {
         const url = this.builder.getUrl();
-        return this._fetch(null, {}, 'POST', attributes, this.headers);
+        return this._fetch(null, {}, 'POST', Object.assign(attributes || {}, this.attributes), this.headers);
     }
     put(attributes) {
         const url = this.builder.getUrl();
-        return this._fetch(null, {}, 'PUT', attributes, this.headers);
+        return this._fetch(null, {}, 'PUT', Object.assign(attributes || {}, this.attributes), this.headers);
     }
     save(attributes = {}) {
         const method = this.id ? 'PUT' : 'POST';
-        return this._fetch(null, {}, method, attributes, this.headers);
+        return this._fetch(null, {}, method, Object.assign(attributes || {}, this.attributes), this.headers);
     }
     add(attributes) {
         return this.set(attributes);

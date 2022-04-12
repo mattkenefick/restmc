@@ -428,7 +428,7 @@ export default class ActiveRecord<T> extends Core {
 	public delete(attributes: IAttributes = {}): FetchResponse {
 		const url: string = this.builder.identifier(this.id || attributes?.id || '').getUrl();
 
-		return this._fetch(null, {}, 'DELETE', attributes, this.headers);
+		return this._fetch(null, {}, 'DELETE', Object.assign(attributes || {}, this.attributes), this.headers);
 	}
 
 	/**
@@ -438,7 +438,7 @@ export default class ActiveRecord<T> extends Core {
 	public post(attributes: IAttributes = {}): FetchResponse {
 		const url: string = this.builder.getUrl();
 
-		return this._fetch(null, {}, 'POST', attributes, this.headers);
+		return this._fetch(null, {}, 'POST', Object.assign(attributes || {}, this.attributes), this.headers);
 	}
 
 	/**
@@ -448,7 +448,7 @@ export default class ActiveRecord<T> extends Core {
 	public put(attributes: IAttributes): FetchResponse {
 		const url: string = this.builder.getUrl();
 
-		return this._fetch(null, {}, 'PUT', attributes, this.headers);
+		return this._fetch(null, {}, 'PUT', Object.assign(attributes || {}, this.attributes), this.headers);
 	}
 
 	/**
@@ -458,7 +458,7 @@ export default class ActiveRecord<T> extends Core {
 	public save(attributes: IAttributes = {}): FetchResponse {
 		const method: string = this.id ? 'PUT' : 'POST';
 
-		return this._fetch(null, {}, method, attributes, this.headers);
+		return this._fetch(null, {}, method, Object.assign(attributes || {}, this.attributes), this.headers);
 	}
 
 	/**
