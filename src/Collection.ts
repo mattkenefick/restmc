@@ -675,7 +675,7 @@ export default class Collection<GenericModel extends Model>
 
 				// Send response to subscribers
 				.then((request: HttpRequest) => {
-					const data: any = request.responseData;
+					const data: any = request.response?.data;
 					const method: string = request.method || 'get';
 
 					// Save actual cache response (key, value, isComplete)
@@ -683,9 +683,20 @@ export default class Collection<GenericModel extends Model>
 
 					// Send all of our subscribers the response through `resolve`
 					this.getCache(cacheKey)?.subscribers?.forEach((subscriber: any) => {
-						subscriber.collection.setAfterResponse(request);
-						subscriber.collection.dispatch('complete', request);
-						subscriber.collection.dispatch('complete:' + method, request);
+						subscriber.collection.setAfterResponse({
+							detail: {
+								request: request,
+								response: request.response,
+							},
+						});
+						subscriber.collection.dispatch('complete', {
+							request: request,
+							response: request.response,
+						});
+						subscriber.collection.dispatch('complete:' + method, {
+							request: request,
+							response: request.response,
+						});
 						subscriber.resolve(request);
 					});
 
@@ -698,7 +709,10 @@ export default class Collection<GenericModel extends Model>
 				// Send error to subscribers
 				.catch((request: HttpRequest) => {
 					// Error
-					this.dispatch('error', request);
+					this.dispatch('error', {
+						request: request,
+						response: request.response,
+					});
 
 					// Save actual cache response (key, value, isComplete)
 					this.cache(cacheKey, request, true);
@@ -717,8 +731,7 @@ export default class Collection<GenericModel extends Model>
 	/**
 	 * @type Iterator<any>
 	 */
-	// @ts-ignore
-	[Symbol.iterator](): CollectionIterator<GenericModel> {
+	[Symbol.iterator](): any {
 		return new CollectionIterator<GenericModel>(this, CollectionIterator.ITERATOR_VALUES);
 	}
 }

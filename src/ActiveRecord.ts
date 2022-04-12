@@ -5,11 +5,13 @@ import {
 	ICachedResponse,
 	ICachedResponses,
 	IDispatcherCallbackFunction,
+	IDispatcherEvent,
 	IModelRequestOptions,
 	IModelRequestQueryParams,
 	IProgressEvent,
 	IRequest,
 	IRequestEvent,
+	IResponse,
 } from './Interfaces';
 import { AxiosResponse } from 'axios';
 import Builder from './Http/Builder';
@@ -317,7 +319,7 @@ export default class ActiveRecord<T> extends Core {
 
 		// Trigger
 		if (trigger) {
-			this.dispatch('set');
+			this.dispatch('set', { attributes });
 		}
 
 		return this;
@@ -578,7 +580,7 @@ export default class ActiveRecord<T> extends Core {
 
 		// Set fetch
 		return this._fetch(null, {}, 'POST', formData).then((request: any) => {
-			this.dispatch('file:complete', this);
+			this.dispatch('file:complete');
 			return request;
 		});
 	}
@@ -883,23 +885,27 @@ export default class ActiveRecord<T> extends Core {
 	 * This is useful if we're doing callbacks from cached promises
 	 *
 	 * @todo Have another look at this
+	 * @param IDispatcherEvent e
+	 * @param IAttribute options
+	 * @return void
 	 */
-	public setAfterResponse(request: HttpRequest, options: any = {}) {
+	public setAfterResponse(e: IDispatcherEvent, options: any = {}) {
+		const request: HttpRequest = e.detail.request as HttpRequest;
+		const response: IResponse = e.detail.response as IResponse;
 		let method: string = request.method || 'get';
-		let remoteJson: any = request.responseData;
+		let remoteJson: any = response.data;
 
 		// If this isn't a model, try appending to
 		if (method.toLowerCase() === 'post' && !this.isModel) {
 			// "data" comes from axios
 			// "data.data" is our default key on the API
-			this.add((this.dataKey ? remoteJson[this.dataKey] : remoteJson) || request.responseData);
+			this.add((this.dataKey ? remoteJson[this.dataKey] : remoteJson) || response.data);
 		}
 		else if (method.toLowerCase() === 'delete') {
 			// Intentionally empty
 		}
 		else {
-			let data
-				= this.dataKey !== undefined ? remoteJson[this.dataKey] : remoteJson.responseData || request.responseData;
+			let data = this.dataKey !== undefined ? remoteJson[this.dataKey] : remoteJson.responseData || response.data;
 
 			this.set(data, options);
 		}
@@ -908,7 +914,7 @@ export default class ActiveRecord<T> extends Core {
 		this.setOptions(Object.assign({}, options, { meta: remoteJson.meta }));
 
 		// Events
-		this.dispatch('parse:after', this);
+		this.dispatch('parse:after', e.detail);
 	}
 
 	// endregion: Set Params
@@ -956,7 +962,7 @@ export default class ActiveRecord<T> extends Core {
 		const url: string = this.getUrlByMethod(method);
 
 		// Events
-		this.dispatch('requesting', this.lastRequest);
+		this.dispatch('requesting', { request: this.lastRequest });
 
 		// Has fetched
 		this.hasFetched = true;
@@ -975,8 +981,8 @@ export default class ActiveRecord<T> extends Core {
 		this.request.method = method;
 
 		// After parse
-		request.on('complete:delete', (e: any) => {
-			this.dispatch('complete:delete', e.target);
+		request.on('complete:delete', (e: IDispatcherEvent) => {
+			this.dispatch('complete:delete', e.detail);
 
 			// Remove possible identifiers if we deleted something
 			this.builder.identifier('');
@@ -984,20 +990,17 @@ export default class ActiveRecord<T> extends Core {
 
 		// The "e' bubbling up is an Event, where "e.target" == HttpRequest
 		// I want to add a new solution for this, but will wait for now.
-		request.on('complete:get', (e: any) => this.dispatch('complete:get', e.target));
-		request.on('complete:post', (e: any) => this.dispatch('complete:post', e.target));
-		request.on('complete:put', (e: any) => this.dispatch('complete:put', e.target));
-		request.on('complete', (e: any) => this.FetchComplete(e.target as HttpRequest));
-		request.on('error:delete', (e: any) => this.dispatch('error:delete', e.target));
-		request.on('error:get', (e: any) => this.dispatch('error:get', e.target));
-		request.on('error:post', (e: any) => this.dispatch('error:post', e.target));
-		request.on('error:put', (e: any) => this.dispatch('error:put', e.target));
-		request.on('error', (e: any) => this.dispatch('error', e.target));
-		request.on('parse:after', (e: any) => this.FetchParseAfter(e.target as HttpRequest, options || {}));
-
-		// This order make look wrong, but it's righ tbecause the event "e"
-		// contains progress data, not a Request object
-		request.on('progress', (e: any) => this.FetchProgress(e));
+		request.on('complete:get', (e: IDispatcherEvent) => this.dispatch('complete:get', e.detail));
+		request.on('complete:post', (e: IDispatcherEvent) => this.dispatch('complete:post', e.detail));
+		request.on('complete:put', (e: IDispatcherEvent) => this.dispatch('complete:put', e.detail));
+		request.on('complete', (e: IDispatcherEvent) => this.FetchComplete(e));
+		request.on('error:delete', (e: IDispatcherEvent) => this.dispatch('error:delete', e.detail));
+		request.on('error:get', (e: IDispatcherEvent) => this.dispatch('error:get', e.detail));
+		request.on('error:post', (e: IDispatcherEvent) => this.dispatch('error:post', e.detail));
+		request.on('error:put', (e: IDispatcherEvent) => this.dispatch('error:put', e.detail));
+		request.on('error', (e: IDispatcherEvent) => this.dispatch('error', e.detail));
+		request.on('parse:after', (e: IDispatcherEvent) => this.FetchParseAfter(e, options || {}));
+		request.on('progress', (e: IDispatcherEvent) => this.FetchProgress(e));
 
 		// Request (method, body headers)
 		// @ts-ignore
@@ -1021,7 +1024,6 @@ export default class ActiveRecord<T> extends Core {
 	 * @param any value
 	 * @param boolean isComplete
 	 * @param number tll
-	 *
 	 * @return void
 	 */
 	protected cache(key: string, value: any, isComplete: boolean = false, ttl: number = 5000): void {
@@ -1110,10 +1112,10 @@ export default class ActiveRecord<T> extends Core {
 	 * @param HttpRequest request
 	 * @return void
 	 */
-	protected FetchComplete(request: HttpRequest): void {
+	protected FetchComplete(e: IDispatcherEvent): void {
 		this.hasLoaded = true;
 		this.loading = false;
-		this.dispatch('complete', request);
+		this.dispatch('complete', e.detail);
 	}
 
 	/**
@@ -1122,8 +1124,8 @@ export default class ActiveRecord<T> extends Core {
 	 * @param IProgressEvent progress
 	 * @return void
 	 */
-	protected FetchProgress(progress: IProgressEvent): void {
-		this.dispatch('progress', progress);
+	protected FetchProgress(e: IDispatcherEvent): void {
+		this.dispatch('progress', e.detail);
 	}
 
 	/**
@@ -1133,17 +1135,17 @@ export default class ActiveRecord<T> extends Core {
 	 * @param IAttributes options
 	 * @return void
 	 */
-	protected FetchParseAfter(request: HttpRequest, options: IAttributes = {}): void {
-		const response: IAxiosResponse | IAxiosSuccess | undefined = request.response;
-		const code: number = response ? response.status : 0;
+	protected FetchParseAfter(e: IDispatcherEvent, options: IAttributes = {}): void {
+		// @ts-ignore
+		const code: number = e.detail?.response?.status || 0;
 
 		// Only set for acceptable responses
 		if (code < 400) {
-			this.setAfterResponse(request, options);
+			this.setAfterResponse(e, options);
 		}
 
 		// Fetched event
-		this.dispatch('fetched', request);
+		this.dispatch('fetched', e.detail);
 	}
 
 	// endregion: Http Events

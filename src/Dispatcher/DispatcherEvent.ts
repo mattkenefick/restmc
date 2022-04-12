@@ -1,6 +1,19 @@
-import { IDispatcherCallbackFunction, IDispatcherEventData } from '../Interfaces';
+import { IDispatcherCallbackFunction, IDispatcherEvent, IDispatchData } from '../Interfaces';
 
 /**
+ * The DispatcherEvent can be instantiated with data that's included
+ * every time it fires in addition to ephemeral data per firing.
+ *
+ * Example:
+ *
+ *   const event: DispatcherEvent = new DispatcherEvent('my-event', { foo: 'bar' });
+ *
+ *   event.registerCallback((e: IDispatcherEvent) => {
+ *       console.log('Triggered event', e.name, 'with data', e.detail);
+ *   });
+ *
+ *   event.fire();
+ *
  * @author Matt Kenefick <matt@polymermallard.com>
  * @package Dispatcher
  * @project RestMC
@@ -12,9 +25,9 @@ export default class DispatcherEvent {
 	public callbacks: IDispatcherCallbackFunction[];
 
 	/**
-	 * @type IDispatcherEventData
+	 * @type IDispatchData
 	 */
-	public eventData: IDispatcherEventData;
+	public detail: IDispatchData;
 
 	/**
 	 * @type string
@@ -23,11 +36,11 @@ export default class DispatcherEvent {
 
 	/**
 	 * @param string eventName
-	 * @param IDispatcherEventData eventData
+	 * @param IDispatchData dispatchData
 	 */
-	constructor(eventName: string, eventData: IDispatcherEventData = {}) {
+	constructor(eventName: string, detail: IDispatchData = {}) {
 		this.callbacks = [];
-		this.eventData = eventData;
+		this.detail = detail;
 		this.eventName = eventName;
 	}
 
@@ -39,15 +52,19 @@ export default class DispatcherEvent {
 	}
 
 	/**
-	 * @param IDispatcherEventData eventData
+	 * @param IDispatcherEvent event
 	 * @return number
 	 */
-	public fire(eventData: IDispatcherEventData = {}): number {
+	public fire(detail: IDispatchData): number {
 		const callbacks = this.callbacks.slice(0);
 		let fires: number = 0;
+		const event: IDispatcherEvent = {
+			detail: Object.assign({}, this.detail, detail),
+			name: this.eventName,
+		};
 
 		callbacks.forEach((callback: IDispatcherCallbackFunction) => {
-			callback(Object.assign({}, this.eventData, eventData));
+			callback(event);
 			fires++;
 		});
 
@@ -63,7 +80,7 @@ export default class DispatcherEvent {
 	}
 
 	/**
-	 * @param IDispatcherEventData callback
+	 * @param IDispatchData callback
 	 * @return void
 	 */
 	public registerCallback(callback: IDispatcherCallbackFunction): void {

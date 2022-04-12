@@ -6,22 +6,25 @@ export { default as DispatcherEvent } from './Dispatcher/DispatcherEvent';
 export { default as Model } from './Model';
 export { default as Request } from './Http/Request';
 
-export { IAttributes } from './Interfaces';
-export { IAxiosConfig } from './Interfaces';
-export { IAxiosError } from './Interfaces';
-export { IAxiosResponse } from './Interfaces';
-export { IAxiosSuccess } from './Interfaces';
-export { ICachedResponse } from './Interfaces';
-export { ICachedResponses } from './Interfaces';
-export { ICollectionChange } from './Interfaces';
-export { ICollectionMeta } from './Interfaces';
-export { IDispatcher } from './Interfaces';
-export { IDispatcherCallbackFunction } from './Interfaces';
-export { IDispatcherEvent } from './Interfaces';
-export { IDispatcherEventData } from './Interfaces';
-export { IModelRequestOptions } from './Interfaces';
-export { IModelRequestQueryParams } from './Interfaces';
-export { IPagination } from './Interfaces';
-export { IProgressEvent } from './Interfaces';
-export { IRequestEvent } from './Interfaces';
-export { ISortOptions } from './Interfaces';
+export {
+	IAttributes,
+	IAxiosConfig,
+	IAxiosError,
+	IAxiosResponse,
+	IAxiosSuccess,
+	ICachedResponse,
+	ICachedResponses,
+	ICollectionChange,
+	ICollectionMeta,
+	IDispatcher,
+	IDispatcherCallbackFunction,
+	IDispatcherEvent,
+	IDispatchData,
+	IModelRequestOptions,
+	IModelRequestQueryParams,
+	IPagination,
+	IProgressEvent,
+	IRequestEvent,
+	IResponse,
+	ISortOptions,
+} from './Interfaces';

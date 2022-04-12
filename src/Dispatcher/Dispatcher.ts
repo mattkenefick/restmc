@@ -1,7 +1,22 @@
-import { IDispatcherCallbackFunction, IDispatcherEventData } from '../Interfaces';
+import { IDispatcherCallbackFunction, IDispatchData } from '../Interfaces';
 import DispatcherEvent from './DispatcherEvent';
 
 /**
+ * The Dispatcher is used as a superclass or mixin that provides the
+ * functionality of an event system.
+ *
+ * Example:
+ *
+ *   class MyClass extends Dispatcher { ... }
+ *
+ *   const instance: MyClass = new MyClass;
+ *
+ *   instance.on('my-event', (e: IDispatcherEvent) => {
+ *       console.log('Triggered event', e.name, 'with data', e.detail);
+ *   });
+ *
+ *   instance.dispatch('my-event');
+ *
  * @author Matt Kenefick <matt@polymermallard.com>
  * @package Dispatcher
  * @project RestMC
@@ -19,20 +34,14 @@ export default class Dispatcher {
 	 * Returns true if there are any events to broadcast to
 	 *
 	 * @param string eventName
-	 * @param any eventData
+	 * @param IDispatchData dispatchData
 	 * @return boolean
 	 */
-	public dispatch(name: string, data: any = {}): boolean {
+	public dispatch(name: string, detail: IDispatchData = {}): boolean {
 		const event: DispatcherEvent = this.events[name] as DispatcherEvent;
-		const eventData: any = name === data.event?.name && data.eventData ? data.eventData : data;
 
 		if (event) {
-			event.fire({
-				event: { name },
-				eventData: eventData,
-				target: this,
-			});
-
+			event.fire(detail);
 			return true;
 		}
 
@@ -81,7 +90,7 @@ export default class Dispatcher {
 		let event = this.events[eventName];
 
 		if (!event) {
-			event = new DispatcherEvent(eventName);
+			event = new DispatcherEvent(eventName, {});
 			this.events[eventName] = event;
 		}
 
@@ -92,9 +101,9 @@ export default class Dispatcher {
 	 * Alias for dispatch
 	 *
 	 * @param string eventName
-	 * @param any eventData
+	 * @param IDispatchData eventData
 	 */
-	public trigger(eventName: string, eventData: IDispatcherEventData): boolean {
-		return this.dispatch(eventName, eventData);
+	public trigger(eventName: string, detail: IDispatchData = {}): boolean {
+		return this.dispatch(eventName, detail);
 	}
 }

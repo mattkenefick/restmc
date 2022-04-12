@@ -11,14 +11,14 @@ describe('Dispatcher/DispatcherEvent', () => {
 	 * @return Dispatcher
 	 */
 	function createDispatcherEvent(): DispatcherEvent {
-		return new DispatcherEvent('myEvent', { foo: 'bar' });
+		return new DispatcherEvent('my-event', { foo: 'bar' });
 	}
 
 	it('should instantiate with a name and data', () => {
 		const event: DispatcherEvent = createDispatcherEvent();
 
-		expect(event.eventName).to.equal('myEvent');
-		expect(event.eventData.foo).to.equal('bar');
+		expect(event.eventName).to.equal('my-event');
+		expect(event.detail.foo).to.equal('bar');
 	});
 
 	it('should register a callback', () => {
@@ -58,5 +58,18 @@ describe('Dispatcher/DispatcherEvent', () => {
 		const fires: number = event.fire();
 
 		expect(fires).to.equal(3);
+	});
+
+	it('should have name and detail in the registered callback', () => {
+		const event: DispatcherEvent = createDispatcherEvent();
+
+		event.registerCallback((e: IDispatcherEvent) => {
+			expect(e.name).to.equal('my-event');
+			expect(e.detail.foo).to.equal('bar');
+		});
+
+		const fires: number = event.fire();
+
+		expect(fires).to.equal(1);
 	});
 });

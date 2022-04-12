@@ -1,4 +1,4 @@
-import { IDispatcherCallbackFunction, IDispatcherEventData } from '../Interfaces';
+import { IDispatcherCallbackFunction, IDispatchData } from '../Interfaces';
 import ActiveRecord from '../ActiveRecord';
 
 /**

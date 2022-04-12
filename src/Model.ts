@@ -113,7 +113,7 @@ export default class Model extends ActiveRecord<Model> {
 		let key: string;
 
 		// Trigger event
-		this.dispatch('set:before', attributes);
+		this.dispatch('set:before', { attributes });
 
 		// mk: 29, we disabled this because it breaks references
 		// but we had previously enabled it for some reason.
@@ -154,7 +154,7 @@ export default class Model extends ActiveRecord<Model> {
 		}
 
 		// Trigger event
-		this.dispatch('set', attributes);
+		this.dispatch('set', { attributes });
 
 		return this;
 	}

@@ -7,8 +7,11 @@ import {
 	IAxiosError,
 	IAxiosResponse,
 	IAxiosSuccess,
-	IDispatcherEventData,
+	IDispatchData,
+	IProgressEvent,
 	IRequest,
+	IRequestEvent,
+	IResponse,
 } from '../Interfaces';
 import Core from '../Core';
 import RequestError from './RequestError';
@@ -122,7 +125,13 @@ export default class Request extends Core implements IRequest {
 		body: IAttributes = {},
 		headers: IAttributes = {},
 	): Promise<Request | AxiosResponse<any>> {
-		let params: any = {};
+		const params: IAttributes = {};
+		const requestEvent: IRequestEvent = {
+			body,
+			headers,
+			method,
+			params,
+		};
 
 		// Set request method
 		this.method = (method || 'GET').toUpperCase();
@@ -137,39 +146,24 @@ export default class Request extends Core implements IRequest {
 		params.redirect = 'follow';
 		params.url = this.url;
 		params.withCredentials = this.withCredentials;
-		params.onUploadProgress = (progressEvent: any) => {
-			this.dispatch('progress', {
-				loaded: progressEvent.loaded,
-				ratio: progressEvent.loaded / progressEvent.total,
-				total: progressEvent.total,
-			});
+		params.onUploadProgress = (event: any) => {
+			const progressEvent: IProgressEvent = {
+				loaded: event.loaded,
+				ratio: event.loaded / event.total,
+				total: event.total,
+			};
+
+			this.dispatch('progress', { progress: progressEvent });
 		};
 
 		// Event trigger
-		this.dispatch('fetch:before', {
-			body,
-			headers,
-			method,
-			params,
-		});
-
-		// Is File?
-		// @todo this is inaccurate and makes many requests (forgot password) think it's a file
-		// var isFile =
-		//     (!params.headers['Content-Type'] ||
-		//         params.headers['Content-Type'].indexOf('multipart')) &&
-		//     params.method.toLowerCase() === 'post';
+		this.dispatch('fetch:before', { request: requestEvent });
 
 		// Loading
 		this.loading = true;
 
 		// Events
-		this.dispatch('requesting', {
-			body,
-			headers,
-			method,
-			params,
-		});
+		this.dispatch('requesting', { request: requestEvent });
 
 		return new Promise((resolve, reject) => {
 			axios(params)
@@ -181,7 +175,12 @@ export default class Request extends Core implements IRequest {
 				// console.log(response.headers);
 				// console.log(response.config);
 				.then((response: AxiosResponse<any>) => {
-					this.response = response as IAxiosSuccess;
+					// @ts-ignore
+					this.response = response;
+
+					if (!this.response) {
+						return;
+					}
 
 					this.beforeParse(this.response);
 					this.parse(this.response);
@@ -201,9 +200,13 @@ export default class Request extends Core implements IRequest {
 				// console.log(error.request?);
 				// console.log(error.message?);
 				.catch((error: IAxiosError) => {
-					this.response = error.response;
+					this.response = error.response as IResponse;
 
-					this.afterAll(error);
+					if (!this.response) {
+						return;
+					}
+
+					this.afterAllError(error);
 
 					reject(this);
 
@@ -276,36 +279,18 @@ export default class Request extends Core implements IRequest {
 
 			return new Promise(function(resolve, reject) {
 				xhr.upload.onprogress = function(e) {
+					const progressEvent: IProgressEvent = {
+						loaded: e.loaded,
+						ratio: 1,
+						total: e.total,
+					};
+
 					if (e.lengthComputable) {
-						self.dispatch('progress', {
-							loaded: e.loaded,
-							ratio: e.loaded / e.total,
-							total: e.total,
-						});
+						progressEvent.ratio = e.loaded / e.total;
 					}
-					else {
-						self.dispatch('progress', {
-							loaded: e.loaded,
-							ratio: 1,
-							total: e.total,
-						});
-					}
+
+					self.dispatch('progress', { progress: progressEvent });
 				};
-
-				// xhr.onloadend = function(e: ProgressEvent) {
-				//     const xhr: XMLHttpRequest = <XMLHttpRequest> e.currentTarget;
-				//     var status = xhr.status;
-				//     var json = JSON.parse(xhr.response);
-
-				//     // Error
-				//     if (status >= 400) {
-				//         reject({
-				//             status: status,
-				//             statusText: json.status,
-				//         });
-				//         // throw new RequestError(status, json.status);
-				//     }
-				// }
 
 				xhr.onload = function() {
 					let blob = new Blob([xhr.response], { type: 'application/json' });
@@ -315,15 +300,7 @@ export default class Request extends Core implements IRequest {
 					};
 					let response = new Response(xhr.response ? blob : null, init);
 
-					// Resolved
 					resolve(response);
-
-					// if (xhr.status < 200 || xhr.status >= 300) {
-					//     reject({ response });
-					// }
-					// else {
-					//     resolve(response);
-					// }
 				};
 
 				xhr.onerror = function() {
@@ -369,47 +346,44 @@ export default class Request extends Core implements IRequest {
 	 *
 	 * @param e IAxiosResponse
 	 */
-	private beforeParse(response: IAxiosSuccess): IAxiosSuccess {
-		this.log('before parse');
-
+	private beforeParse(response: IAxiosSuccess): void {
 		// Trigger
-		this.dispatch('parse:before', response);
-
-		return response;
+		this.dispatch('parse:before', {
+			request: this,
+			response: response,
+		});
 	}
 
 	/**
 	 * Parse data
 	 *
 	 * @param IAxiosSuccess response
+	 * @return IAxiosSuccess
 	 */
-	private parse(response: IAxiosSuccess): IAxiosSuccess {
-		this.log('parse');
-
+	private parse(response: IAxiosSuccess): void {
 		// Trigger
-		this.dispatch('parse:parsing', response);
+		this.dispatch('parse:parsing', {
+			request: this,
+			response: response,
+		});
 
 		// Set data
 		if (response.status != 204) {
 			this.responseData = response.data;
-
-			// this.data = await request.response.json();
 		}
 
 		// Trigger
-		this.dispatch('parse', this.responseData);
-
-		return response;
+		this.dispatch('parse', {
+			request: this,
+			response: response,
+		});
 	}
 
 	/**
-	 * After data parsed
-	 *
 	 * @param IAxiosSuccess response
+	 * @return void
 	 */
-	private afterParse(response: IAxiosSuccess): IAxiosSuccess {
-		this.log('after parse');
-
+	private afterParse(response: IAxiosSuccess): void {
 		// Check if we have a status in the JSON as well
 		if (response.status >= 400 && response.data?.status) {
 			const message: string = response.data?.message || response.data || '';
@@ -418,70 +392,79 @@ export default class Request extends Core implements IRequest {
 		}
 
 		// Trigger
-		this.dispatch('parse:after', response);
-
-		return response;
+		this.dispatch('parse:after', {
+			request: this,
+			response: response,
+		});
 	}
 
 	/**
 	 * @param IAxiosSuccess response
+	 * @return void
 	 */
-	private afterFetch(response: IAxiosSuccess): IAxiosSuccess {
-		this.log('after fetch');
-
+	private afterFetch(response: IAxiosSuccess): void {
 		// Trigger
-		this.dispatch('fetch', response);
+		this.dispatch('fetch', {
+			request: this,
+			response: response,
+		});
 
-		// Trigger
-		this.dispatch('fetch:after', response);
+		this.dispatch('fetch:after', {
+			request: this,
+			response: response,
+		});
 
 		// Not loading
 		this.loading = false;
-
-		return response;
 	}
 
 	/**
 	 * @param IAxiosSuccess response
+	 * @return void
 	 */
-	private afterAll(e: IAxiosSuccess | IAxiosError): IAxiosSuccess | IAxiosError {
-		function isError(e: any): e is IAxiosError {
-			return 'name' in e;
+	private afterAll(e: IAxiosSuccess): void {
+		if (e === undefined) {
+			return;
 		}
 
-		const data: any = isError(e)
-			? e.response?.data || e.message // IAxiosError
-			: e.data; // IAxiosSuccess
-		const status: number = isError(e)
-			? e.response?.status // IAxiosError
-			: e.status; // IAxiosSuccess
-		const method: string = (e.config.method || 'get').toLowerCase();
-		const event = e;
-
-		// Log
-		this.log('after all: ' + method + ' / ' + status);
+		const data: any = e.data;
+		const status: number = e.status;
+		const method: string = (e.config?.method || 'get').toLowerCase();
 
 		// Check request
-		if (status < 400) {
-			this.dispatch('complete', event);
-			this.dispatch('complete:' + method, event);
-		}
-		else {
-			// mk: Apparently, throw Error does same as dispatch 'error' which
-			// causes duplicates when listening on('error' ...)
-			// this.dispatch('error', e.data);
-			this.responseData = data;
-			this.dispatch('error', event);
-			this.dispatch('error:' + method, event);
-		}
+		this.dispatch('complete', {
+			request: this,
+			response: e,
+		});
 
-		return e;
+		this.dispatch('complete:' + method, {
+			request: this,
+			response: e,
+		});
 	}
 
 	/**
-	 * @param string msg
+	 * @param IAxiosSuccess response
+	 * @return void
 	 */
-	private log(msg: string = ''): void {
-		// console.log(' > ' + msg);
+	private afterAllError(e: IAxiosError): void {
+		const data: any = e.message;
+		const status: number = e.response.status;
+		const method: string = (e.config?.method || 'get').toLowerCase();
+
+		// mk: Apparently, throw Error does same as dispatch 'error' which
+		// causes duplicates when listening on('error' ...)
+		// this.dispatch('error', e.data);
+		this.responseData = data;
+
+		this.dispatch('error', {
+			request: this,
+			response: e,
+		});
+
+		this.dispatch('error:' + method, {
+			request: this,
+			response: e,
+		});
 	}
 }

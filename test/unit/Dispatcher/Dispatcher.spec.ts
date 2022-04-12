@@ -57,10 +57,14 @@ describe('Dispatcher/Dispatcher', () => {
 		const dispatcher: Dispatcher = createDispatcher();
 
 		// Event should fire
-		dispatcher.on('my-event', () => expect(true).to.equal(true));
+		dispatcher.on('my-event', (e: IDispatcherEvent) => {
+			expect(e.name).to.equal('my-event');
+			expect(e.detail.foo).to.equal('bar');
+			expect(true).to.equal(true);
+		});
 
 		// Returns true if there are subscribers
-		const didFire: boolean = dispatcher.trigger('my-event');
+		const didFire: boolean = dispatcher.dispatch('my-event', { foo: 'bar' });
 
 		expect(didFire).to.equal(true);
 	});

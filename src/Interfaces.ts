@@ -31,17 +31,8 @@ export interface IAxiosError {
 
 export interface IAxiosSuccess extends IAxiosResponse {}
 
-export interface IAxiosResponse {
-	config: IAxiosConfig;
-	data?: any;
-	headers: any;
-	request: XMLHttpRequest;
-	status: number;
-	statusText: string;
-}
-
-export interface IRequestEvent extends IDispatcherEvent {
-	target: IRequest;
+export interface IAxiosResponse extends IResponse {
+	config?: any;
 }
 
 export interface ICachedResponse {
@@ -65,30 +56,31 @@ export interface ICollectionMeta {
 	pagination: IPagination;
 }
 
+export interface IDispatchData {
+	[key: string]: unknown;
+}
+
 export interface IDispatcher {
-	dispatch: (eventName: string, data?: any) => any;
-	off: (eventName: string, callback?: any) => any;
-	on: (eventName: string, callback: (data?: any) => void) => any;
-	trigger: (eventName: string, data?: any) => any;
+	dispatch: (eventName: string, detail?: IDispatchData) => any;
+	off: (eventName: string, callback?: IDispatcherCallbackFunction) => any;
+	on: (eventName: string, callback: IDispatcherCallbackFunction) => any;
+	trigger: (eventName: string, detail?: IDispatchData) => boolean;
 }
 
 export interface IDispatcherCallbackFunction {
-	(eventData?: IDispatcherEvent): any;
-}
-
-export interface IDispatcherEventEvent {
-	name: string;
+	(event: IDispatcherEvent): any;
 }
 
 export interface IDispatcherEvent {
-	[key: string]: unknown;
-	eventData?: any; // data set by dispatch('', ...)
-	event?: IDispatcherEventEvent;
-	target?: any; // class executing event
+	detail: IDispatchData;
+	name: string;
 }
 
-export interface IDispatcherEventData {
-	[key: string]: unknown;
+export interface IFetchEvent {
+	body: any;
+	headers: any;
+	method: string;
+	params: any;
 }
 
 export interface IModelRequestOptions {
@@ -124,6 +116,21 @@ export interface IRequest {
 	response?: IAxiosResponse | IAxiosSuccess;
 	responseData: IAttributes;
 	url: string;
+}
+
+export interface IRequestEvent {
+	body: any;
+	headers: any;
+	method: string;
+	params: any;
+}
+
+export interface IResponse {
+	data?: any;
+	headers: any;
+	request: XMLHttpRequest;
+	status: number;
+	statusText: string;
 }
 
 export interface ISortOptions {
