@@ -72,7 +72,7 @@ export interface IDispatcherCallbackFunction {
 }
 
 export interface IDispatcherEvent {
-	detail: IDispatchData;
+	detail: IDispatchData | any;
 	name: string;
 }
 

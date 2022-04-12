@@ -61,7 +61,7 @@ export interface IDispatcherCallbackFunction {
     (event: IDispatcherEvent): any;
 }
 export interface IDispatcherEvent {
-    detail: IDispatchData;
+    detail: IDispatchData | any;
     name: string;
 }
 export interface IFetchEvent {
