@@ -1004,7 +1004,7 @@ export default class ActiveRecord<T> extends Core {
 
 		// Request (method, body headers)
 		// @ts-ignore
-		return request.fetch(method, body || this.body, headers || this.headers);
+		return request.fetch(method, Object.assign(body || {}, this.body), Object.assign(headers || {}, this.headers));
 	}
 
 	// region: Cache

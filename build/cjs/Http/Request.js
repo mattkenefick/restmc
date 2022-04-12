@@ -29,6 +29,7 @@ class Request extends Core_1.default {
         };
         this.method = (method || 'GET').toUpperCase();
         headers = Object.assign(this.headers, headers);
+        console.log('body/headers', body, headers);
         params.data = body;
         params.headers = headers;
         params.method = this.method;

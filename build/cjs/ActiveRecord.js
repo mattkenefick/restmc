@@ -368,7 +368,7 @@ class ActiveRecord extends Core_1.default {
         request.on('error', (e) => this.dispatch('error', e.detail));
         request.on('parse:after', (e) => this.FetchParseAfter(e, options || {}));
         request.on('progress', (e) => this.FetchProgress(e));
-        return request.fetch(method, body || this.body, headers || this.headers);
+        return request.fetch(method, Object.assign(body || {}, this.body), Object.assign(headers || {}, this.headers));
     }
     cache(key, value, isComplete = false, ttl = 5000) {
         if (ActiveRecord.cachedResponses[key]) {

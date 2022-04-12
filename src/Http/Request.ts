@@ -139,6 +139,8 @@ export default class Request extends Core implements IRequest {
 		// Combine headers
 		headers = Object.assign(this.headers, headers);
 
+		console.log('body/headers', body, headers);
+
 		// Fetch params
 		params.data = body;
 		params.headers = headers;

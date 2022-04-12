@@ -21,6 +21,8 @@ async function fetchUsers(): Promise<void> {
 	const parentElement: HTMLElement = document.querySelector('#app') as HTMLElement;
 	const userCollection: CollectionUser = new CollectionUser();
 
+	// userCollection.setHeader('x-foo', 'bar');
+
 	userCollection.on('complete', (e) => {
 		console.log('oh ok ', e);
 	});
