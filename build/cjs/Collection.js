@@ -141,6 +141,9 @@ class Collection extends ActiveRecord_1.default {
     each(callback) {
         this.models.forEach(callback);
     }
+    filter(predicate) {
+        return this.models.filter(predicate);
+    }
     push(model, options = {}) {
         this.add(model, options);
         return this;

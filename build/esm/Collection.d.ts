@@ -26,6 +26,7 @@ export default class Collection<GenericModel extends Model> extends ActiveRecord
     count(): number;
     delete(attributes?: IAttributes): any;
     each(callback: any): void;
+    filter(predicate: any): GenericModel[];
     push(model: Model[] | Model | object, options?: object): Collection<GenericModel>;
     pop(): Collection<GenericModel>;
     reset(): Collection<GenericModel>;
