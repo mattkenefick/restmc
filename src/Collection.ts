@@ -359,6 +359,14 @@ export default class Collection<GenericModel extends Model>
 	}
 
 	/**
+	 * Filter through a models list
+	 * @return void
+	 */
+	public filter(predicate: any): GenericModel[] {
+		return this.models.filter(predicate);
+	}
+
+	/**
 	 * @param Model[] | Model | object model
 	 * @param object = {} options
 	 * @return Collection

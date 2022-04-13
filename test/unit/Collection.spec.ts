@@ -70,12 +70,29 @@ describe('Collection', () => {
 		expect(userCollection.length).to.equal(3);
 	});
 
-	it('should not cache length getter', async () => {
+	it('should be filterable (no results)', async () => {
 		const userCollection: CollectionUser = getCollection();
-
-		expect(userCollection.length).to.equal(0);
 		await userCollection.fetch();
-		expect(userCollection.length).to.equal(3);
+
+		const models: ModelUser[] = userCollection.filter((userModel: typeof ModelUser) => userModel.id === 10);
+
+		expect(models.length).to.equal(0);
+	});
+
+	it('should be filterable (one result)', async () => {
+		const userCollection: CollectionUser = getCollection();
+		await userCollection.fetch();
+		const models: ModelUser[] = userCollection.filter((userModel: typeof ModelUser) => userModel.id == 1);
+		expect(models.length).to.equal(1);
+	});
+
+	it('should be filterable (two results)', async () => {
+		const userCollection: CollectionUser = getCollection();
+		await userCollection.fetch();
+
+		const models: ModelUser[] = userCollection.filter((userModel: typeof ModelUser) => userModel.id <= 2);
+
+		expect(models.length).to.equal(2);
 	});
 
 	it('should not cache length getter', async () => {
