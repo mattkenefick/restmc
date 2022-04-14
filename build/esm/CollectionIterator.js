@@ -17,7 +17,7 @@ class CollectionIterator {
         }
         if (this.index < this.collection.length) {
             let value;
-            const model = this.collection.at(++this.index);
+            const model = this.collection.at(this.index++);
             if (this.kind === CollectionIterator.ITERATOR_VALUES) {
                 value = model;
             }
@@ -28,7 +28,7 @@ class CollectionIterator {
                         : (value = [this.collection.modelId, model]);
             }
             return {
-                done: false,
+                done: this.index - 1 === this.collection.length,
                 value: value,
             };
         }

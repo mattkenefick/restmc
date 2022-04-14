@@ -214,4 +214,20 @@ describe('Collection', () => {
 		model = userCollection.next();
 		expect(model?.id).to.equal('2');
 	});
+
+	it('should use the symbol.iterator correctly', async () => {
+		const userCollection: CollectionUser = getCollection();
+		await userCollection.fetch();
+		let num = 0;
+
+		let iterator = userCollection[Symbol.iterator]();
+		let result = iterator.next();
+
+		while (!result.done) {
+			num += parseFloat(result.value.id);
+			result = iterator.next();
+		}
+
+		expect(num).to.equal(6);
+	});
 });

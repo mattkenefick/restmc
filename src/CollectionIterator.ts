@@ -62,7 +62,7 @@ export default class CollectionIterator<GenericModel extends Model> {
 		if (this.index < this.collection.length) {
 			let value;
 
-			const model: GenericModel = this.collection.at(++this.index);
+			const model: GenericModel = this.collection.at(this.index++);
 
 			// Return model as value
 			if (this.kind === CollectionIterator.ITERATOR_VALUES) {
@@ -76,7 +76,7 @@ export default class CollectionIterator<GenericModel extends Model> {
 			}
 
 			return {
-				done: false,
+				done: this.index - 1 === this.collection.length,
 				value: value,
 			};
 		}
