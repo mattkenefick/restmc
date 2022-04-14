@@ -43,4 +43,12 @@ describe('Model', () => {
 		expect(userModel.location.getCity()).to.equal('New York');
 		expect(userModel.location.getState()).to.equal('NY');
 	});
+
+	it('should have an empty hasOne relationship', async () => {
+		const userModel: ModelUser = getModel();
+		await userModel.fetch();
+
+		expect(Object.keys(userModel.otherThing.attributes).length).to.equal(0);
+		expect(userModel.otherThing.id).to.equal('');
+	});
 });
