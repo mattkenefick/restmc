@@ -802,6 +802,10 @@ class CollectionIterator {
             };
         }
         this.collection = void 0;
+        return {
+            done: true,
+            value: void 0,
+        };
     }
 }
 exports["default"] = CollectionIterator;

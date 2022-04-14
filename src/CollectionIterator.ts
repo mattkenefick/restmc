@@ -84,5 +84,10 @@ export default class CollectionIterator<GenericModel extends Model> {
 		// Once exhausted, remove the reference to the collection so future
 		// calls to the next method always return done.
 		this.collection = void 0;
+
+		return {
+			done: true,
+			value: void 0,
+		};
 	}
 }

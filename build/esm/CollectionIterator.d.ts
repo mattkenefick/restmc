@@ -11,5 +11,5 @@ export default class CollectionIterator<GenericModel extends Model> {
     next(): {
         done: boolean;
         value: any;
-    } | undefined;
+    };
 }
