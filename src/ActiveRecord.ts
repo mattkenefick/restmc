@@ -289,6 +289,13 @@ export default class ActiveRecord<T> extends Core {
 	}
 
 	/**
+	 * @return boolean
+	 */
+	public hasAttributes(): boolean {
+		return Object.keys(this.attributes).length > 0;
+	}
+
+	/**
 	 * Set data to our attributes object. It traditionally fires a 'set' event,
 	 * but we can silence that by setting `trigger` to false.
 	 *

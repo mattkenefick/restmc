@@ -55,6 +55,9 @@ class ActiveRecord extends Core_1.default {
     attr(key) {
         return this.attributes[key];
     }
+    hasAttributes() {
+        return Object.keys(this.attributes).length > 0;
+    }
     set(attributes = {}, options = {}, trigger = true) {
         let possibleSetters = Object.getOwnPropertyDescriptors(this.__proto__);
         for (let key in attributes) {

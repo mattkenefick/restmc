@@ -201,6 +201,21 @@ export default class Model extends ActiveRecord<Model> {
 		// Reference this model as parent
 		model.parent = this;
 
+		// If the content is empty, check to see if the parent has an "id"
+		// that might be worth prefilling.
+		// e.g. `relationshipName` == 'product', look for 'product_id'
+		if (!model.id) {
+			const camelRelationship: string = `${relationshipName}_id`;
+			const underscoreRelationship: string = camelRelationship.replace(
+				/[A-Z]/g,
+				(x: string) => '_' + x.toLowerCase(),
+			);
+			const relationshipId: string | number
+				= this.attr(camelRelationship) || this.attr(underscoreRelationship) || '';
+
+			model.setId(relationshipId as string);
+		}
+
 		// Use modified endpoints
 		if (Model.useDescendingRelationships) {
 			model.useModifiedEndpoint(this);

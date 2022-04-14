@@ -39,6 +39,7 @@ export default class ActiveRecord<T> extends Core {
     protected runLastAttemptsMax: number;
     constructor(options?: IAttributes);
     attr(key: string): string | number | null;
+    hasAttributes(): boolean;
     set(attributes?: IAttributes, options?: IAttributes, trigger?: boolean): ActiveRecord<T>;
     unset(key: string): ActiveRecord<T>;
     setOptions(options?: IAttributes): ActiveRecord<T>;

@@ -24,6 +24,10 @@ export default class ModelUser extends Model {
 		return this.hasOne<ModelLocation>('location', ModelLocation);
 	}
 
+	public get nullThing(): Model {
+		return this.hasOne<Model>('nullThing', Model);
+	}
+
 	public get otherThing(): Model {
 		return this.hasOne<Model>('otherThing', Model);
 	}

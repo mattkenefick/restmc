@@ -66,6 +66,12 @@ class Model extends ActiveRecord_1.default {
         let content = this.getRelationship(relationshipName) || {};
         let model = new relationshipClass(content);
         model.parent = this;
+        if (!model.id) {
+            const camelRelationship = `${relationshipName}_id`;
+            const underscoreRelationship = camelRelationship.replace(/[A-Z]/g, (x) => '_' + x.toLowerCase());
+            const relationshipId = this.attr(camelRelationship) || this.attr(underscoreRelationship) || '';
+            model.setId(relationshipId);
+        }
         if (Model.useDescendingRelationships) {
             model.useModifiedEndpoint(this);
         }

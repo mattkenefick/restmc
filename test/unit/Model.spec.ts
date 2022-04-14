@@ -48,7 +48,16 @@ describe('Model', () => {
 		const userModel: ModelUser = getModel();
 		await userModel.fetch();
 
+		expect(Object.keys(userModel.nullThing.attributes).length).to.equal(0);
+		expect(userModel.nullThing.id).to.equal('');
+	});
+
+	it('should have an empty hasOne relationship but populates the ID', async () => {
+		const userModel: ModelUser = getModel();
+		await userModel.fetch();
+
 		expect(Object.keys(userModel.otherThing.attributes).length).to.equal(0);
-		expect(userModel.otherThing.id).to.equal('');
+		expect(userModel.otherThing.id).to.equal('10');
+		expect(userModel.otherThing.hasAttributes()).to.equal(false);
 	});
 });
