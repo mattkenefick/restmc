@@ -16,6 +16,7 @@ import {
 import { AxiosResponse } from 'axios';
 import Builder from './Http/Builder';
 import Core from './Core';
+import FormData from 'form-data';
 import HttpRequest from './Http/Request';
 
 /**
