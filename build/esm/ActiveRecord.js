@@ -178,6 +178,11 @@ class ActiveRecord extends Core_1.default {
             if (file.hasOwnProperty('length')) {
                 file = file[0];
             }
+            else if (file instanceof File) {
+            }
+            else {
+                console.warn('File provided unacceptable type.');
+            }
             this.unsetHeader('Content-Type');
             formData.append(name, file);
             return this._fetch(null, {}, 'POST', formData).then((request) => {

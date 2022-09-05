@@ -15,4 +15,10 @@ describe('ActiveRecord', () => {
 		expect(record.attr('foo')).to.equal('bar');
 		expect(record.attributes['foo']).to.equal('bar');
 	});
+
+	it('should upload a file', async () => {
+		const record: Model = new Model();
+
+		record.file('name', '');
+	});
 });
