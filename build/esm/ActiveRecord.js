@@ -11,7 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const Builder_1 = require("./Http/Builder");
 const Core_1 = require("./Core");
-const form_data_1 = require("form-data");
+const FormData = require("form-data");
 const Request_1 = require("./Http/Request");
 class ActiveRecord extends Core_1.default {
     constructor(options = {}) {
@@ -171,7 +171,7 @@ class ActiveRecord extends Core_1.default {
     file(name, file) {
         return __awaiter(this, void 0, void 0, function* () {
             const url = this.builder.identifier(this.id).getUrl();
-            const formData = new form_data_1.default();
+            const formData = new FormData();
             if (file instanceof HTMLInputElement) {
                 file = file.files[0];
             }
