@@ -172,7 +172,10 @@ class ActiveRecord extends Core_1.default {
         return __awaiter(this, void 0, void 0, function* () {
             const url = this.builder.identifier(this.id).getUrl();
             const formData = new FormData();
-            if (file instanceof FileList) {
+            if (file.hasOwnProperty('files') && file.files) {
+                file = file.files[0];
+            }
+            if (file.hasOwnProperty('length')) {
                 file = file[0];
             }
             else if (file instanceof File) {

@@ -557,22 +557,26 @@ export default class ActiveRecord<T> extends Core {
 	 * Upload file
 	 *
 	 * @param string name
-	 * @param FileList | File file
+	 * @param HTMLInputElement | FileList | File file
 	 * @return FetchResponse
 	 */
-	public async file(name: string, file: FileList | File): FetchResponse {
+	public async file(name: string, file: any): FetchResponse {
 		const url: string = this.builder.identifier(this.id).getUrl();
 
 		// const files = event.target.files
 		const formData = new FormData();
 
-		// Get file
-		// if (file.hasOwnProperty('files') && file.files) {
-		// 	file = (file.files as FileList)[0];
-		// }
-		if (file instanceof FileList) {
+		// HTMLInputElement
+		if (file.hasOwnProperty('files') && file.files) {
+			file = (file.files as any)[0];
+		}
+
+		// FileList
+		if (file.hasOwnProperty('length')) {
 			file = file[0];
 		}
+
+		// File
 		else if (file instanceof File) {
 			// Good
 		}
@@ -597,10 +601,10 @@ export default class ActiveRecord<T> extends Core {
 	 * Alias for `file`
 	 *
 	 * @param string name
-	 * @param FileList | File file
+	 * @param HTMLInputElement | FileList | File file
 	 * @return FetchResponse
 	 */
-	public async upload(name: string, file: FileList | File): FetchResponse {
+	public async upload(name: string, file: any): FetchResponse {
 		return this.file(name, file);
 	}
 
