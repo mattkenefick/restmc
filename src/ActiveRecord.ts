@@ -576,14 +576,6 @@ export default class ActiveRecord<T> extends Core {
 			file = file[0];
 		}
 
-		// File
-		else if (file instanceof File) {
-			// Good
-		}
-		else {
-			console.warn('File provided unacceptable type.');
-		}
-
 		// Set header
 		this.unsetHeader('Content-Type');
 
