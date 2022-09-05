@@ -16,7 +16,7 @@ import {
 import { AxiosResponse } from 'axios';
 import Builder from './Http/Builder';
 import Core from './Core';
-import FormData from 'form-data';
+import * as FormData from 'form-data'; // @see https://github.com/form-data/form-data/issues/484
 import HttpRequest from './Http/Request';
 
 /**
