@@ -54,8 +54,8 @@ export default class ActiveRecord<T> extends Core {
     addLoadingHooks(view: any, preHook?: IDispatcherCallbackFunction | undefined, postHook?: IDispatcherCallbackFunction | undefined): ActiveRecord<T>;
     removeLoadingHooks(): ActiveRecord<T>;
     find(id: string | number, queryParams?: IModelRequestQueryParams): Promise<ActiveRecord<T>>;
-    file(name: string, file: any): FetchResponse;
-    upload(name: string, file: any): FetchResponse;
+    file(name: string, file: any, additionalFields?: Record<string, any>): FetchResponse;
+    upload(name: string, file: any, additionalFields?: Record<string, any>): FetchResponse;
     fetch(options?: IModelRequestOptions, queryParams?: IModelRequestQueryParams): FetchResponse;
     runLast(): FetchResponse | void;
     getUrlByMethod(method: string): string;

@@ -558,9 +558,10 @@ export default class ActiveRecord<T> extends Core {
 	 *
 	 * @param string name
 	 * @param HTMLInputElement | FileList | File file
+	 * @param Record<string, any> additionalFields
 	 * @return FetchResponse
 	 */
-	public async file(name: string, file: any): FetchResponse {
+	public async file(name: string, file: any, additionalFields: Record<string, any> = {}): FetchResponse {
 		const url: string = this.builder.identifier(this.id).getUrl();
 
 		// const files = event.target.files
@@ -582,6 +583,15 @@ export default class ActiveRecord<T> extends Core {
 		// Add files
 		formData.append(name, file);
 
+		// Add additional fields
+		if (additionalFields) {
+			let key: string;
+
+			for (key in additionalFields) {
+				formData.append(key, additionalFields[key]);
+			}
+		}
+
 		// Set fetch
 		return this._fetch(null, {}, 'POST', formData).then((request: any) => {
 			this.dispatch('file:complete');
@@ -594,10 +604,11 @@ export default class ActiveRecord<T> extends Core {
 	 *
 	 * @param string name
 	 * @param HTMLInputElement | FileList | File file
+	 * @param Record<string, any> additionalFields
 	 * @return FetchResponse
 	 */
-	public async upload(name: string, file: any): FetchResponse {
-		return this.file(name, file);
+	public async upload(name: string, file: any, additionalFields: Record<string, any> = {}): FetchResponse {
+		return this.file(name, file, additionalFields);
 	}
 
 	/**

@@ -168,7 +168,7 @@ class ActiveRecord extends Core_1.default {
             return yield this.fetch({ id }, queryParams).then((request) => this);
         });
     }
-    file(name, file) {
+    file(name, file, additionalFields = {}) {
         return __awaiter(this, void 0, void 0, function* () {
             const url = this.builder.identifier(this.id).getUrl();
             const formData = new FormData();
@@ -180,15 +180,21 @@ class ActiveRecord extends Core_1.default {
             }
             this.unsetHeader('Content-Type');
             formData.append(name, file);
+            if (additionalFields) {
+                let key;
+                for (key in additionalFields) {
+                    formData.append(key, additionalFields[key]);
+                }
+            }
             return this._fetch(null, {}, 'POST', formData).then((request) => {
                 this.dispatch('file:complete');
                 return request;
             });
         });
     }
-    upload(name, file) {
+    upload(name, file, additionalFields = {}) {
         return __awaiter(this, void 0, void 0, function* () {
-            return this.file(name, file);
+            return this.file(name, file, additionalFields);
         });
     }
     fetch(options = {}, queryParams = {}) {
