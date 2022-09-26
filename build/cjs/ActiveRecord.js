@@ -183,7 +183,13 @@ class ActiveRecord extends Core_1.default {
             if (additionalFields) {
                 let key;
                 for (key in additionalFields) {
-                    formData.append(key, additionalFields[key]);
+                    let value = additionalFields[key];
+                    if (Array.isArray(value)) {
+                        value.forEach((item) => formData.append(key + '[]', item));
+                    }
+                    else {
+                        formData.append(key, value);
+                    }
                 }
             }
             return this._fetch(null, {}, 'POST', formData).then((request) => {
