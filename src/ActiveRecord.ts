@@ -588,7 +588,14 @@ export default class ActiveRecord<T> extends Core {
 			let key: string;
 
 			for (key in additionalFields) {
-				formData.append(key, additionalFields[key]);
+				let value: any = additionalFields[key];
+
+				if (Array.isArray(value)) {
+					value.forEach((item: number | string) => formData.append(key + '[]', item));
+				}
+				else {
+					formData.append(key, value);
+				}
 			}
 		}
 
