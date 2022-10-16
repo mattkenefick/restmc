@@ -43,7 +43,7 @@ class ActiveRecord extends Core_1.default {
         this.body = {};
         this.cid = this.cidPrefix + Math.random().toString(36).substr(2, 5);
         this.parent = undefined;
-        this.setHeader('Content-Type', 'application/json; charset=utf8');
+        this.setHeader('Content-Type', 'application/json; charset=utf-8');
         this.builder = new Builder_1.default(this);
         this.setOptions(options);
     }
