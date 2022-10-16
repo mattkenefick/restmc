@@ -270,7 +270,7 @@ export default class ActiveRecord<T> extends Core {
 		this.parent = undefined;
 
 		// Set default content type header
-		this.setHeader('Content-Type', 'application/json; charset=utf8');
+		this.setHeader('Content-Type', 'application/json; charset=utf-8');
 
 		// Setup URL builder
 		this.builder = new Builder<T>(this);
