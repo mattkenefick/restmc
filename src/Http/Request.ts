@@ -202,9 +202,10 @@ export default class Request extends Core implements IRequest {
 				.catch((error: IAxiosError) => {
 					this.response = error.response as IResponse;
 
-					if (!this.response) {
-						return;
-					}
+					// Network Errors will not return a response
+					// if (!this.response) {
+					// 	return;
+					// }
 
 					this.afterAllError(error);
 
@@ -448,8 +449,8 @@ export default class Request extends Core implements IRequest {
 	 * @return void
 	 */
 	private afterAllError(e: IAxiosError): void {
-		const data: any = e.message;
-		const status: number = e.response.status;
+		const data: any = e.message || 'Unknown error';
+		const status: number = e.response?.status || 503; // Default to 503 Service Unavailable
 		const method: string = (e.config?.method || 'get').toLowerCase();
 
 		// mk: Apparently, throw Error does same as dispatch 'error' which
