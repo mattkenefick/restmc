@@ -1,4 +1,5 @@
 export { default as ActiveRecord } from './ActiveRecord';
+export { default as Cache } from './Cache';
 export { default as Collection } from './Collection';
 export { default as Core } from './Core';
 export { default as Dispatcher } from './Dispatcher/Dispatcher';
