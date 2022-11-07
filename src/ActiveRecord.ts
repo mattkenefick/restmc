@@ -256,6 +256,13 @@ export default class ActiveRecord<T> extends Core {
 	protected runLastAttemptsMax: number = 2;
 
 	/**
+	 * Set by the .cache(ttl) method and is applied on the next _fetch call
+	 *
+	 * @type number
+	 */
+	protected ttl: number = 0;
+
+	/**
 	 * @param IAttributes options
 	 */
 	constructor(options: IAttributes = {}) {
@@ -544,6 +551,21 @@ export default class ActiveRecord<T> extends Core {
 	}
 
 	/**
+	 * Request cache on next fetch
+	 *
+	 * Usage:
+	 *
+	 *     myCollection.cache(1000).fetch();
+	 *
+	 * @param number ttl
+	 * @return this
+	 */
+	public cache(ttl: number): ActiveRecord<T> {
+		this.ttl = ttl;
+		return this;
+	}
+
+	/**
 	 * Searches the remote server for an ID-based record
 	 *
 	 * @param number | string id
@@ -619,7 +641,7 @@ export default class ActiveRecord<T> extends Core {
 	}
 
 	/**
-	 * NOTE: It is favored to use other methods
+	 * NOTE: It is preferred to use other methods
 	 *
 	 * @param  IModelRequestOptions options
 	 * @param  IModelRequestQueryParams queryParams
@@ -982,6 +1004,10 @@ export default class ActiveRecord<T> extends Core {
 
 		// Query params
 		const url: string = this.getUrlByMethod(method);
+		const ttl: number = this.ttl || 0;
+
+		// Reset ttl
+		this.ttl = 0;
 
 		// Events
 		this.dispatch('requesting', { request: this.lastRequest });
@@ -1026,102 +1052,107 @@ export default class ActiveRecord<T> extends Core {
 
 		// Request (method, body headers)
 		// @ts-ignore
-		return request.fetch(method, Object.assign(body || {}, this.body), Object.assign(headers || {}, this.headers));
+		return request.fetch(
+			method,
+			Object.assign(body || {}, this.body),
+			Object.assign(headers || {}, this.headers),
+			ttl,
+		);
 	}
 
-	// region: Cache
+	// region: Cache (mk: I think this is outdated now, but I like the subscribers part)
 	// -------------------------------------------------------------------------
 
-	/**
-	 * @type ICachedResponses
-	 */
-	protected static cachedResponses: ICachedResponses = {};
+	// /**
+	//  * @type ICachedResponses
+	//  */
+	// protected static cachedResponses: ICachedResponses = {};
 
-	/**
-	 * Usage:
-	 *
-	 *     this.cache('foo', 'bar');
-	 *
-	 * @param string, key
-	 * @param any value
-	 * @param boolean isComplete
-	 * @param number tll
-	 * @return void
-	 */
-	protected cache(key: string, value: any, isComplete: boolean = false, ttl: number = 5000): void {
-		// If exists, save only value as to not overwrite subscribers
-		if (ActiveRecord.cachedResponses[key]) {
-			ActiveRecord.cachedResponses[key].complete = isComplete;
-			ActiveRecord.cachedResponses[key].time = Date.now();
-			ActiveRecord.cachedResponses[key].value = value;
-		}
-		else {
-			ActiveRecord.cachedResponses[key] = {
-				complete: false,
-				subscribers: [],
-				time: Date.now(),
-				ttl: ttl,
-				value: value,
-			};
-		}
-	}
+	// /**
+	//  * Usage:
+	//  *
+	//  *     this.cache('foo', 'bar');
+	//  *
+	//  * @param string, key
+	//  * @param any value
+	//  * @param boolean isComplete
+	//  * @param number tll
+	//  * @return void
+	//  */
+	// protected cache(key: string, value: any, isComplete: boolean = false, ttl: number = 5000): void {
+	// 	// If exists, save only value as to not overwrite subscribers
+	// 	if (ActiveRecord.cachedResponses[key]) {
+	// 		ActiveRecord.cachedResponses[key].complete = isComplete;
+	// 		ActiveRecord.cachedResponses[key].time = Date.now();
+	// 		ActiveRecord.cachedResponses[key].value = value;
+	// 	}
+	// 	else {
+	// 		ActiveRecord.cachedResponses[key] = {
+	// 			complete: false,
+	// 			subscribers: [],
+	// 			time: Date.now(),
+	// 			ttl: ttl,
+	// 			value: value,
+	// 		};
+	// 	}
+	// }
 
-	/**
-	 * @param string key
-	 * @return boolean
-	 */
-	protected isCached(key: string): boolean {
-		return !!ActiveRecord.cachedResponses[key];
+	// /**
+	//  * @param string key
+	//  * @return boolean
+	//  */
+	// protected isCached(key: string): boolean {
+	// 	return !!ActiveRecord.cachedResponses[key];
 
-		/*
-		 * return !!ActiveRecord.cachedResponses[key]
-		 *     && (ActiveRecord.cachedResponses[key].time + ActiveRecord.cachedResponses[key].ttl) < Date.now();
-		 */
-	}
+	// 	/*
+	// 	 * return !!ActiveRecord.cachedResponses[key]
+	// 	 *     && (ActiveRecord.cachedResponses[key].time + ActiveRecord.cachedResponses[key].ttl) < Date.now();
+	// 	 */
+	// }
 
-	/**
-	 * @param string key
-	 * @return boolean
-	 */
-	protected isCachePending(key: string): boolean {
-		return !!this.isCached(key) && (!this.getCache(key).complete || !!this.getCache(key).failed);
-	}
+	// /**
+	//  * @param string key
+	//  * @return boolean
+	//  */
+	// protected isCachePending(key: string): boolean {
+	// 	return !!this.isCached(key) && (!this.getCache(key).complete || !!this.getCache(key).failed);
+	// }
 
-	/**
-	 * @param string key
-	 * @return ICachedResponse
-	 */
-	protected getCache(key: string): ICachedResponse {
-		return ActiveRecord.cachedResponses[key];
-	}
+	// /**
+	//  * @param string key
+	//  * @return ICachedResponse
+	//  */
+	// protected getCache(key: string): ICachedResponse {
+	// 	return ActiveRecord.cachedResponses[key];
+	// }
 
-	/**
-	 * Add subscriber
-	 *
-	 * @param string key
-	 * @param any resolve
-	 * @param any reject
-	 * @param any collection
-	 * @return void
-	 */
-	protected addCacheSubscriber(key: string, resolve: any, reject: any, collection: any): void {
-		const cache: any = this.getCache(key);
+	// /**
+	//  * Add subscriber
+	//  *
+	//  * @param string key
+	//  * @param any resolve
+	//  * @param any reject
+	//  * @param any collection
+	//  * @return void
+	//  */
+	// protected addCacheSubscriber(key: string, resolve: any, reject: any, collection: any): void {
+	// 	const cache: any = this.getCache(key);
 
-		cache.subscribers.push({
-			collection,
-			reject,
-			resolve,
-		});
-	}
+	// 	cache.subscribers.push({
+	// 		collection,
+	// 		reject,
+	// 		resolve,
+	// 	});
+	// }
 
-	/**
-	 * @param string key
-	 * @return void
-	 */
-	protected clearCacheSubscribers(key: string): void {
-		const cache: any = this.getCache(key);
-		cache.subscribers = [];
-	}
+	// /**
+	//  * @param string key
+	//  * @return void
+	//  */
+	// protected clearCacheSubscribers(key: string): void {
+	// 	const cache: any = this.getCache(key);
+	// 	cache.subscribers = [];
+	// }
 
 	// endregion: Cache
 

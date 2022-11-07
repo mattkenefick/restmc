@@ -62,10 +62,10 @@ describe('Collection', () => {
 		expect(model).to.equal(undefined);
 	});
 
-	it('should fetch data and have 3 models', async () => {
+	it('should fetch data and have 3 models (with 5ms cache)', async () => {
 		const userCollection: CollectionUser = getCollection();
 
-		await userCollection.fetch();
+		await userCollection.cache(5).fetch();
 
 		expect(userCollection.length).to.equal(3);
 	});
@@ -73,7 +73,6 @@ describe('Collection', () => {
 	it('should be filterable (no results)', async () => {
 		const userCollection: CollectionUser = getCollection();
 		await userCollection.fetch();
-
 		const models: ModelUser[] = userCollection.filter((userModel: typeof ModelUser) => userModel.id === 10);
 
 		expect(models.length).to.equal(0);
@@ -89,7 +88,6 @@ describe('Collection', () => {
 	it('should be filterable (two results)', async () => {
 		const userCollection: CollectionUser = getCollection();
 		await userCollection.fetch();
-
 		const models: ModelUser[] = userCollection.filter((userModel: typeof ModelUser) => userModel.id <= 2);
 
 		expect(models.length).to.equal(2);

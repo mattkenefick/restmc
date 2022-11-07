@@ -20,20 +20,6 @@ export default class Cache {
 	private storage: Record<string, ICachedItem> = {};
 
 	/**
-	 * Default TTL
-	 *
-	 * @type number ttl
-	 */
-	private ttl: number;
-
-	/**
-	 * @param number ttl
-	 */
-	constructor(ttl: number = -1) {
-		this.ttl = ttl > 0 ? ttl : 0;
-	}
-
-	/**
 	 * @param string key
 	 * @return void
 	 */
@@ -47,7 +33,7 @@ export default class Cache {
 	 * @param string key
 	 * @return any
 	 */
-	public get(key: string): any {
+	public get(key: string, keep: boolean = false): any {
 		// Check time on it
 		const item: ICachedItem = this.storage[key];
 		let value: any;
@@ -60,7 +46,10 @@ export default class Cache {
 		// Check if it's a 0 expiration (first-access)
 		else if (item.ttl === 0) {
 			value = item.value;
-			this.delete(key);
+
+			// The .has() method calls .get() so we don't want to
+			// destroy this object before we retrieve it
+			!keep && this.delete(key);
 		}
 
 		// Check if it's healthy within the TTL
@@ -89,7 +78,7 @@ export default class Cache {
 	 * @return boolean
 	 */
 	public has(key: string): boolean {
-		return this.get(key) !== undefined;
+		return this.get(key, true) !== undefined;
 	}
 
 	/**

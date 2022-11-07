@@ -13,6 +13,7 @@ import {
 	IRequestEvent,
 	IResponse,
 } from '../Interfaces';
+import Cache from '../Cache';
 import Core from '../Core';
 import RequestError from './RequestError';
 
@@ -22,6 +23,17 @@ import RequestError from './RequestError';
  * @project RestMC
  */
 export default class Request extends Core implements IRequest {
+	/**
+	 * Create a cache for previously sent requests.
+	 *
+	 * 11/07/22
+	 * mk: This isn't completely hooked up yet. We're adding it now
+	 * so we can add mock data requests that simulate cached entries
+	 *
+	 * @type Cache
+	 */
+	public static cachedResponses: Cache = new Cache();
+
 	/**
 	 * Represents the expected key to find our data on in remote responses.
 	 * It's frequently found on 'data':
@@ -119,11 +131,14 @@ export default class Request extends Core implements IRequest {
 	 * @param string method
 	 * @param IAttributes body
 	 * @param IAttributes headers
+	 * @param number ttl
+	 * @return Promise<Request | AxiosResponse<any>>
 	 */
 	public fetch(
 		method: string = 'GET',
 		body: IAttributes = {},
 		headers: IAttributes = {},
+		ttl: number = 0,
 	): Promise<Request | AxiosResponse<any>> {
 		const params: IAttributes = {};
 		const requestEvent: IRequestEvent = {
@@ -166,7 +181,20 @@ export default class Request extends Core implements IRequest {
 		this.dispatch('requesting', { request: requestEvent });
 
 		return new Promise((resolve, reject) => {
-			axios(params)
+			let cacheKey = `${params.method}.${params.url}`;
+
+			new Promise((resolve) => {
+				// Find cache
+				if (Request.cachedResponses.has(cacheKey)) {
+					const result = Request.cachedResponses.get(cacheKey);
+					console.log('💾 Cached Response: ', cacheKey);
+					resolve(result);
+				}
+				else {
+					console.log('🚦 Requesting remote');
+					resolve(axios(params));
+				}
+			})
 
 				// @see https://axios-http.com/docs/res_schema
 				// console.log(response.data);
@@ -178,6 +206,12 @@ export default class Request extends Core implements IRequest {
 					// @ts-ignore
 					this.response = response;
 
+					// Set response to cache
+					if (ttl > 0) {
+						Request.cachedResponses.set(cacheKey, response, ttl);
+					}
+
+					// Nothing to report
 					if (!this.response) {
 						return;
 					}
