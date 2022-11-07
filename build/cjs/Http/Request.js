@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const axios_1 = require("axios");
+const Cache_1 = require("../Cache");
 const Core_1 = require("../Core");
 const RequestError_1 = require("./RequestError");
 class Request extends Core_1.default {
@@ -19,7 +20,7 @@ class Request extends Core_1.default {
         this.url = this.url.replace(/\?$/, '');
         this.url = this.url.replace(/\?&/, '?');
     }
-    fetch(method = 'GET', body = {}, headers = {}) {
+    fetch(method = 'GET', body = {}, headers = {}, ttl = 0) {
         const params = {};
         const requestEvent = {
             body,
@@ -47,9 +48,23 @@ class Request extends Core_1.default {
         this.loading = true;
         this.dispatch('requesting', { request: requestEvent });
         return new Promise((resolve, reject) => {
-            (0, axios_1.default)(params)
+            let cacheKey = `${params.method}.${params.url}`;
+            new Promise((resolve) => {
+                if (Request.cachedResponses.has(cacheKey)) {
+                    const result = Request.cachedResponses.get(cacheKey);
+                    console.log('💾 Cached Response: ', cacheKey);
+                    resolve(result);
+                }
+                else {
+                    console.log('🚦 Requesting remote');
+                    resolve((0, axios_1.default)(params));
+                }
+            })
                 .then((response) => {
                 this.response = response;
+                if (ttl > 0) {
+                    Request.cachedResponses.set(cacheKey, response, ttl);
+                }
                 if (!this.response) {
                     return;
                 }
@@ -192,4 +207,5 @@ class Request extends Core_1.default {
     }
 }
 exports.default = Request;
+Request.cachedResponses = new Cache_1.default();
 //# sourceMappingURL=Request.js.map

@@ -39,6 +39,7 @@ class ActiveRecord extends Core_1.default {
         this.cidPrefix = 'c';
         this.runLastAttempts = 0;
         this.runLastAttemptsMax = 2;
+        this.ttl = 0;
         Object.assign(this, options);
         this.body = {};
         this.cid = this.cidPrefix + Math.random().toString(36).substr(2, 5);
@@ -161,6 +162,10 @@ class ActiveRecord extends Core_1.default {
         this.loadingHookPre && this.off('requesting', this.loadingHookPre);
         this.loadingHookPost = undefined;
         this.loadingHookPre = undefined;
+        return this;
+    }
+    cache(ttl) {
+        this.ttl = ttl;
         return this;
     }
     find(id, queryParams = {}) {
@@ -356,6 +361,8 @@ class ActiveRecord extends Core_1.default {
             this.builder.identifier(options.id);
         }
         const url = this.getUrlByMethod(method);
+        const ttl = this.ttl || 0;
+        this.ttl = 0;
         this.dispatch('requesting', { request: this.lastRequest });
         this.hasFetched = true;
         this.loading = true;
@@ -379,44 +386,7 @@ class ActiveRecord extends Core_1.default {
         request.on('error', (e) => this.dispatch('error', e.detail));
         request.on('parse:after', (e) => this.FetchParseAfter(e, options || {}));
         request.on('progress', (e) => this.FetchProgress(e));
-        return request.fetch(method, Object.assign(body || {}, this.body), Object.assign(headers || {}, this.headers));
-    }
-    cache(key, value, isComplete = false, ttl = 5000) {
-        if (ActiveRecord.cachedResponses[key]) {
-            ActiveRecord.cachedResponses[key].complete = isComplete;
-            ActiveRecord.cachedResponses[key].time = Date.now();
-            ActiveRecord.cachedResponses[key].value = value;
-        }
-        else {
-            ActiveRecord.cachedResponses[key] = {
-                complete: false,
-                subscribers: [],
-                time: Date.now(),
-                ttl: ttl,
-                value: value,
-            };
-        }
-    }
-    isCached(key) {
-        return !!ActiveRecord.cachedResponses[key];
-    }
-    isCachePending(key) {
-        return !!this.isCached(key) && (!this.getCache(key).complete || !!this.getCache(key).failed);
-    }
-    getCache(key) {
-        return ActiveRecord.cachedResponses[key];
-    }
-    addCacheSubscriber(key, resolve, reject, collection) {
-        const cache = this.getCache(key);
-        cache.subscribers.push({
-            collection,
-            reject,
-            resolve,
-        });
-    }
-    clearCacheSubscribers(key) {
-        const cache = this.getCache(key);
-        cache.subscribers = [];
+        return request.fetch(method, Object.assign(body || {}, this.body), Object.assign(headers || {}, this.headers), ttl);
     }
     FetchComplete(e) {
         this.hasLoaded = true;
@@ -436,5 +406,4 @@ class ActiveRecord extends Core_1.default {
     }
 }
 exports.default = ActiveRecord;
-ActiveRecord.cachedResponses = {};
 //# sourceMappingURL=ActiveRecord.js.map

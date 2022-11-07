@@ -1,8 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Request = exports.Model = exports.DispatcherEvent = exports.Dispatcher = exports.Core = exports.Collection = exports.ActiveRecord = void 0;
+exports.Request = exports.Model = exports.DispatcherEvent = exports.Dispatcher = exports.Core = exports.Collection = exports.Cache = exports.ActiveRecord = void 0;
 var ActiveRecord_1 = require("./ActiveRecord");
 Object.defineProperty(exports, "ActiveRecord", { enumerable: true, get: function () { return ActiveRecord_1.default; } });
+var Cache_1 = require("./Cache");
+Object.defineProperty(exports, "Cache", { enumerable: true, get: function () { return Cache_1.default; } });
 var Collection_1 = require("./Collection");
 Object.defineProperty(exports, "Collection", { enumerable: true, get: function () { return Collection_1.default; } });
 var Core_1 = require("./Core");

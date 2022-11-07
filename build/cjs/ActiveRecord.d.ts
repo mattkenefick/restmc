@@ -1,4 +1,4 @@
-import { IAttributes, ICachedResponse, ICachedResponses, IDispatcherCallbackFunction, IDispatcherEvent, IModelRequestOptions, IModelRequestQueryParams } from './Interfaces';
+import { IAttributes, IDispatcherCallbackFunction, IDispatcherEvent, IModelRequestOptions, IModelRequestQueryParams } from './Interfaces';
 import Builder from './Http/Builder';
 import Core from './Core';
 import HttpRequest from './Http/Request';
@@ -37,6 +37,7 @@ export default class ActiveRecord<T> extends Core {
     protected referenceForModifiedEndpoint: ActiveRecord<any> | undefined;
     protected runLastAttempts: number;
     protected runLastAttemptsMax: number;
+    protected ttl: number;
     constructor(options?: IAttributes);
     attr(key: string): string | number | null;
     hasAttributes(): boolean;
@@ -53,6 +54,7 @@ export default class ActiveRecord<T> extends Core {
     reset(): ActiveRecord<T>;
     addLoadingHooks(view: any, preHook?: IDispatcherCallbackFunction | undefined, postHook?: IDispatcherCallbackFunction | undefined): ActiveRecord<T>;
     removeLoadingHooks(): ActiveRecord<T>;
+    cache(ttl: number): ActiveRecord<T>;
     find(id: string | number, queryParams?: IModelRequestQueryParams): Promise<ActiveRecord<T>>;
     file(name: string, file: any, additionalFields?: Record<string, any>): FetchResponse;
     upload(name: string, file: any, additionalFields?: Record<string, any>): FetchResponse;
@@ -78,13 +80,6 @@ export default class ActiveRecord<T> extends Core {
     setToken(token: string): ActiveRecord<T>;
     setAfterResponse(e: IDispatcherEvent, options?: any): void;
     protected _fetch(options?: IModelRequestOptions | null, queryParams?: IModelRequestQueryParams, method?: string, body?: IAttributes, headers?: IAttributes): FetchResponse;
-    protected static cachedResponses: ICachedResponses;
-    protected cache(key: string, value: any, isComplete?: boolean, ttl?: number): void;
-    protected isCached(key: string): boolean;
-    protected isCachePending(key: string): boolean;
-    protected getCache(key: string): ICachedResponse;
-    protected addCacheSubscriber(key: string, resolve: any, reject: any, collection: any): void;
-    protected clearCacheSubscribers(key: string): void;
     protected FetchComplete(e: IDispatcherEvent): void;
     protected FetchProgress(e: IDispatcherEvent): void;
     protected FetchParseAfter(e: IDispatcherEvent, options?: IAttributes): void;

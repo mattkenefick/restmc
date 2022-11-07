@@ -252,53 +252,6 @@ class Collection extends ActiveRecord_1.default {
     entries(attributes = {}) {
         return new CollectionIterator_1.default(this, CollectionIterator_1.default.ITERATOR_KEYSVALUES);
     }
-    _fetch(options = {}, queryParams = {}, method = 'get', body = {}, headers = {}) {
-        const cacheKey = this.b.getUrl();
-        if (this.isCachePending(cacheKey)) {
-            return new Promise((resolve, reject) => {
-                this.addCacheSubscriber(cacheKey, resolve, reject, this);
-            });
-        }
-        this.cache(cacheKey, true);
-        return (super
-            ._fetch(options, queryParams, method, body, headers)
-            .then((request) => {
-            var _a, _b, _c;
-            const data = (_a = request.response) === null || _a === void 0 ? void 0 : _a.data;
-            const method = request.method || 'get';
-            this.cache(cacheKey, request, true);
-            (_c = (_b = this.getCache(cacheKey)) === null || _b === void 0 ? void 0 : _b.subscribers) === null || _c === void 0 ? void 0 : _c.forEach((subscriber) => {
-                subscriber.collection.setAfterResponse({
-                    detail: {
-                        request: request,
-                        response: request.response,
-                    },
-                });
-                subscriber.collection.dispatch('complete', {
-                    request: request,
-                    response: request.response,
-                });
-                subscriber.collection.dispatch('complete:' + method, {
-                    request: request,
-                    response: request.response,
-                });
-                subscriber.resolve(request);
-            });
-            this.clearCacheSubscribers(cacheKey);
-            return request;
-        })
-            .catch((request) => {
-            var _a, _b;
-            this.dispatch('error', {
-                request: request,
-                response: request.response,
-            });
-            this.cache(cacheKey, request, true);
-            (_b = (_a = this.getCache(cacheKey)) === null || _a === void 0 ? void 0 : _a.subscribers) === null || _b === void 0 ? void 0 : _b.forEach((subscriber) => subscriber.reject(request));
-            this.clearCacheSubscribers(cacheKey);
-            throw request;
-        }));
-    }
     [Symbol.iterator]() {
         return new CollectionIterator_1.default(this, CollectionIterator_1.default.ITERATOR_VALUES);
     }

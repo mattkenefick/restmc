@@ -2,7 +2,7 @@ import ActiveRecord from './ActiveRecord';
 import CollectionIterator from './CollectionIterator';
 import HttpRequest from './Http/Request';
 import Model from './Model';
-import { IAttributes, ICollectionMeta, IModelRequestOptions, IModelRequestQueryParams, IPagination } from './Interfaces';
+import { IAttributes, ICollectionMeta, IPagination } from './Interfaces';
 export default class Collection<GenericModel extends Model> extends ActiveRecord<Collection<GenericModel>> implements Iterable<GenericModel> {
     static paginator(collection: any): IPagination;
     static hydrate<T>(models?: Model[], options?: object): any;
@@ -24,7 +24,7 @@ export default class Collection<GenericModel extends Model> extends ActiveRecord
     set(model: Model[] | Model | object, options?: IAttributes): Collection<GenericModel>;
     clear(): Collection<GenericModel>;
     count(): number;
-    delete(attributes?: IAttributes): any;
+    delete(attributes?: IAttributes): Promise<HttpRequest>;
     each(callback: any): void;
     filter(predicate: any): GenericModel[];
     push(model: Model[] | Model | object, options?: object): Collection<GenericModel>;
@@ -50,6 +50,5 @@ export default class Collection<GenericModel extends Model> extends ActiveRecord
     values(): CollectionIterator<GenericModel>;
     keys(attributes?: IAttributes): CollectionIterator<GenericModel>;
     entries(attributes?: IAttributes): CollectionIterator<GenericModel>;
-    protected _fetch(options?: IModelRequestOptions | null, queryParams?: IModelRequestQueryParams, method?: string, body?: IAttributes, headers?: IAttributes): any;
     [Symbol.iterator](): any;
 }
