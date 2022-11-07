@@ -202,7 +202,7 @@ export default class Request extends Core implements IRequest {
 				// console.log(response.statusText);
 				// console.log(response.headers);
 				// console.log(response.config);
-				.then((response: AxiosResponse<any>) => {
+				.then((response: AxiosResponse<any> | any) => {
 					// @ts-ignore
 					this.response = response;
 
