@@ -611,7 +611,7 @@ export default class ActiveRecord<T> extends Core {
 	}
 
 	/**
-	 * Request cache on next fetch
+	 * Set ttl on next fetch
 	 *
 	 * Usage:
 	 *
@@ -622,6 +622,36 @@ export default class ActiveRecord<T> extends Core {
 	 */
 	public cache(ttl: number): ActiveRecord<T> {
 		this.ttl = ttl;
+		return this;
+	}
+
+	/**
+	 * Set mock data for one fetch call
+	 *
+	 * Example:
+	 *
+	 *  myCollection.mock({ ... }).fetch();
+	 *
+	 * @param object data
+	 * @return ActiveRecord<T>
+	 */
+	public mock(data: any): ActiveRecord<T> {
+		const self = this;
+
+		/**
+		 * @return void
+		 */
+		function callback() {
+			self.unsetMockData('any');
+			self.off('finish', this);
+		}
+
+		// On the next _fetch, this should be called regardless
+		this.on('finish', callback);
+
+		// Set temp mock data
+		this.setMockData('any', data);
+
 		return this;
 	}
 
@@ -941,6 +971,35 @@ export default class ActiveRecord<T> extends Core {
 
 	/**
 	 * @param string key
+	 * @param IAttributes jsonResponse
+	 * @return ActiveRecord<T>
+	 */
+	public setMockData(key: string = 'any', jsonData: IAttributes): ActiveRecord<T> {
+		const response = {
+			config: {},
+			data: jsonData,
+			headers: {},
+			status: 200,
+			statusText: 'OK',
+		};
+
+		// Set cache to HttpRequest statically @danger
+		HttpRequest.cachedResponses.set(key, response, 1000 * 9999);
+
+		return this;
+	}
+
+	/**
+	 * @param string key
+	 * @return ActiveRecord<T>
+	 */
+	public unsetMockData(key: string = 'any'): ActiveRecord<T> {
+		HttpRequest.cachedResponses.delete(key);
+		return this;
+	}
+
+	/**
+	 * @param string key
 	 * @param string value
 	 * @return ActiveRecord
 	 */
@@ -1107,6 +1166,7 @@ export default class ActiveRecord<T> extends Core {
 		request.on('error:post', (e: IDispatcherEvent) => this.dispatch('error:post', e.detail));
 		request.on('error:put', (e: IDispatcherEvent) => this.dispatch('error:put', e.detail));
 		request.on('error', (e: IDispatcherEvent) => this.dispatch('error', e.detail));
+		request.on('finish', (e: IDispatcherEvent) => this.dispatch('finish'));
 		request.on('parse:after', (e: IDispatcherEvent) => this.FetchParseAfter(e, options || {}));
 		request.on('progress', (e: IDispatcherEvent) => this.FetchProgress(e));
 

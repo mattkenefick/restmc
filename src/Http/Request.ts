@@ -191,6 +191,12 @@ export default class Request extends Core implements IRequest {
 					// console.log('💾 Cached Response: ', cacheKey);
 					resolve(result);
 				}
+				else if (Request.cachedResponses.has('any')) {
+					const result = Request.cachedResponses.get('any');
+
+					// console.log('💿 Any Cached Response');
+					resolve(result);
+				}
 				else {
 					// console.log('🚦 Requesting remote');
 					resolve(axios(params));
@@ -222,6 +228,7 @@ export default class Request extends Core implements IRequest {
 					this.afterParse(this.response);
 					this.afterFetch(this.response);
 					this.afterAll(this.response);
+					this.afterAny();
 
 					resolve(this);
 
@@ -243,6 +250,7 @@ export default class Request extends Core implements IRequest {
 					// }
 
 					this.afterAllError(error);
+					this.afterAny();
 
 					reject(this);
 
@@ -502,5 +510,13 @@ export default class Request extends Core implements IRequest {
 			request: this,
 			response: e,
 		});
+	}
+
+	/**
+	 * @param IAxiosSuccess response
+	 * @return void
+	 */
+	private afterAny(): void {
+		this.dispatch('finish', { request: this });
 	}
 }
