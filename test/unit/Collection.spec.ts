@@ -239,4 +239,25 @@ describe('Collection', () => {
 
 		expect(num).to.equal(6);
 	});
+
+	it('should use mock data under the "any" tag', async () => {
+		const userCollection: CollectionUser = getCollection();
+		const json = {
+			data: [
+				{
+					first_name: 'Jolly',
+					last_name: 'Roger',
+					username: 'jollyrogerdog',
+				},
+			],
+			meta: { pagination: [] },
+		};
+
+		// Fetch mock data
+		await userCollection.mock(json).fetch();
+		const userModel = userCollection.first();
+
+		expect(userModel.getFirstName()).to.equal('Jolly');
+		expect(userModel.getLastName()).to.equal('Roger');
+	});
 });
