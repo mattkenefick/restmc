@@ -71,6 +71,7 @@ export default class ActiveRecord<T> extends Core {
 	public static hook(key: string = 'init', params: any = []): void {
 		const func = this.hooks.get(key);
 
+		// @ts-ignore
 		func && func(...params);
 	}
 
