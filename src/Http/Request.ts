@@ -187,11 +187,12 @@ export default class Request extends Core implements IRequest {
 				// Find cache
 				if (Request.cachedResponses.has(cacheKey)) {
 					const result = Request.cachedResponses.get(cacheKey);
-					console.log('💾 Cached Response: ', cacheKey);
+
+					// console.log('💾 Cached Response: ', cacheKey);
 					resolve(result);
 				}
 				else {
-					console.log('🚦 Requesting remote');
+					// console.log('🚦 Requesting remote');
 					resolve(axios(params));
 				}
 			})
