@@ -4,6 +4,10 @@ import Core from './Core';
 import HttpRequest from './Http/Request';
 declare type FetchResponse = Promise<HttpRequest>;
 export default class ActiveRecord<T> extends Core {
+    private static hooks;
+    static setHook(event: string | undefined, func: any): void;
+    static unsetHook(event?: string): void;
+    static hook(key?: string, params?: any): void;
     get b(): Builder<T>;
     protected get isModel(): boolean;
     attributes: IAttributes;
@@ -23,6 +27,7 @@ export default class ActiveRecord<T> extends Core {
     limit: number;
     loading: boolean;
     meta: IAttributes;
+    mockData: IAttributes;
     modifiedEndpointPosition: string;
     options: IAttributes;
     page: number;
@@ -55,6 +60,7 @@ export default class ActiveRecord<T> extends Core {
     addLoadingHooks(view: any, preHook?: IDispatcherCallbackFunction | undefined, postHook?: IDispatcherCallbackFunction | undefined): ActiveRecord<T>;
     removeLoadingHooks(): ActiveRecord<T>;
     cache(ttl: number): ActiveRecord<T>;
+    mock(data: any): ActiveRecord<T>;
     find(id: string | number, queryParams?: IModelRequestQueryParams): Promise<ActiveRecord<T>>;
     file(name: string, file: any, additionalFields?: Record<string, any>): FetchResponse;
     upload(name: string, file: any, additionalFields?: Record<string, any>): FetchResponse;
@@ -74,6 +80,8 @@ export default class ActiveRecord<T> extends Core {
     setId(id: number | string): ActiveRecord<T>;
     unsetId(): ActiveRecord<T>;
     unsetHeader(header: string): ActiveRecord<T>;
+    setMockData(key: string | undefined, jsonData: IAttributes): ActiveRecord<T>;
+    unsetMockData(key?: string): ActiveRecord<T>;
     setQueryParam(key: string, value: string): ActiveRecord<T>;
     setQueryParams(params: Record<string, number | string>): ActiveRecord<T>;
     unsetQueryParam(param: string): ActiveRecord<T>;

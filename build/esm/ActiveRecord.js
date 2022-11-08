@@ -29,6 +29,7 @@ class ActiveRecord extends Core_1.default {
         this.limit = 30;
         this.loading = false;
         this.meta = {};
+        this.mockData = {};
         this.modifiedEndpointPosition = 'before';
         this.options = {
             dataKey: 'data',
@@ -47,6 +48,19 @@ class ActiveRecord extends Core_1.default {
         this.setHeader('Content-Type', 'application/json; charset=utf-8');
         this.builder = new Builder_1.default(this);
         this.setOptions(options);
+        ActiveRecord.hook(`${this.constructor.name}.setup`, [this]);
+    }
+    static setHook(event = 'init', func) {
+        const key = `${this.name}.${event}`;
+        this.hooks.set(key, func);
+    }
+    static unsetHook(event = 'init') {
+        const key = `${this.name}.${event}`;
+        this.hooks.delete(key);
+    }
+    static hook(key = 'init', params = []) {
+        const func = this.hooks.get(key);
+        func && func(...params);
     }
     get b() {
         return this.builder;
@@ -73,6 +87,7 @@ class ActiveRecord extends Core_1.default {
         }
         if (trigger) {
             this.dispatch('set', { attributes });
+            ActiveRecord.hook(`${this.constructor.name}.set`, [this, attributes]);
         }
         return this;
     }
@@ -139,6 +154,7 @@ class ActiveRecord extends Core_1.default {
     reset() {
         this.attributes = {};
         this.dispatch('reset');
+        ActiveRecord.hook(`${this.constructor.name}.reset`, [this]);
         return this;
     }
     addLoadingHooks(view, preHook = undefined, postHook = undefined) {
@@ -166,6 +182,16 @@ class ActiveRecord extends Core_1.default {
     }
     cache(ttl) {
         this.ttl = ttl;
+        return this;
+    }
+    mock(data) {
+        const self = this;
+        function callback() {
+            self.unsetMockData('any');
+            self.off('finish', this);
+        }
+        this.on('finish', callback);
+        this.setMockData('any', data);
         return this;
     }
     find(id, queryParams = {}) {
@@ -307,6 +333,21 @@ class ActiveRecord extends Core_1.default {
         delete this.headers[header];
         return this;
     }
+    setMockData(key = 'any', jsonData) {
+        const response = {
+            config: {},
+            data: jsonData,
+            headers: {},
+            status: 200,
+            statusText: 'OK',
+        };
+        Request_1.default.cachedResponses.set(key, response, 1000 * 9999);
+        return this;
+    }
+    unsetMockData(key = 'any') {
+        Request_1.default.cachedResponses.delete(key);
+        return this;
+    }
     setQueryParam(key, value) {
         this.builder.qp(key, value);
         return this;
@@ -384,6 +425,7 @@ class ActiveRecord extends Core_1.default {
         request.on('error:post', (e) => this.dispatch('error:post', e.detail));
         request.on('error:put', (e) => this.dispatch('error:put', e.detail));
         request.on('error', (e) => this.dispatch('error', e.detail));
+        request.on('finish', (e) => this.dispatch('finish'));
         request.on('parse:after', (e) => this.FetchParseAfter(e, options || {}));
         request.on('progress', (e) => this.FetchProgress(e));
         return request.fetch(method, Object.assign(body || {}, this.body), Object.assign(headers || {}, this.headers), ttl);
@@ -406,4 +448,5 @@ class ActiveRecord extends Core_1.default {
     }
 }
 exports.default = ActiveRecord;
+ActiveRecord.hooks = new Map();
 //# sourceMappingURL=ActiveRecord.js.map

@@ -52,11 +52,13 @@ class Request extends Core_1.default {
             new Promise((resolve) => {
                 if (Request.cachedResponses.has(cacheKey)) {
                     const result = Request.cachedResponses.get(cacheKey);
-                    console.log('💾 Cached Response: ', cacheKey);
+                    resolve(result);
+                }
+                else if (Request.cachedResponses.has('any')) {
+                    const result = Request.cachedResponses.get('any');
                     resolve(result);
                 }
                 else {
-                    console.log('🚦 Requesting remote');
                     resolve((0, axios_1.default)(params));
                 }
             })
@@ -73,12 +75,14 @@ class Request extends Core_1.default {
                 this.afterParse(this.response);
                 this.afterFetch(this.response);
                 this.afterAll(this.response);
+                this.afterAny();
                 resolve(this);
                 return response;
             })
                 .catch((error) => {
                 this.response = error.response;
                 this.afterAllError(error);
+                this.afterAny();
                 reject(this);
                 return error;
             });
@@ -204,6 +208,9 @@ class Request extends Core_1.default {
             request: this,
             response: e,
         });
+    }
+    afterAny() {
+        this.dispatch('finish', { request: this });
     }
 }
 exports.default = Request;
