@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Collection } from '../../src/index';
+import { ActiveRecord, Collection } from '../../src/index';
 import { configureServer } from '../mock/server/test';
 import CollectionUser from '../mock/collections/User.ts';
 import ModelUser from '../mock/models/User.ts';
@@ -15,6 +15,17 @@ describe('Collection', () => {
 	function getCollection(options: any = {}): CollectionUser {
 		return new CollectionUser(Object.assign(options, { baseUrl: 'http://localhost:3000/v1' }));
 	}
+
+	it('should fire an `setup` hook', async () => {
+		return new Promise((resolve) => {
+			CollectionUser.setHook('setup', (instance) => {
+				CollectionUser.unsetHook('setup');
+				resolve();
+			});
+
+			const userCollection: CollectionUser = new CollectionUser();
+		});
+	});
 
 	it('should absord the endpoint from model', () => {
 		const userCollection: CollectionUser = getCollection();
