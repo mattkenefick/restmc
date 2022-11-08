@@ -31,6 +31,50 @@ type FetchResponse = Promise<HttpRequest>;
  */
 export default class ActiveRecord<T> extends Core {
 	/**
+	 * Class hooks that allow us to trigger custom functionality
+	 * on an instantiation level.
+	 *
+	 * Example:
+	 *
+	 *  MyCollection.setHook('init', instance => {
+	 *      instance.setMockData(...);
+	 *  });
+	 *
+	 * @type Map
+	 */
+	private static hooks = new Map<string, string[]>();
+
+	/**
+	 * @param string event
+	 * @param Function func
+	 * @return void
+	 */
+	public static setHook(event: string = 'init', func: any): void {
+		const key: string = `${this.name}.${event}`;
+		this.hooks.set(key, func);
+	}
+
+	/**
+	 * @param string event
+	 * @return void
+	 */
+	public static unsetHook(event: string = 'init'): void {
+		const key: string = `${this.name}.${event}`;
+		this.hooks.delete(key);
+	}
+
+	/**
+	 * @param string event
+	 * @param array params
+	 * @return void
+	 */
+	public static hook(key: string = 'init', params: any = []): void {
+		const func = this.hooks.get(key);
+
+		func && func(...params);
+	}
+
+	/**
 	 * @return Builder
 	 */
 	public get b(): Builder<T> {
@@ -156,6 +200,13 @@ export default class ActiveRecord<T> extends Core {
 	 * @type IAttributes
 	 */
 	public meta: IAttributes = {};
+
+	/**
+	 * Mock data responses to use
+	 *
+	 * @type IAttributes
+	 */
+	public mockData: IAttributes = {};
 
 	/**
 	 * Where to position our modified endpoint (before or after)
@@ -284,6 +335,9 @@ export default class ActiveRecord<T> extends Core {
 
 		// Set options
 		this.setOptions(options);
+
+		// Hook
+		ActiveRecord.hook(`${this.constructor.name}.setup`, [this]);
 	}
 
 	/**
@@ -335,6 +389,9 @@ export default class ActiveRecord<T> extends Core {
 		// Trigger
 		if (trigger) {
 			this.dispatch('set', { attributes });
+
+			// Hook
+			ActiveRecord.hook(`${this.constructor.name}.set`, [this, attributes]);
 		}
 
 		return this;
@@ -494,6 +551,9 @@ export default class ActiveRecord<T> extends Core {
 
 		// Event
 		this.dispatch('reset');
+
+		// Hook
+		ActiveRecord.hook(`${this.constructor.name}.reset`, [this]);
 
 		return this;
 	}
