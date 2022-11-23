@@ -367,6 +367,13 @@ export default class Collection<GenericModel extends Model>
 	}
 
 	/**
+	 * @return Model[]
+	 */
+	public map(...params: any): Model[] {
+		return <Model[]>Array.prototype.map.apply(this.models, params);
+	}
+
+	/**
 	 * @param Model[] | Model | object model
 	 * @param object = {} options
 	 * @return Collection
