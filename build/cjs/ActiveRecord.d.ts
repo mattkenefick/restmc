@@ -64,7 +64,7 @@ export default class ActiveRecord<T> extends Core {
     find(id: string | number, queryParams?: IModelRequestQueryParams): Promise<ActiveRecord<T>>;
     file(name: string, file: any, additionalFields?: Record<string, any>): FetchResponse;
     upload(name: string, file: any, additionalFields?: Record<string, any>): FetchResponse;
-    fetch(options?: IModelRequestOptions, queryParams?: IModelRequestQueryParams): FetchResponse;
+    fetch(options?: IModelRequestOptions, queryParams?: IModelRequestQueryParams, method?: string, body?: IAttributes, headers?: IAttributes): FetchResponse;
     runLast(): FetchResponse | void;
     getUrlByMethod(method: string): string;
     cancelModifiedEndpoint(): ActiveRecord<T>;

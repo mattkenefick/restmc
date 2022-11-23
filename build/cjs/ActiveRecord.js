@@ -234,9 +234,9 @@ class ActiveRecord extends Core_1.default {
             return this.file(name, file, additionalFields);
         });
     }
-    fetch(options = {}, queryParams = {}) {
+    fetch(options = {}, queryParams = {}, method = 'get', body = {}, headers = {}) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield this._fetch(options, queryParams);
+            return yield this._fetch(options, queryParams, method, body, headers);
         });
     }
     runLast() {
