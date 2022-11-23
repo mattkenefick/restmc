@@ -144,6 +144,9 @@ class Collection extends ActiveRecord_1.default {
     filter(predicate) {
         return this.models.filter(predicate);
     }
+    map(...params) {
+        return Array.prototype.map.apply(this.models, params);
+    }
     push(model, options = {}) {
         this.add(model, options);
         return this;

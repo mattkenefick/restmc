@@ -27,6 +27,7 @@ export default class Collection<GenericModel extends Model> extends ActiveRecord
     delete(attributes?: IAttributes): Promise<HttpRequest>;
     each(callback: any): void;
     filter(predicate: any): GenericModel[];
+    map(...params: any): Model[];
     push(model: Model[] | Model | object, options?: object): Collection<GenericModel>;
     pop(): Collection<GenericModel>;
     reset(): Collection<GenericModel>;
