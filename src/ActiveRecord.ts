@@ -738,8 +738,14 @@ export default class ActiveRecord<T> extends Core {
 	 * @param  IModelRequestQueryParams queryParams
 	 * @return FetchResponse
 	 */
-	public async fetch(options: IModelRequestOptions = {}, queryParams: IModelRequestQueryParams = {}): FetchResponse {
-		return await this._fetch(options, queryParams);
+	public async fetch(
+		options: IModelRequestOptions = {},
+		queryParams: IModelRequestQueryParams = {},
+		method: string = 'get',
+		body: IAttributes = {},
+		headers: IAttributes = {},
+	): FetchResponse {
+		return await this._fetch(options, queryParams, method, body, headers);
 	}
 
 	/**
