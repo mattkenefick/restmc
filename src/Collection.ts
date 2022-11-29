@@ -369,7 +369,7 @@ export default class Collection<GenericModel extends Model>
 	/**
 	 * @return Model[]
 	 */
-	public map(...params: any): Model[] {
+	public map(...params: any): any[] {
 		return <Model[]>Array.prototype.map.apply(this.models, params);
 	}
 
