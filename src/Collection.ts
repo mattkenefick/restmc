@@ -208,6 +208,26 @@ export default class Collection<GenericModel extends Model>
 	}
 
 	/**
+	 * Fetch previous page with last used set of options
+	 *
+	 * @param bool append
+	 * @return Promise<HttpRequest>
+	 */
+	public async fetchPrevious(append: boolean = false): Promise<HttpRequest> {
+		let options = Object.assign({}, this.lastRequest.options);
+		let qp = Object.assign({}, this.builder.queryParams, this.lastRequest.queryParams);
+
+		// Decrease page number
+		qp.page = Math.max(1, parseFloat(qp.page) - 1);
+
+		// Merge
+		options.merge = append;
+
+		// Fetch
+		return await this._fetch(options, qp, this.lastRequest.method, this.lastRequest.body, this.lastRequest.headers);
+	}
+
+	/**
 	 * @return string
 	 */
 	public getEndpoint(): string {

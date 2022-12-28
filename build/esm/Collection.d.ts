@@ -18,6 +18,7 @@ export default class Collection<GenericModel extends Model> extends ActiveRecord
     constructor(options?: IAttributes);
     toJSON(): object;
     fetchNext(append?: boolean): Promise<HttpRequest>;
+    fetchPrevious(append?: boolean): Promise<HttpRequest>;
     getEndpoint(): string;
     add(data: GenericModel[] | GenericModel | object, options?: IAttributes): Collection<GenericModel>;
     remove(model: Model[] | Model | object): Collection<GenericModel>;

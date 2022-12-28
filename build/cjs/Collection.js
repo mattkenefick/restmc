@@ -66,6 +66,15 @@ class Collection extends ActiveRecord_1.default {
             return yield this._fetch(options, qp, this.lastRequest.method, this.lastRequest.body, this.lastRequest.headers);
         });
     }
+    fetchPrevious(append = false) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let options = Object.assign({}, this.lastRequest.options);
+            let qp = Object.assign({}, this.builder.queryParams, this.lastRequest.queryParams);
+            qp.page = Math.max(1, parseFloat(qp.page) - 1);
+            options.merge = append;
+            return yield this._fetch(options, qp, this.lastRequest.method, this.lastRequest.body, this.lastRequest.headers);
+        });
+    }
     getEndpoint() {
         return super.getEndpoint() || this.model.endpoint;
     }
