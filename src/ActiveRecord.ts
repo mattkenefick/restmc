@@ -1172,7 +1172,10 @@ export default class ActiveRecord<T> extends Core {
 		request.on('error:get', (e: IDispatcherEvent) => this.dispatch('error:get', e.detail));
 		request.on('error:post', (e: IDispatcherEvent) => this.dispatch('error:post', e.detail));
 		request.on('error:put', (e: IDispatcherEvent) => this.dispatch('error:put', e.detail));
-		request.on('error', (e: IDispatcherEvent) => this.dispatch('error', e.detail));
+		request.on('error', (e: IDispatcherEvent) => {
+			this.loading = false;
+			return this.dispatch('error', e.detail);
+		});
 		request.on('finish', (e: IDispatcherEvent) => this.dispatch('finish'));
 		request.on('parse:after', (e: IDispatcherEvent) => this.FetchParseAfter(e, options || {}));
 		request.on('progress', (e: IDispatcherEvent) => this.FetchProgress(e));
