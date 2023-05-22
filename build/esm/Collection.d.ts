@@ -1,8 +1,8 @@
-import ActiveRecord from './ActiveRecord';
-import CollectionIterator from './CollectionIterator';
-import HttpRequest from './Http/Request';
-import Model from './Model';
-import { IAttributes, ICollectionMeta, IPagination } from './Interfaces';
+import ActiveRecord from './ActiveRecord.js';
+import CollectionIterator from './CollectionIterator.js';
+import HttpRequest from './Http/Request.js';
+import Model from './Model.js';
+import { IAttributes, ICollectionMeta, IPagination } from './Interfaces.js';
 export default class Collection<GenericModel extends Model> extends ActiveRecord<Collection<GenericModel>> implements Iterable<GenericModel> {
     static paginator(collection: any): IPagination;
     static hydrate<T>(models?: Model[], options?: object): any;

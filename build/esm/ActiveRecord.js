@@ -8,12 +8,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const Builder_1 = require("./Http/Builder");
-const Core_1 = require("./Core");
-const FormData = require("form-data");
-const Request_1 = require("./Http/Request");
-class ActiveRecord extends Core_1.default {
+const Builder_js_1 = __importDefault(require("./Http/Builder.js"));
+const Core_js_1 = __importDefault(require("./Core.js"));
+const form_data_1 = __importDefault(require("form-data"));
+const Request_js_1 = __importDefault(require("./Http/Request.js"));
+class ActiveRecord extends Core_js_1.default {
     constructor(options = {}) {
         super(options);
         this.attributes = {};
@@ -46,7 +49,7 @@ class ActiveRecord extends Core_1.default {
         this.cid = this.cidPrefix + Math.random().toString(36).substr(2, 5);
         this.parent = undefined;
         this.setHeader('Content-Type', 'application/json; charset=utf-8');
-        this.builder = new Builder_1.default(this);
+        this.builder = new Builder_js_1.default(this);
         this.setOptions(options);
         ActiveRecord.hook(`${this.constructor.name}.setup`, [this]);
     }
@@ -75,8 +78,8 @@ class ActiveRecord extends Core_1.default {
         return Object.keys(this.attributes).length > 0;
     }
     set(attributes = {}, options = {}, trigger = true) {
-        let possibleSetters = Object.getOwnPropertyDescriptors(this.__proto__);
-        for (let key in attributes) {
+        const possibleSetters = Object.getOwnPropertyDescriptors(this.__proto__);
+        for (const key in attributes) {
             this.attributes[key] = attributes[key];
             if (possibleSetters && possibleSetters[key] && possibleSetters[key].set) {
                 this[key] = attributes[key];
@@ -120,9 +123,9 @@ class ActiveRecord extends Core_1.default {
         return this;
     }
     toJSON() {
-        let json = this.attributes;
-        let possibleGetters = Object.getOwnPropertyNames(this.__proto__);
-        for (let key of possibleGetters) {
+        const json = this.attributes;
+        const possibleGetters = Object.keys(Object.getPrototypeOf(this));
+        for (const key of possibleGetters) {
             if (json[key] && this[key] && this[key].toJSON) {
                 json[key] = this[key].toJSON();
             }
@@ -202,7 +205,7 @@ class ActiveRecord extends Core_1.default {
     file(name, file, additionalFields = {}) {
         return __awaiter(this, void 0, void 0, function* () {
             const url = this.builder.identifier(this.id).getUrl();
-            const formData = new FormData();
+            const formData = new form_data_1.default();
             if (file.hasOwnProperty('files') && file.files) {
                 file = file.files[0];
             }
@@ -214,7 +217,7 @@ class ActiveRecord extends Core_1.default {
             if (additionalFields) {
                 let key;
                 for (key in additionalFields) {
-                    let value = additionalFields[key];
+                    const value = additionalFields[key];
                     if (Array.isArray(value)) {
                         value.forEach((item) => formData.append(key + '[]', item));
                     }
@@ -251,7 +254,7 @@ class ActiveRecord extends Core_1.default {
     }
     getUrlByMethod(method) {
         let url = '';
-        let originalEndpoint = this.getEndpoint();
+        const originalEndpoint = this.getEndpoint();
         if (method === 'delete' && this.endpointDelete) {
             this.endpoint = this.endpointDelete;
         }
@@ -314,7 +317,7 @@ class ActiveRecord extends Core_1.default {
         return this;
     }
     setHeaders(headers) {
-        for (let k in headers) {
+        for (const k in headers) {
             this.setHeader(k, headers[k]);
         }
         return this;
@@ -341,11 +344,11 @@ class ActiveRecord extends Core_1.default {
             status: 200,
             statusText: 'OK',
         };
-        Request_1.default.cachedResponses.set(key, response, 1000 * 9999);
+        Request_js_1.default.cachedResponses.set(key, response, 1000 * 9999);
         return this;
     }
     unsetMockData(key = 'any') {
-        Request_1.default.cachedResponses.delete(key);
+        Request_js_1.default.cachedResponses.delete(key);
         return this;
     }
     setQueryParam(key, value) {
@@ -353,7 +356,7 @@ class ActiveRecord extends Core_1.default {
         return this;
     }
     setQueryParams(params) {
-        for (let k in params) {
+        for (const k in params) {
             this.setQueryParam(k, params[k]);
         }
         return this;
@@ -369,15 +372,15 @@ class ActiveRecord extends Core_1.default {
     setAfterResponse(e, options = {}) {
         const request = e.detail.request;
         const response = e.detail.response;
-        let method = request.method || 'get';
-        let remoteJson = response.data;
+        const method = request.method || 'get';
+        const remoteJson = response.data;
         if (method.toLowerCase() === 'post' && !this.isModel) {
             this.add((this.dataKey ? remoteJson[this.dataKey] : remoteJson) || response.data);
         }
         else if (method.toLowerCase() === 'delete') {
         }
         else {
-            let data = this.dataKey !== undefined ? remoteJson[this.dataKey] : remoteJson.responseData || response.data;
+            const data = this.dataKey !== undefined ? remoteJson[this.dataKey] : remoteJson.responseData || response.data;
             this.set(data, options);
         }
         this.setOptions(Object.assign({}, options, { meta: remoteJson.meta }));
@@ -407,7 +410,7 @@ class ActiveRecord extends Core_1.default {
         this.dispatch('requesting', { request: this.lastRequest });
         this.hasFetched = true;
         this.loading = true;
-        let request = (this.request = new Request_1.default(url, {
+        const request = (this.request = new Request_js_1.default(url, {
             dataKey: this.dataKey,
             withCredentials: this.options.withCredentials,
         }));

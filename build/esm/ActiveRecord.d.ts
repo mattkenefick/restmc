@@ -1,7 +1,7 @@
-import { IAttributes, IDispatcherCallbackFunction, IDispatcherEvent, IModelRequestOptions, IModelRequestQueryParams } from './Interfaces';
-import Builder from './Http/Builder';
-import Core from './Core';
-import HttpRequest from './Http/Request';
+import { IAttributes, IDispatcherCallbackFunction, IDispatcherEvent, IModelRequestOptions, IModelRequestQueryParams } from './Interfaces.js';
+import Builder from './Http/Builder.js';
+import Core from './Core.js';
+import HttpRequest from './Http/Request.js';
 declare type FetchResponse = Promise<HttpRequest>;
 export default class ActiveRecord<T> extends Core {
     private static hooks;

@@ -1,7 +1,7 @@
 import { AxiosResponse } from 'axios';
-import { IAttributes, IAxiosResponse, IAxiosSuccess, IRequest } from '../Interfaces';
-import Cache from '../Cache';
-import Core from '../Core';
+import { IAttributes, IAxiosResponse, IAxiosSuccess, IRequest } from '../Interfaces.js';
+import Cache from '../Cache.js';
+import Core from '../Core.js';
 export default class Request extends Core implements IRequest {
     static cachedResponses: Cache;
     dataKey: string;
@@ -15,7 +15,7 @@ export default class Request extends Core implements IRequest {
     url: string;
     withCredentials: boolean;
     constructor(url?: string, options?: IAttributes);
-    fetch(method?: string, body?: IAttributes, headers?: IAttributes, ttl?: number): Promise<Request | AxiosResponse<any>>;
+    fetch(method?: string, body?: IAttributes, headers?: IAttributes, ttl?: number): Promise<Request>;
     xhrFetch(url: string, params: any): any;
     setHeader(header: string, value: string): any;
     setHeaders(headers: any): any;

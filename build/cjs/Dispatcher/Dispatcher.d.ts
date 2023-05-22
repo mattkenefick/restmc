@@ -1,5 +1,5 @@
-import { IDispatcherCallbackFunction, IDispatchData } from '../Interfaces';
-import DispatcherEvent from './DispatcherEvent';
+import { IDispatcherCallbackFunction, IDispatchData } from '../Interfaces.js';
+import DispatcherEvent from './DispatcherEvent.js';
 export default class Dispatcher {
     protected events: Record<string, DispatcherEvent>;
     dispatch(name: string, detail?: IDispatchData): boolean;

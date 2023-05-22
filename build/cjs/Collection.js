@@ -8,11 +8,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const ActiveRecord_1 = require("./ActiveRecord");
-const CollectionIterator_1 = require("./CollectionIterator");
-const Model_1 = require("./Model");
-class Collection extends ActiveRecord_1.default {
+const ActiveRecord_js_1 = __importDefault(require("./ActiveRecord.js"));
+const CollectionIterator_js_1 = __importDefault(require("./CollectionIterator.js"));
+const Model_js_1 = __importDefault(require("./Model.js"));
+class Collection extends ActiveRecord_js_1.default {
     constructor(options = {}) {
         super(options);
         this.atRelationship = [];
@@ -84,7 +87,7 @@ class Collection extends ActiveRecord_1.default {
         }
         const models = Array.isArray(data) ? data : [data];
         models.forEach((model) => {
-            if (!(model instanceof Model_1.default)) {
+            if (!(model instanceof Model_js_1.default)) {
                 model = new this.model.constructor(model);
                 model.parent = this;
                 model.headers = this.headers;
@@ -184,7 +187,7 @@ class Collection extends ActiveRecord_1.default {
         if (query == null) {
             return void 0;
         }
-        return this.where({ [this.modelId]: query instanceof Model_1.default ? query.id : query }, true);
+        return this.where({ [this.modelId]: query instanceof Model_js_1.default ? query.id : query }, true);
     }
     has(obj) {
         return this.get(obj) != undefined;
@@ -256,16 +259,16 @@ class Collection extends ActiveRecord_1.default {
         return instance;
     }
     values() {
-        return new CollectionIterator_1.default(this, CollectionIterator_1.default.ITERATOR_VALUES);
+        return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_VALUES);
     }
     keys(attributes = {}) {
-        return new CollectionIterator_1.default(this, CollectionIterator_1.default.ITERATOR_KEYS);
+        return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_KEYS);
     }
     entries(attributes = {}) {
-        return new CollectionIterator_1.default(this, CollectionIterator_1.default.ITERATOR_KEYSVALUES);
+        return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_KEYSVALUES);
     }
     [Symbol.iterator]() {
-        return new CollectionIterator_1.default(this, CollectionIterator_1.default.ITERATOR_VALUES);
+        return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_VALUES);
     }
 }
 exports.default = Collection;

@@ -1,4 +1,4 @@
-import ActiveRecord from '../ActiveRecord';
+import ActiveRecord from '../ActiveRecord.js';
 export default class Builder<T> {
     id: string;
     includes: string[];

@@ -1,4 +1,4 @@
-import { IDispatcherCallbackFunction, IDispatchData } from '../Interfaces';
+import { IDispatcherCallbackFunction, IDispatchData } from '../Interfaces.js';
 export default class DispatcherEvent {
     callbacks: IDispatcherCallbackFunction[];
     detail: IDispatchData;

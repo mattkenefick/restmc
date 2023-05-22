@@ -1,5 +1,5 @@
-import Collection from './Collection';
-import Model from './Model';
+import Collection from './Collection.js';
+import Model from './Model.js';
 export default class CollectionIterator<GenericModel extends Model> {
     static ITERATOR_VALUES: number;
     static ITERATOR_KEYS: number;

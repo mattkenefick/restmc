@@ -1,10 +1,13 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const axios_1 = require("axios");
-const Cache_1 = require("../Cache");
-const Core_1 = require("../Core");
-const RequestError_1 = require("./RequestError");
-class Request extends Core_1.default {
+const axios_1 = __importDefault(require("axios"));
+const Cache_js_1 = __importDefault(require("../Cache.js"));
+const Core_js_1 = __importDefault(require("../Core.js"));
+const RequestError_js_1 = __importDefault(require("./RequestError.js"));
+class Request extends Core_js_1.default {
     constructor(url = '', options = {}) {
         super();
         this.dataKey = 'data';
@@ -49,17 +52,17 @@ class Request extends Core_1.default {
         this.dispatch('requesting', { request: requestEvent });
         return new Promise((resolve, reject) => {
             let cacheKey = `${params.method}.${params.url}`;
-            new Promise((resolve) => {
+            new Promise((resolveCacheLayer) => {
                 if (Request.cachedResponses.has(cacheKey)) {
                     const result = Request.cachedResponses.get(cacheKey);
-                    resolve(result);
+                    resolveCacheLayer(result);
                 }
                 else if (Request.cachedResponses.has('any')) {
                     const result = Request.cachedResponses.get('any');
-                    resolve(result);
+                    resolveCacheLayer(result);
                 }
                 else {
-                    resolve((0, axios_1.default)(params));
+                    resolveCacheLayer((0, axios_1.default)(params));
                 }
             })
                 .then((response) => {
@@ -159,7 +162,7 @@ class Request extends Core_1.default {
         var _a, _b;
         if (response.status >= 400 && ((_a = response.data) === null || _a === void 0 ? void 0 : _a.status)) {
             const message = ((_b = response.data) === null || _b === void 0 ? void 0 : _b.message) || response.data || '';
-            throw new RequestError_1.default(response.status, message);
+            throw new RequestError_js_1.default(response.status, message);
         }
         this.dispatch('parse:after', {
             request: this,
@@ -214,5 +217,5 @@ class Request extends Core_1.default {
     }
 }
 exports.default = Request;
-Request.cachedResponses = new Cache_1.default();
+Request.cachedResponses = new Cache_js_1.default();
 //# sourceMappingURL=Request.js.map

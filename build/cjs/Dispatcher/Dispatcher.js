@@ -1,6 +1,9 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const DispatcherEvent_1 = require("./DispatcherEvent");
+const DispatcherEvent_js_1 = __importDefault(require("./DispatcherEvent.js"));
 class Dispatcher {
     constructor() {
         this.events = {};
@@ -32,7 +35,7 @@ class Dispatcher {
     on(eventName, callback) {
         let event = this.events[eventName];
         if (!event) {
-            event = new DispatcherEvent_1.default(eventName, {});
+            event = new DispatcherEvent_js_1.default(eventName, {});
             this.events[eventName] = event;
         }
         event.registerCallback(callback);
