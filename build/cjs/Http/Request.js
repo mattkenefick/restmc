@@ -1,12 +1,9 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const axios_1 = __importDefault(require("axios"));
-const Cache_js_1 = __importDefault(require("../Cache.js"));
-const Core_js_1 = __importDefault(require("../Core.js"));
-const RequestError_js_1 = __importDefault(require("./RequestError.js"));
+const axios_1 = require("axios");
+const Cache_js_1 = require("../Cache.js");
+const Core_js_1 = require("../Core.js");
+const RequestError_js_1 = require("./RequestError.js");
 class Request extends Core_js_1.default {
     constructor(url = '', options = {}) {
         super();
