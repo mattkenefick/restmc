@@ -1,7 +1,7 @@
-import ActiveRecord from './ActiveRecord';
-import Collection from './Collection';
-import Request from './Http/Request';
-import { IAttributes, IModelRequestOptions, IModelRequestQueryParams } from './Interfaces';
+import ActiveRecord from './ActiveRecord.js';
+import Collection from './Collection.js';
+import Request from './Http/Request.js';
+import { IAttributes, IModelRequestOptions, IModelRequestQueryParams } from './Interfaces.js';
 
 /**
  * @author Matt Kenefick <matt@polymermallard.com>

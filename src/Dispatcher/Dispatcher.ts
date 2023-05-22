@@ -1,5 +1,5 @@
-import { IDispatcherCallbackFunction, IDispatchData } from '../Interfaces';
-import DispatcherEvent from './DispatcherEvent';
+import { IDispatcherCallbackFunction, IDispatchData } from '../Interfaces.js';
+import DispatcherEvent from './DispatcherEvent.js';
 
 /**
  * The Dispatcher is used as a superclass or mixin that provides the

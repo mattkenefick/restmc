@@ -1,5 +1,5 @@
-import { IAttributes, IDispatcher } from './Interfaces';
-import Dispatcher from './Dispatcher/Dispatcher';
+import { IAttributes, IDispatcher } from './Interfaces.js';
+import Dispatcher from './Dispatcher/Dispatcher.js';
 
 /**
  * @author Matt Kenefick <matt@polymermallard.com>

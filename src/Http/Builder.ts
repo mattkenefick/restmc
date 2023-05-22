@@ -1,5 +1,5 @@
-import { IDispatcherCallbackFunction, IDispatchData } from '../Interfaces';
-import ActiveRecord from '../ActiveRecord';
+import { IDispatcherCallbackFunction, IDispatchData } from '../Interfaces.js';
+import ActiveRecord from '../ActiveRecord.js';
 
 /**
  * @author Matt Kenefick <matt@polymermallard.com>

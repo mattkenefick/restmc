@@ -1,7 +1,7 @@
-import ActiveRecord from './ActiveRecord';
-import CollectionIterator from './CollectionIterator';
-import HttpRequest from './Http/Request';
-import Model from './Model';
+import ActiveRecord from './ActiveRecord.js';
+import CollectionIterator from './CollectionIterator.js';
+import HttpRequest from './Http/Request.js';
+import Model from './Model.js';
 import {
 	IAttributes,
 	IAxiosResponse,
@@ -13,12 +13,7 @@ import {
 	IModelRequestQueryParams,
 	IPagination,
 	ISortOptions,
-} from './Interfaces';
-
-/**
- * Union type
- */
-type FetchResponse = Promise<Response | HttpRequest | null>;
+} from './Interfaces.js';
 
 /**
  * 'meta': {

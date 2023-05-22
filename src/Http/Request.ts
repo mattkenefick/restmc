@@ -12,10 +12,10 @@ import {
 	IRequest,
 	IRequestEvent,
 	IResponse,
-} from '../Interfaces';
-import Cache from '../Cache';
-import Core from '../Core';
-import RequestError from './RequestError';
+} from '../Interfaces.js';
+import Cache from '../Cache.js';
+import Core from '../Core.js';
+import RequestError from './RequestError.js';
 
 /**
  * @author Matt Kenefick <matt@polymermallard.com>
@@ -139,7 +139,7 @@ export default class Request extends Core implements IRequest {
 		body: IAttributes = {},
 		headers: IAttributes = {},
 		ttl: number = 0,
-	): Promise<Request | AxiosResponse<any>> {
+	): Promise<Request> {
 		const params: IAttributes = {};
 		const requestEvent: IRequestEvent = {
 			body,
@@ -183,23 +183,24 @@ export default class Request extends Core implements IRequest {
 		return new Promise((resolve, reject) => {
 			let cacheKey = `${params.method}.${params.url}`;
 
-			new Promise((resolve) => {
+			// Get cache OR fetch new
+			new Promise((resolveCacheLayer) => {
 				// Find cache
 				if (Request.cachedResponses.has(cacheKey)) {
 					const result = Request.cachedResponses.get(cacheKey);
 
 					// console.log('💾 Cached Response: ', cacheKey);
-					resolve(result);
+					resolveCacheLayer(result);
 				}
 				else if (Request.cachedResponses.has('any')) {
 					const result = Request.cachedResponses.get('any');
 
 					// console.log('💿 Any Cached Response');
-					resolve(result);
+					resolveCacheLayer(result);
 				}
 				else {
 					// console.log('🚦 Requesting remote');
-					resolve(axios(params));
+					resolveCacheLayer(axios(params));
 				}
 			})
 

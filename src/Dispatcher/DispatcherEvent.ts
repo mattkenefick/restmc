@@ -1,4 +1,4 @@
-import { IDispatcherCallbackFunction, IDispatcherEvent, IDispatchData } from '../Interfaces';
+import { IDispatcherCallbackFunction, IDispatcherEvent, IDispatchData } from '../Interfaces.js';
 
 /**
  * The DispatcherEvent can be instantiated with data that's included
