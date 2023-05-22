@@ -18,11 +18,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const Builder_1 = __webpack_require__(/*! ./Http/Builder */ "../../build/esm/Http/Builder.js");
-const Core_1 = __webpack_require__(/*! ./Core */ "../../build/esm/Core.js");
-const Request_1 = __webpack_require__(/*! ./Http/Request */ "../../build/esm/Http/Request.js");
-class ActiveRecord extends Core_1.default {
+const Builder_js_1 = __importDefault(__webpack_require__(/*! ./Http/Builder.js */ "../../build/esm/Http/Builder.js"));
+const Core_js_1 = __importDefault(__webpack_require__(/*! ./Core.js */ "../../build/esm/Core.js"));
+const form_data_1 = __importDefault(__webpack_require__(/*! form-data */ "../../node_modules/form-data/lib/browser.js"));
+const Request_js_1 = __importDefault(__webpack_require__(/*! ./Http/Request.js */ "../../build/esm/Http/Request.js"));
+class ActiveRecord extends Core_js_1.default {
     constructor(options = {}) {
         super(options);
         this.attributes = {};
@@ -38,6 +42,7 @@ class ActiveRecord extends Core_1.default {
         this.limit = 30;
         this.loading = false;
         this.meta = {};
+        this.mockData = {};
         this.modifiedEndpointPosition = 'before';
         this.options = {
             dataKey: 'data',
@@ -48,13 +53,27 @@ class ActiveRecord extends Core_1.default {
         this.cidPrefix = 'c';
         this.runLastAttempts = 0;
         this.runLastAttemptsMax = 2;
+        this.ttl = 0;
         Object.assign(this, options);
         this.body = {};
         this.cid = this.cidPrefix + Math.random().toString(36).substr(2, 5);
         this.parent = undefined;
-        this.setHeader('Content-Type', 'application/json; charset=utf8');
-        this.builder = new Builder_1.default(this);
+        this.setHeader('Content-Type', 'application/json; charset=utf-8');
+        this.builder = new Builder_js_1.default(this);
         this.setOptions(options);
+        ActiveRecord.hook(`${this.constructor.name}.setup`, [this]);
+    }
+    static setHook(event = 'init', func) {
+        const key = `${this.name}.${event}`;
+        this.hooks.set(key, func);
+    }
+    static unsetHook(event = 'init') {
+        const key = `${this.name}.${event}`;
+        this.hooks.delete(key);
+    }
+    static hook(key = 'init', params = []) {
+        const func = this.hooks.get(key);
+        func && func(...params);
     }
     get b() {
         return this.builder;
@@ -69,8 +88,8 @@ class ActiveRecord extends Core_1.default {
         return Object.keys(this.attributes).length > 0;
     }
     set(attributes = {}, options = {}, trigger = true) {
-        let possibleSetters = Object.getOwnPropertyDescriptors(this.__proto__);
-        for (let key in attributes) {
+        const possibleSetters = Object.getOwnPropertyDescriptors(this.__proto__);
+        for (const key in attributes) {
             this.attributes[key] = attributes[key];
             if (possibleSetters && possibleSetters[key] && possibleSetters[key].set) {
                 this[key] = attributes[key];
@@ -81,6 +100,7 @@ class ActiveRecord extends Core_1.default {
         }
         if (trigger) {
             this.dispatch('set', { attributes });
+            ActiveRecord.hook(`${this.constructor.name}.set`, [this, attributes]);
         }
         return this;
     }
@@ -113,9 +133,9 @@ class ActiveRecord extends Core_1.default {
         return this;
     }
     toJSON() {
-        let json = this.attributes;
-        let possibleGetters = Object.getOwnPropertyNames(this.__proto__);
-        for (let key of possibleGetters) {
+        const json = this.attributes;
+        const possibleGetters = Object.keys(Object.getPrototypeOf(this));
+        for (const key of possibleGetters) {
             if (json[key] && this[key] && this[key].toJSON) {
                 json[key] = this[key].toJSON();
             }
@@ -147,6 +167,7 @@ class ActiveRecord extends Core_1.default {
     reset() {
         this.attributes = {};
         this.dispatch('reset');
+        ActiveRecord.hook(`${this.constructor.name}.reset`, [this]);
         return this;
     }
     addLoadingHooks(view, preHook = undefined, postHook = undefined) {
@@ -172,42 +193,63 @@ class ActiveRecord extends Core_1.default {
         this.loadingHookPre = undefined;
         return this;
     }
+    cache(ttl) {
+        this.ttl = ttl;
+        return this;
+    }
+    mock(data) {
+        const self = this;
+        function callback() {
+            self.unsetMockData('any');
+            self.off('finish', this);
+        }
+        this.on('finish', callback);
+        this.setMockData('any', data);
+        return this;
+    }
     find(id, queryParams = {}) {
         return __awaiter(this, void 0, void 0, function* () {
             return yield this.fetch({ id }, queryParams).then((request) => this);
         });
     }
-    file(name, file) {
+    file(name, file, additionalFields = {}) {
         return __awaiter(this, void 0, void 0, function* () {
             const url = this.builder.identifier(this.id).getUrl();
-            const formData = new FormData();
-            if (file instanceof HTMLInputElement) {
+            const formData = new form_data_1.default();
+            if (file.hasOwnProperty('files') && file.files) {
                 file = file.files[0];
             }
-            else if (file instanceof FileList) {
+            if (file.hasOwnProperty('length')) {
                 file = file[0];
-            }
-            else if (file instanceof File) {
-            }
-            else {
-                console.warn('File provided unacceptable type.');
             }
             this.unsetHeader('Content-Type');
             formData.append(name, file);
+            if (additionalFields) {
+                let key;
+                for (key in additionalFields) {
+                    const value = additionalFields[key];
+                    if (Array.isArray(value)) {
+                        value.forEach((item) => formData.append(key + '[]', item));
+                    }
+                    else {
+                        formData.append(key, value);
+                    }
+                }
+            }
             return this._fetch(null, {}, 'POST', formData).then((request) => {
                 this.dispatch('file:complete');
                 return request;
             });
         });
     }
-    upload(name, file) {
+    upload(name, file, additionalFields = {}) {
         return __awaiter(this, void 0, void 0, function* () {
-            return this.file(name, file);
+            return this.file(name, file, additionalFields);
         });
     }
-    fetch(options = {}, queryParams = {}) {
+    fetch(options = {}, queryParams = {}, method = 'get', body = {}, headers = {}) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield this._fetch(options, queryParams);
+            return yield this._fetch(options, queryParams, method, body, headers);
         });
     }
     runLast() {
@@ -222,7 +264,7 @@ class ActiveRecord extends Core_1.default {
     }
     getUrlByMethod(method) {
         let url = '';
-        let originalEndpoint = this.getEndpoint();
+        const originalEndpoint = this.getEndpoint();
         if (method === 'delete' && this.endpointDelete) {
             this.endpoint = this.endpointDelete;
         }
@@ -285,7 +327,7 @@ class ActiveRecord extends Core_1.default {
         return this;
     }
     setHeaders(headers) {
-        for (let k in headers) {
+        for (const k in headers) {
             this.setHeader(k, headers[k]);
         }
         return this;
@@ -304,12 +346,27 @@ class ActiveRecord extends Core_1.default {
         delete this.headers[header];
         return this;
     }
+    setMockData(key = 'any', jsonData) {
+        const response = {
+            config: {},
+            data: jsonData,
+            headers: {},
+            status: 200,
+            statusText: 'OK',
+        };
+        Request_js_1.default.cachedResponses.set(key, response, 1000 * 9999);
+        return this;
+    }
+    unsetMockData(key = 'any') {
+        Request_js_1.default.cachedResponses.delete(key);
+        return this;
+    }
     setQueryParam(key, value) {
         this.builder.qp(key, value);
         return this;
     }
     setQueryParams(params) {
-        for (let k in params) {
+        for (const k in params) {
             this.setQueryParam(k, params[k]);
         }
         return this;
@@ -325,15 +382,15 @@ class ActiveRecord extends Core_1.default {
     setAfterResponse(e, options = {}) {
         const request = e.detail.request;
         const response = e.detail.response;
-        let method = request.method || 'get';
-        let remoteJson = response.data;
+        const method = request.method || 'get';
+        const remoteJson = response.data;
         if (method.toLowerCase() === 'post' && !this.isModel) {
             this.add((this.dataKey ? remoteJson[this.dataKey] : remoteJson) || response.data);
         }
         else if (method.toLowerCase() === 'delete') {
         }
         else {
-            let data = this.dataKey !== undefined ? remoteJson[this.dataKey] : remoteJson.responseData || response.data;
+            const data = this.dataKey !== undefined ? remoteJson[this.dataKey] : remoteJson.responseData || response.data;
             this.set(data, options);
         }
         this.setOptions(Object.assign({}, options, { meta: remoteJson.meta }));
@@ -358,10 +415,12 @@ class ActiveRecord extends Core_1.default {
             this.builder.identifier(options.id);
         }
         const url = this.getUrlByMethod(method);
+        const ttl = this.ttl || 0;
+        this.ttl = 0;
         this.dispatch('requesting', { request: this.lastRequest });
         this.hasFetched = true;
         this.loading = true;
-        let request = (this.request = new Request_1.default(url, {
+        const request = (this.request = new Request_js_1.default(url, {
             dataKey: this.dataKey,
             withCredentials: this.options.withCredentials,
         }));
@@ -378,47 +437,14 @@ class ActiveRecord extends Core_1.default {
         request.on('error:get', (e) => this.dispatch('error:get', e.detail));
         request.on('error:post', (e) => this.dispatch('error:post', e.detail));
         request.on('error:put', (e) => this.dispatch('error:put', e.detail));
-        request.on('error', (e) => this.dispatch('error', e.detail));
+        request.on('error', (e) => {
+            this.loading = false;
+            return this.dispatch('error', e.detail);
+        });
+        request.on('finish', (e) => this.dispatch('finish'));
         request.on('parse:after', (e) => this.FetchParseAfter(e, options || {}));
         request.on('progress', (e) => this.FetchProgress(e));
-        return request.fetch(method, Object.assign(body || {}, this.body), Object.assign(headers || {}, this.headers));
-    }
-    cache(key, value, isComplete = false, ttl = 5000) {
-        if (ActiveRecord.cachedResponses[key]) {
-            ActiveRecord.cachedResponses[key].complete = isComplete;
-            ActiveRecord.cachedResponses[key].time = Date.now();
-            ActiveRecord.cachedResponses[key].value = value;
-        }
-        else {
-            ActiveRecord.cachedResponses[key] = {
-                complete: false,
-                subscribers: [],
-                time: Date.now(),
-                ttl: ttl,
-                value: value,
-            };
-        }
-    }
-    isCached(key) {
-        return !!ActiveRecord.cachedResponses[key];
-    }
-    isCachePending(key) {
-        return !!this.isCached(key) && (!this.getCache(key).complete || !!this.getCache(key).failed);
-    }
-    getCache(key) {
-        return ActiveRecord.cachedResponses[key];
-    }
-    addCacheSubscriber(key, resolve, reject, collection) {
-        const cache = this.getCache(key);
-        cache.subscribers.push({
-            collection,
-            reject,
-            resolve,
-        });
-    }
-    clearCacheSubscribers(key) {
-        const cache = this.getCache(key);
-        cache.subscribers = [];
+        return request.fetch(method, Object.assign(body || {}, this.body), Object.assign(headers || {}, this.headers), ttl);
     }
     FetchComplete(e) {
         this.hasLoaded = true;
@@ -438,8 +464,77 @@ class ActiveRecord extends Core_1.default {
     }
 }
 exports["default"] = ActiveRecord;
-ActiveRecord.cachedResponses = {};
+ActiveRecord.hooks = new Map();
 //# sourceMappingURL=ActiveRecord.js.map
+
+/***/ }),
+
+/***/ "../../build/esm/Cache.js":
+/*!********************************!*\
+  !*** ../../build/esm/Cache.js ***!
+  \********************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+class Cache {
+    constructor() {
+        this.storage = {};
+    }
+    delete(key) {
+        if (this.storage[key]) {
+            delete this.storage[key];
+        }
+    }
+    get(key, keep = false) {
+        const item = this.storage[key];
+        let value;
+        if (!item) {
+            value = undefined;
+        }
+        else if (item.ttl === 0) {
+            value = item.value;
+            !keep && this.delete(key);
+        }
+        else if (this.isCachedItemHealthy(item)) {
+            value = item.value;
+        }
+        return value;
+    }
+    exists(key) {
+        return this.storage[key] !== undefined;
+    }
+    has(key) {
+        return this.get(key, true) !== undefined;
+    }
+    set(key, value, ttl = 0, immutable = false) {
+        const hasItem = this.has(key);
+        const time = Date.now();
+        if (hasItem && this.isImmutable(key)) {
+            return false;
+        }
+        this.storage[key] = {
+            immutable,
+            time,
+            ttl,
+            value,
+        };
+        return true;
+    }
+    isCachedItemHealthy(item) {
+        const now = Date.now();
+        const then = item.time;
+        const ttl = item.ttl;
+        return then + ttl > now;
+    }
+    isImmutable(key) {
+        const item = this.storage[key];
+        return !!(item === null || item === void 0 ? void 0 : item.immutable);
+    }
+}
+exports["default"] = Cache;
+//# sourceMappingURL=Cache.js.map
 
 /***/ }),
 
@@ -460,11 +555,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const ActiveRecord_1 = __webpack_require__(/*! ./ActiveRecord */ "../../build/esm/ActiveRecord.js");
-const CollectionIterator_1 = __webpack_require__(/*! ./CollectionIterator */ "../../build/esm/CollectionIterator.js");
-const Model_1 = __webpack_require__(/*! ./Model */ "../../build/esm/Model.js");
-class Collection extends ActiveRecord_1.default {
+const ActiveRecord_js_1 = __importDefault(__webpack_require__(/*! ./ActiveRecord.js */ "../../build/esm/ActiveRecord.js"));
+const CollectionIterator_js_1 = __importDefault(__webpack_require__(/*! ./CollectionIterator.js */ "../../build/esm/CollectionIterator.js"));
+const Model_js_1 = __importDefault(__webpack_require__(/*! ./Model.js */ "../../build/esm/Model.js"));
+class Collection extends ActiveRecord_js_1.default {
     constructor(options = {}) {
         super(options);
         this.atRelationship = [];
@@ -518,6 +616,15 @@ class Collection extends ActiveRecord_1.default {
             return yield this._fetch(options, qp, this.lastRequest.method, this.lastRequest.body, this.lastRequest.headers);
         });
     }
+    fetchPrevious(append = false) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let options = Object.assign({}, this.lastRequest.options);
+            let qp = Object.assign({}, this.builder.queryParams, this.lastRequest.queryParams);
+            qp.page = Math.max(1, parseFloat(qp.page) - 1);
+            options.merge = append;
+            return yield this._fetch(options, qp, this.lastRequest.method, this.lastRequest.body, this.lastRequest.headers);
+        });
+    }
     getEndpoint() {
         return super.getEndpoint() || this.model.endpoint;
     }
@@ -527,7 +634,7 @@ class Collection extends ActiveRecord_1.default {
         }
         const models = Array.isArray(data) ? data : [data];
         models.forEach((model) => {
-            if (!(model instanceof Model_1.default)) {
+            if (!(model instanceof Model_js_1.default)) {
                 model = new this.model.constructor(model);
                 model.parent = this;
                 model.headers = this.headers;
@@ -596,6 +703,9 @@ class Collection extends ActiveRecord_1.default {
     filter(predicate) {
         return this.models.filter(predicate);
     }
+    map(...params) {
+        return Array.prototype.map.apply(this.models, params);
+    }
     push(model, options = {}) {
         this.add(model, options);
         return this;
@@ -624,7 +734,7 @@ class Collection extends ActiveRecord_1.default {
         if (query == null) {
             return void 0;
         }
-        return this.where({ [this.modelId]: query instanceof Model_1.default ? query.id : query }, true);
+        return this.where({ [this.modelId]: query instanceof Model_js_1.default ? query.id : query }, true);
     }
     has(obj) {
         return this.get(obj) != undefined;
@@ -696,63 +806,16 @@ class Collection extends ActiveRecord_1.default {
         return instance;
     }
     values() {
-        return new CollectionIterator_1.default(this, CollectionIterator_1.default.ITERATOR_VALUES);
+        return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_VALUES);
     }
     keys(attributes = {}) {
-        return new CollectionIterator_1.default(this, CollectionIterator_1.default.ITERATOR_KEYS);
+        return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_KEYS);
     }
     entries(attributes = {}) {
-        return new CollectionIterator_1.default(this, CollectionIterator_1.default.ITERATOR_KEYSVALUES);
-    }
-    _fetch(options = {}, queryParams = {}, method = 'get', body = {}, headers = {}) {
-        const cacheKey = this.b.getUrl();
-        if (this.isCachePending(cacheKey)) {
-            return new Promise((resolve, reject) => {
-                this.addCacheSubscriber(cacheKey, resolve, reject, this);
-            });
-        }
-        this.cache(cacheKey, true);
-        return (super
-            ._fetch(options, queryParams, method, body, headers)
-            .then((request) => {
-            var _a, _b, _c;
-            const data = (_a = request.response) === null || _a === void 0 ? void 0 : _a.data;
-            const method = request.method || 'get';
-            this.cache(cacheKey, request, true);
-            (_c = (_b = this.getCache(cacheKey)) === null || _b === void 0 ? void 0 : _b.subscribers) === null || _c === void 0 ? void 0 : _c.forEach((subscriber) => {
-                subscriber.collection.setAfterResponse({
-                    detail: {
-                        request: request,
-                        response: request.response,
-                    },
-                });
-                subscriber.collection.dispatch('complete', {
-                    request: request,
-                    response: request.response,
-                });
-                subscriber.collection.dispatch('complete:' + method, {
-                    request: request,
-                    response: request.response,
-                });
-                subscriber.resolve(request);
-            });
-            this.clearCacheSubscribers(cacheKey);
-            return request;
-        })
-            .catch((request) => {
-            var _a, _b;
-            this.dispatch('error', {
-                request: request,
-                response: request.response,
-            });
-            this.cache(cacheKey, request, true);
-            (_b = (_a = this.getCache(cacheKey)) === null || _a === void 0 ? void 0 : _a.subscribers) === null || _b === void 0 ? void 0 : _b.forEach((subscriber) => subscriber.reject(request));
-            this.clearCacheSubscribers(cacheKey);
-            throw request;
-        }));
+        return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_KEYSVALUES);
     }
     [Symbol.iterator]() {
-        return new CollectionIterator_1.default(this, CollectionIterator_1.default.ITERATOR_VALUES);
+        return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_VALUES);
     }
 }
 exports["default"] = Collection;
@@ -820,13 +883,16 @@ CollectionIterator.ITERATOR_KEYSVALUES = 2;
 /*!*******************************!*\
   !*** ../../build/esm/Core.js ***!
   \*******************************/
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
 
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const Dispatcher_1 = __webpack_require__(/*! ./Dispatcher/Dispatcher */ "../../build/esm/Dispatcher/Dispatcher.js");
-class Core extends Dispatcher_1.default {
+const Dispatcher_js_1 = __importDefault(__webpack_require__(/*! ./Dispatcher/Dispatcher.js */ "../../build/esm/Dispatcher/Dispatcher.js"));
+class Core extends Dispatcher_js_1.default {
     constructor(options = {}) {
         super();
         Object.assign(this, options);
@@ -841,12 +907,15 @@ exports["default"] = Core;
 /*!************************************************!*\
   !*** ../../build/esm/Dispatcher/Dispatcher.js ***!
   \************************************************/
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
 
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const DispatcherEvent_1 = __webpack_require__(/*! ./DispatcherEvent */ "../../build/esm/Dispatcher/DispatcherEvent.js");
+const DispatcherEvent_js_1 = __importDefault(__webpack_require__(/*! ./DispatcherEvent.js */ "../../build/esm/Dispatcher/DispatcherEvent.js"));
 class Dispatcher {
     constructor() {
         this.events = {};
@@ -878,7 +947,7 @@ class Dispatcher {
     on(eventName, callback) {
         let event = this.events[eventName];
         if (!event) {
-            event = new DispatcherEvent_1.default(eventName, {});
+            event = new DispatcherEvent_js_1.default(eventName, {});
             this.events[eventName] = event;
         }
         event.registerCallback(callback);
@@ -1037,15 +1106,19 @@ exports["default"] = Builder;
 /*!***************************************!*\
   !*** ../../build/esm/Http/Request.js ***!
   \***************************************/
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
 
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const axios_1 = __webpack_require__(/*! axios */ "../../node_modules/axios/index.js");
-const Core_1 = __webpack_require__(/*! ../Core */ "../../build/esm/Core.js");
-const RequestError_1 = __webpack_require__(/*! ./RequestError */ "../../build/esm/Http/RequestError.js");
-class Request extends Core_1.default {
+const axios_1 = __importDefault(__webpack_require__(/*! axios */ "../../node_modules/axios/index.js"));
+const Cache_js_1 = __importDefault(__webpack_require__(/*! ../Cache.js */ "../../build/esm/Cache.js"));
+const Core_js_1 = __importDefault(__webpack_require__(/*! ../Core.js */ "../../build/esm/Core.js"));
+const RequestError_js_1 = __importDefault(__webpack_require__(/*! ./RequestError.js */ "../../build/esm/Http/RequestError.js"));
+class Request extends Core_js_1.default {
     constructor(url = '', options = {}) {
         super();
         this.dataKey = 'data';
@@ -1061,7 +1134,7 @@ class Request extends Core_1.default {
         this.url = this.url.replace(/\?$/, '');
         this.url = this.url.replace(/\?&/, '?');
     }
-    fetch(method = 'GET', body = {}, headers = {}) {
+    fetch(method = 'GET', body = {}, headers = {}, ttl = 0) {
         const params = {};
         const requestEvent = {
             body,
@@ -1089,9 +1162,25 @@ class Request extends Core_1.default {
         this.loading = true;
         this.dispatch('requesting', { request: requestEvent });
         return new Promise((resolve, reject) => {
-            (0, axios_1.default)(params)
+            let cacheKey = `${params.method}.${params.url}`;
+            new Promise((resolveCacheLayer) => {
+                if (Request.cachedResponses.has(cacheKey)) {
+                    const result = Request.cachedResponses.get(cacheKey);
+                    resolveCacheLayer(result);
+                }
+                else if (Request.cachedResponses.has('any')) {
+                    const result = Request.cachedResponses.get('any');
+                    resolveCacheLayer(result);
+                }
+                else {
+                    resolveCacheLayer((0, axios_1.default)(params));
+                }
+            })
                 .then((response) => {
                 this.response = response;
+                if (ttl > 0) {
+                    Request.cachedResponses.set(cacheKey, response, ttl);
+                }
                 if (!this.response) {
                     return;
                 }
@@ -1100,15 +1189,14 @@ class Request extends Core_1.default {
                 this.afterParse(this.response);
                 this.afterFetch(this.response);
                 this.afterAll(this.response);
+                this.afterAny();
                 resolve(this);
                 return response;
             })
                 .catch((error) => {
                 this.response = error.response;
-                if (!this.response) {
-                    return;
-                }
                 this.afterAllError(error);
+                this.afterAny();
                 reject(this);
                 return error;
             });
@@ -1185,7 +1273,7 @@ class Request extends Core_1.default {
         var _a, _b;
         if (response.status >= 400 && ((_a = response.data) === null || _a === void 0 ? void 0 : _a.status)) {
             const message = ((_b = response.data) === null || _b === void 0 ? void 0 : _b.message) || response.data || '';
-            throw new RequestError_1.default(response.status, message);
+            throw new RequestError_js_1.default(response.status, message);
         }
         this.dispatch('parse:after', {
             request: this,
@@ -1221,10 +1309,10 @@ class Request extends Core_1.default {
         });
     }
     afterAllError(e) {
-        var _a;
-        const data = e.message;
-        const status = e.response.status;
-        const method = (((_a = e.config) === null || _a === void 0 ? void 0 : _a.method) || 'get').toLowerCase();
+        var _a, _b;
+        const data = e.message || 'Unknown error';
+        const status = ((_a = e.response) === null || _a === void 0 ? void 0 : _a.status) || 503;
+        const method = (((_b = e.config) === null || _b === void 0 ? void 0 : _b.method) || 'get').toLowerCase();
         this.responseData = data;
         this.dispatch('error', {
             request: this,
@@ -1235,8 +1323,12 @@ class Request extends Core_1.default {
             response: e,
         });
     }
+    afterAny() {
+        this.dispatch('finish', { request: this });
+    }
 }
 exports["default"] = Request;
+Request.cachedResponses = new Cache_js_1.default();
 //# sourceMappingURL=Request.js.map
 
 /***/ }),
@@ -1279,9 +1371,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const ActiveRecord_1 = __webpack_require__(/*! ./ActiveRecord */ "../../build/esm/ActiveRecord.js");
-class Model extends ActiveRecord_1.default {
+const ActiveRecord_js_1 = __importDefault(__webpack_require__(/*! ./ActiveRecord.js */ "../../build/esm/ActiveRecord.js"));
+class Model extends ActiveRecord_js_1.default {
     constructor(attributes = {}, options = {}) {
         super(options);
         this.relationships = {};
@@ -1381,26 +1476,31 @@ Model.useDescendingRelationships = true;
 /*!********************************!*\
   !*** ../../build/esm/index.js ***!
   \********************************/
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
 
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Request = exports.Model = exports.DispatcherEvent = exports.Dispatcher = exports.Core = exports.Collection = exports.ActiveRecord = void 0;
-var ActiveRecord_1 = __webpack_require__(/*! ./ActiveRecord */ "../../build/esm/ActiveRecord.js");
-Object.defineProperty(exports, "ActiveRecord", ({ enumerable: true, get: function () { return ActiveRecord_1.default; } }));
-var Collection_1 = __webpack_require__(/*! ./Collection */ "../../build/esm/Collection.js");
-Object.defineProperty(exports, "Collection", ({ enumerable: true, get: function () { return Collection_1.default; } }));
-var Core_1 = __webpack_require__(/*! ./Core */ "../../build/esm/Core.js");
-Object.defineProperty(exports, "Core", ({ enumerable: true, get: function () { return Core_1.default; } }));
-var Dispatcher_1 = __webpack_require__(/*! ./Dispatcher/Dispatcher */ "../../build/esm/Dispatcher/Dispatcher.js");
-Object.defineProperty(exports, "Dispatcher", ({ enumerable: true, get: function () { return Dispatcher_1.default; } }));
-var DispatcherEvent_1 = __webpack_require__(/*! ./Dispatcher/DispatcherEvent */ "../../build/esm/Dispatcher/DispatcherEvent.js");
-Object.defineProperty(exports, "DispatcherEvent", ({ enumerable: true, get: function () { return DispatcherEvent_1.default; } }));
-var Model_1 = __webpack_require__(/*! ./Model */ "../../build/esm/Model.js");
-Object.defineProperty(exports, "Model", ({ enumerable: true, get: function () { return Model_1.default; } }));
-var Request_1 = __webpack_require__(/*! ./Http/Request */ "../../build/esm/Http/Request.js");
-Object.defineProperty(exports, "Request", ({ enumerable: true, get: function () { return Request_1.default; } }));
+exports.Request = exports.Model = exports.DispatcherEvent = exports.Dispatcher = exports.Core = exports.Collection = exports.Cache = exports.ActiveRecord = void 0;
+var ActiveRecord_js_1 = __webpack_require__(/*! ./ActiveRecord.js */ "../../build/esm/ActiveRecord.js");
+Object.defineProperty(exports, "ActiveRecord", ({ enumerable: true, get: function () { return __importDefault(ActiveRecord_js_1).default; } }));
+var Cache_js_1 = __webpack_require__(/*! ./Cache.js */ "../../build/esm/Cache.js");
+Object.defineProperty(exports, "Cache", ({ enumerable: true, get: function () { return __importDefault(Cache_js_1).default; } }));
+var Collection_js_1 = __webpack_require__(/*! ./Collection.js */ "../../build/esm/Collection.js");
+Object.defineProperty(exports, "Collection", ({ enumerable: true, get: function () { return __importDefault(Collection_js_1).default; } }));
+var Core_js_1 = __webpack_require__(/*! ./Core.js */ "../../build/esm/Core.js");
+Object.defineProperty(exports, "Core", ({ enumerable: true, get: function () { return __importDefault(Core_js_1).default; } }));
+var Dispatcher_js_1 = __webpack_require__(/*! ./Dispatcher/Dispatcher.js */ "../../build/esm/Dispatcher/Dispatcher.js");
+Object.defineProperty(exports, "Dispatcher", ({ enumerable: true, get: function () { return __importDefault(Dispatcher_js_1).default; } }));
+var DispatcherEvent_js_1 = __webpack_require__(/*! ./Dispatcher/DispatcherEvent.js */ "../../build/esm/Dispatcher/DispatcherEvent.js");
+Object.defineProperty(exports, "DispatcherEvent", ({ enumerable: true, get: function () { return __importDefault(DispatcherEvent_js_1).default; } }));
+var Model_js_1 = __webpack_require__(/*! ./Model.js */ "../../build/esm/Model.js");
+Object.defineProperty(exports, "Model", ({ enumerable: true, get: function () { return __importDefault(Model_js_1).default; } }));
+var Request_js_1 = __webpack_require__(/*! ./Http/Request.js */ "../../build/esm/Http/Request.js");
+Object.defineProperty(exports, "Request", ({ enumerable: true, get: function () { return __importDefault(Request_js_1).default; } }));
 //# sourceMappingURL=index.js.map
 
 /***/ }),
@@ -1510,7 +1610,7 @@ async function fetchUsers() {
     const parentElement = document.querySelector('#app');
     const userCollection = new User_1.default();
     userCollection.on('complete', (e) => {
-        console.log('oh ok ', e);
+        console.log('Received data: ', e);
     });
     await userCollection.fetch();
     userCollection.each((model) => addUser(model, parentElement));
@@ -3568,6 +3668,18 @@ module.exports = {
   trim: trim,
   stripBOM: stripBOM
 };
+
+
+/***/ }),
+
+/***/ "../../node_modules/form-data/lib/browser.js":
+/*!***************************************************!*\
+  !*** ../../node_modules/form-data/lib/browser.js ***!
+  \***************************************************/
+/***/ ((module) => {
+
+/* eslint-env browser */
+module.exports = typeof self == 'object' ? self.FormData : window.FormData;
 
 
 /***/ }),

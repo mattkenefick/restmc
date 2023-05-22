@@ -24,7 +24,7 @@ async function fetchUsers(): Promise<void> {
 	// userCollection.setHeader('x-foo', 'bar');
 
 	userCollection.on('complete', (e) => {
-		console.log('oh ok ', e);
+		console.log('Received data: ', e);
 	});
 
 	// Fetch remotely
