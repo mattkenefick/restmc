@@ -41,7 +41,9 @@ class Collection extends ActiveRecord_js_1.default {
     }
     static hydrate(models = [], options = {}) {
         const collection = new this(options);
-        collection.add(models);
+        if (models) {
+            collection.add(models);
+        }
         collection.setOptions(options);
         return collection;
     }
@@ -86,11 +88,11 @@ class Collection extends ActiveRecord_js_1.default {
         models.forEach((model) => {
             if (!(model instanceof Model_js_1.default)) {
                 model = new this.model.constructor(model);
-                model.parent = this;
-                model.headers = this.headers;
-                if (this.referenceForModifiedEndpoint) {
-                    model.useModifiedEndpoint(this.referenceForModifiedEndpoint);
-                }
+            }
+            model.parent = this;
+            model.headers = this.headers;
+            if (this.referenceForModifiedEndpoint) {
+                model.useModifiedEndpoint(this.referenceForModifiedEndpoint);
             }
             if (options.prepend) {
                 this.models.unshift(model);
