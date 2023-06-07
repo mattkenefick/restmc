@@ -54,12 +54,14 @@ export default class Collection<GenericModel extends Model>
 	 * @param object options
 	 * @type Collection
 	 */
-	public static hydrate<T>(models: Model[] = [], options: object = {}): any {
+	public static hydrate<T>(models: Model[] | any = [], options: object = {}): any {
 		// Instantiate collection
 		const collection = new this(options);
 
 		// Add models to collection
-		collection.add(models);
+		if (models) {
+			collection.add(models);
+		}
 
 		// Add options to collection
 		collection.setOptions(options);
@@ -242,22 +244,24 @@ export default class Collection<GenericModel extends Model>
 			return this;
 		}
 
-		// Allow multiple or singles
+		// Allow multiple models/data or single
 		const models: any = Array.isArray(data) ? data : [data];
 
-		// Iterate through supplied models
+		// Iterate through supplied models/data
 		models.forEach((model: GenericModel) => {
 			// Data supplied is an object that must be instantiated
 			if (!(model instanceof Model)) {
 				// @ts-ignore
 				model = new this.model.constructor(model);
-				model.parent = this;
-				model.headers = this.headers;
+			}
 
-				// Check the modified endpoint
-				if (this.referenceForModifiedEndpoint) {
-					model.useModifiedEndpoint(this.referenceForModifiedEndpoint);
-				}
+			// Set references on model
+			model.parent = this;
+			model.headers = this.headers;
+
+			// Check the modified endpoint
+			if (this.referenceForModifiedEndpoint) {
+				model.useModifiedEndpoint(this.referenceForModifiedEndpoint);
 			}
 
 			if (options.prepend) {
