@@ -35,7 +35,8 @@ import {
  */
 export default class Collection<GenericModel extends Model>
 	extends ActiveRecord<Collection<GenericModel>>
-	implements Iterable<GenericModel> {
+	implements Iterable<GenericModel>
+{
 	/**
 	 * This static function could be overridden globally depending on the
 	 * structure of your API. By default, we assume it's within .meta
@@ -67,6 +68,13 @@ export default class Collection<GenericModel extends Model>
 		collection.setOptions(options);
 
 		return collection;
+	}
+
+	/**
+	 * @return boolean
+	 */
+	protected get isCollection(): boolean {
+		return true;
 	}
 
 	/**
@@ -266,8 +274,7 @@ export default class Collection<GenericModel extends Model>
 
 			if (options.prepend) {
 				this.models.unshift(model);
-			}
-			else {
+			} else {
 				this.models.push(model);
 			}
 		});
@@ -297,8 +304,7 @@ export default class Collection<GenericModel extends Model>
 			while (i < this.models.length) {
 				if (this.models[i] == items[ii]) {
 					this.models.splice(i, 1);
-				}
-				else {
+				} else {
 					++i;
 				}
 			}
@@ -561,7 +567,7 @@ export default class Collection<GenericModel extends Model>
 		// @todo, this code sucks but I'm not spending all day here
 		this.models.map((model: any) => {
 			const intersection: string[] = Object.keys(model.attributes).filter(
-				(k: string) => k in attributes && model.attr(k) == attributes[k],
+				(k: string) => k in attributes && model.attr(k) == attributes[k]
 			);
 
 			if (intersection.length) {
