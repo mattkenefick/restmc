@@ -97,6 +97,11 @@ export default class Request extends Core implements IRequest {
 	public responseData: IAttributes = {};
 
 	/**
+	 * @type number
+	 */
+	public status: number = 0;
+
+	/**
 	 * @type string
 	 */
 	public url: string;
@@ -138,7 +143,7 @@ export default class Request extends Core implements IRequest {
 		method: string = 'GET',
 		body: IAttributes = {},
 		headers: IAttributes = {},
-		ttl: number = 0,
+		ttl: number = 0
 	): Promise<Request> {
 		const params: IAttributes = {};
 		const requestEvent: IRequestEvent = {
@@ -191,14 +196,12 @@ export default class Request extends Core implements IRequest {
 
 					// console.log('💾 Cached Response: ', cacheKey);
 					resolveCacheLayer(result);
-				}
-				else if (Request.cachedResponses.has('any')) {
+				} else if (Request.cachedResponses.has('any')) {
 					const result = Request.cachedResponses.get('any');
 
 					// console.log('💿 Any Cached Response');
 					resolveCacheLayer(result);
-				}
-				else {
+				} else {
 					// console.log('🚦 Requesting remote');
 					resolveCacheLayer(axios(params));
 				}
@@ -319,11 +322,11 @@ export default class Request extends Core implements IRequest {
 		const xhrSend = xhr.send;
 
 		// Create new `send`
-		xhr.send = function() {
+		xhr.send = function () {
 			const xhrArguments: any = arguments;
 
-			return new Promise(function(resolve, reject) {
-				xhr.upload.onprogress = function(e) {
+			return new Promise(function (resolve, reject) {
+				xhr.upload.onprogress = function (e) {
 					const progressEvent: IProgressEvent = {
 						loaded: e.loaded,
 						ratio: 1,
@@ -337,7 +340,7 @@ export default class Request extends Core implements IRequest {
 					self.dispatch('progress', { progress: progressEvent });
 				};
 
-				xhr.onload = function() {
+				xhr.onload = function () {
 					let blob = new Blob([xhr.response], { type: 'application/json' });
 					let init = {
 						status: xhr.status,
@@ -348,7 +351,7 @@ export default class Request extends Core implements IRequest {
 					resolve(response);
 				};
 
-				xhr.onerror = function() {
+				xhr.onerror = function () {
 					reject({ request: xhr });
 				};
 
@@ -476,6 +479,9 @@ export default class Request extends Core implements IRequest {
 		const status: number = e.status;
 		const method: string = (e.config?.method || 'get').toLowerCase();
 
+		// Set status
+		this.status = status;
+
 		// Check request
 		this.dispatch('complete', {
 			request: this,
@@ -501,6 +507,9 @@ export default class Request extends Core implements IRequest {
 		// causes duplicates when listening on('error' ...)
 		// this.dispatch('error', e.data);
 		this.responseData = data;
+
+		// Set status
+		this.status = status;
 
 		this.dispatch('error', {
 			request: this,
