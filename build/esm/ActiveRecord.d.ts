@@ -2,7 +2,6 @@ import { IAttributes, IDispatcherCallbackFunction, IDispatcherEvent, IModelReque
 import Builder from './Http/Builder.js';
 import Core from './Core.js';
 import HttpRequest from './Http/Request.js';
-declare type FetchResponse = Promise<HttpRequest>;
 export default class ActiveRecord<T> extends Core {
     private static hooks;
     static setHook(event: string | undefined, func: any): void;
@@ -50,11 +49,11 @@ export default class ActiveRecord<T> extends Core {
     unset(key: string): ActiveRecord<T>;
     setOptions(options?: IAttributes): ActiveRecord<T>;
     toJSON(): object;
-    create(attributes: IAttributes): FetchResponse;
-    delete(attributes?: IAttributes): FetchResponse;
-    post(attributes?: IAttributes): FetchResponse;
-    put(attributes: IAttributes): FetchResponse;
-    save(attributes?: IAttributes): FetchResponse;
+    create(attributes: IAttributes): Promise<HttpRequest>;
+    delete(attributes?: IAttributes): Promise<HttpRequest>;
+    post(attributes?: IAttributes): Promise<HttpRequest>;
+    put(attributes: IAttributes): Promise<HttpRequest>;
+    save(attributes?: IAttributes): Promise<HttpRequest>;
     add(attributes: IAttributes): ActiveRecord<T>;
     reset(): ActiveRecord<T>;
     addLoadingHooks(view: any, preHook?: IDispatcherCallbackFunction | undefined, postHook?: IDispatcherCallbackFunction | undefined): ActiveRecord<T>;
@@ -62,15 +61,17 @@ export default class ActiveRecord<T> extends Core {
     cache(ttl: number): ActiveRecord<T>;
     mock(data: any): ActiveRecord<T>;
     find(id: string | number, queryParams?: IModelRequestQueryParams): Promise<ActiveRecord<T>>;
-    file(name: string, file: any, additionalFields?: Record<string, any>): FetchResponse;
-    upload(name: string, file: any, additionalFields?: Record<string, any>): FetchResponse;
-    fetch(options?: IModelRequestOptions, queryParams?: IModelRequestQueryParams, method?: string, body?: IAttributes, headers?: IAttributes): FetchResponse;
-    runLast(): FetchResponse | void;
+    file(name: string, file: any, additionalFields?: Record<string, any>): Promise<HttpRequest>;
+    upload(name: string, file: any, additionalFields?: Record<string, any>): Promise<HttpRequest>;
+    fetch(options?: IModelRequestOptions, queryParams?: IModelRequestQueryParams, method?: string, body?: IAttributes, headers?: IAttributes): Promise<HttpRequest>;
+    runLast(): Promise<HttpRequest> | void;
     getUrlByMethod(method: string): string;
     cancelModifiedEndpoint(): ActiveRecord<T>;
     isUsingModifiedEndpoint(): boolean;
     getReferencedEndpoint(): ActiveRecord<T> | undefined;
     getModifiedEndpoint(): string;
+    hasParent(): boolean;
+    hasParentCollection(): boolean;
     useModifiedEndpoint(activeRecord: ActiveRecord<any>, position?: string): ActiveRecord<T>;
     setBody(value: IAttributes): ActiveRecord<T>;
     getEndpoint(): string;
@@ -87,9 +88,8 @@ export default class ActiveRecord<T> extends Core {
     unsetQueryParam(param: string): ActiveRecord<T>;
     setToken(token: string): ActiveRecord<T>;
     setAfterResponse(e: IDispatcherEvent, options?: any): void;
-    protected _fetch(options?: IModelRequestOptions | null, queryParams?: IModelRequestQueryParams, method?: string, body?: IAttributes, headers?: IAttributes): FetchResponse;
+    protected _fetch(options?: IModelRequestOptions | null, queryParams?: IModelRequestQueryParams, method?: string, body?: IAttributes, headers?: IAttributes): Promise<HttpRequest>;
     protected FetchComplete(e: IDispatcherEvent): void;
     protected FetchProgress(e: IDispatcherEvent): void;
     protected FetchParseAfter(e: IDispatcherEvent, options?: IAttributes): void;
 }
-export {};

@@ -12,6 +12,7 @@ export default class Request extends Core implements IRequest {
     request?: Promise<Request | Response | AxiosResponse<any>>;
     response?: IAxiosResponse | IAxiosSuccess;
     responseData: IAttributes;
+    status: number;
     url: string;
     withCredentials: boolean;
     constructor(url?: string, options?: IAttributes);

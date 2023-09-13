@@ -6,6 +6,7 @@ import { IAttributes, ICollectionMeta, IPagination } from './Interfaces.js';
 export default class Collection<GenericModel extends Model> extends ActiveRecord<Collection<GenericModel>> implements Iterable<GenericModel> {
     static paginator(collection: any): IPagination;
     static hydrate<T>(models?: Model[] | any, options?: object): any;
+    protected get isCollection(): boolean;
     get length(): number;
     get modelId(): string;
     get pagination(): IPagination;

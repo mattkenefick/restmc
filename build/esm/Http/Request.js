@@ -13,6 +13,7 @@ class Request extends Core_js_1.default {
         this.method = 'get';
         this.mode = 'cors';
         this.responseData = {};
+        this.status = 0;
         this.withCredentials = true;
         this.dataKey = options.dataKey || this.dataKey;
         this.withCredentials = options.hasOwnProperty('withCredentials') ? options.withCredentials : true;
@@ -185,6 +186,7 @@ class Request extends Core_js_1.default {
         const data = e.data;
         const status = e.status;
         const method = (((_a = e.config) === null || _a === void 0 ? void 0 : _a.method) || 'get').toLowerCase();
+        this.status = status;
         this.dispatch('complete', {
             request: this,
             response: e,
@@ -200,6 +202,7 @@ class Request extends Core_js_1.default {
         const status = ((_a = e.response) === null || _a === void 0 ? void 0 : _a.status) || 503;
         const method = (((_b = e.config) === null || _b === void 0 ? void 0 : _b.method) || 'get').toLowerCase();
         this.responseData = data;
+        this.status = status;
         this.dispatch('error', {
             request: this,
             response: e,

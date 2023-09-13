@@ -47,6 +47,9 @@ class Collection extends ActiveRecord_js_1.default {
         collection.setOptions(options);
         return collection;
     }
+    get isCollection() {
+        return true;
+    }
     get length() {
         return this.models.length;
     }

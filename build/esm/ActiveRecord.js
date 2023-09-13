@@ -134,19 +134,32 @@ class ActiveRecord extends Core_js_1.default {
     }
     delete(attributes = {}) {
         const url = this.builder.identifier(this.id || (attributes === null || attributes === void 0 ? void 0 : attributes.id) || '').getUrl();
-        return this._fetch(null, {}, 'DELETE', Object.assign(attributes || {}, this.attributes), this.headers);
+        const output = this._fetch(null, {}, 'DELETE', Object.assign(attributes || {}, this.attributes), this.headers);
+        output.then((request) => {
+            var _a;
+            if (request.status < 200 || request.status > 299) {
+                return;
+            }
+            if (this.hasParentCollection()) {
+                (_a = this.parent) === null || _a === void 0 ? void 0 : _a.remove(this);
+            }
+        });
+        return output;
     }
     post(attributes = {}) {
         const url = this.builder.getUrl();
-        return this._fetch(null, {}, 'POST', Object.assign(attributes || {}, this.attributes), this.headers);
+        const output = this._fetch(null, {}, 'POST', Object.assign(attributes || {}, this.attributes), this.headers);
+        return output;
     }
     put(attributes) {
         const url = this.builder.getUrl();
-        return this._fetch(null, {}, 'PUT', Object.assign(attributes || {}, this.attributes), this.headers);
+        const output = this._fetch(null, {}, 'PUT', Object.assign(attributes || {}, this.attributes), this.headers);
+        return output;
     }
     save(attributes = {}) {
         const method = this.id ? 'PUT' : 'POST';
-        return this._fetch(null, {}, method, Object.assign(attributes || {}, this.attributes), this.headers);
+        const output = this._fetch(null, {}, method, Object.assign(attributes || {}, this.attributes), this.headers);
+        return output;
     }
     add(attributes) {
         return this.set(attributes);
@@ -281,16 +294,22 @@ class ActiveRecord extends Core_js_1.default {
     getModifiedEndpoint() {
         const activeRecord = this.referenceForModifiedEndpoint;
         if (!activeRecord || (!activeRecord.id && this.modifiedEndpointPosition == 'before')) {
-            console.warn('Modified ActiveRecord [`'
-                + activeRecord.getEndpoint()
-                + '.'
-                + this.getEndpoint()
-                + '] usually has an ID signature. [ar/this]', this);
+            console.warn('Modified ActiveRecord [`' +
+                activeRecord.getEndpoint() +
+                '.' +
+                this.getEndpoint() +
+                '] usually has an ID signature. [ar/this]', this);
             return this.getEndpoint();
         }
         return this.modifiedEndpointPosition == 'before'
             ? [activeRecord.getEndpoint(), activeRecord.id, this.getEndpoint()].join('/')
             : [this.getEndpoint(), this.id, activeRecord.getEndpoint()].join('/');
+    }
+    hasParent() {
+        return !!this.parent;
+    }
+    hasParentCollection() {
+        return this.hasParent() && this.parent.isCollection;
     }
     useModifiedEndpoint(activeRecord, position = 'before') {
         this.referenceForModifiedEndpoint = activeRecord;
