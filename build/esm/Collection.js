@@ -97,6 +97,7 @@ class Collection extends ActiveRecord_js_1.default {
             if (this.referenceForModifiedEndpoint) {
                 model.useModifiedEndpoint(this.referenceForModifiedEndpoint);
             }
+            this.dispatch('add:before', { model });
             if (options.prepend) {
                 this.models.unshift(model);
             }
@@ -115,6 +116,7 @@ class Collection extends ActiveRecord_js_1.default {
         for (ii = 0; ii < items.length; ii++) {
             i = 0;
             while (i < this.models.length) {
+                this.dispatch('remove:before', { model: this.models[i] });
                 if (this.models[i] == items[ii]) {
                     this.models.splice(i, 1);
                 }

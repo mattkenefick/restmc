@@ -272,6 +272,10 @@ export default class Collection<GenericModel extends Model>
 				model.useModifiedEndpoint(this.referenceForModifiedEndpoint);
 			}
 
+			// Trigger event before adding it
+			this.dispatch('add:before', { model });
+
+			// Add to list
 			if (options.prepend) {
 				this.models.unshift(model);
 			} else {
@@ -301,7 +305,10 @@ export default class Collection<GenericModel extends Model>
 		// models. If we are successful, call recursive
 		for (ii = 0; ii < items.length; ii++) {
 			i = 0;
+
 			while (i < this.models.length) {
+				this.dispatch('remove:before', { model: this.models[i] });
+
 				if (this.models[i] == items[ii]) {
 					this.models.splice(i, 1);
 				} else {
