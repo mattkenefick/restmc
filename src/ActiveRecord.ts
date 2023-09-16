@@ -925,6 +925,21 @@ export default class ActiveRecord<T> extends Core {
 	}
 
 	/**
+	 * @param string key
+	 * @return string
+	 */
+	public getQueryParam(key: string): string {
+		return this.builder.getQueryParam(key) || '';
+	}
+
+	/**
+	 * @return any
+	 */
+	public getQueryParams(): any {
+		return this.builder.getQueryParams() || {};
+	}
+
+	/**
 	 * @return boolean
 	 */
 	public hasParent(): boolean {

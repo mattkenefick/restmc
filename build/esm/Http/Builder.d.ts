@@ -10,6 +10,8 @@ export default class Builder<T> {
     getUrl(): string;
     getBaseUrl(): string;
     getEndpoint(): string;
+    getQueryParam(key: string): string;
+    getQueryParams(): any;
     getQueryParamsAsString(): string;
     identifier(id: string | number): Builder<T>;
     include(value: string): Builder<T>;

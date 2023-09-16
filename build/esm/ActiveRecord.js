@@ -305,6 +305,12 @@ class ActiveRecord extends Core_js_1.default {
             ? [activeRecord.getEndpoint(), activeRecord.id, this.getEndpoint()].join('/')
             : [this.getEndpoint(), this.id, activeRecord.getEndpoint()].join('/');
     }
+    getQueryParam(key) {
+        return this.builder.getQueryParam(key) || '';
+    }
+    getQueryParams() {
+        return this.builder.getQueryParams() || {};
+    }
     hasParent() {
         return !!this.parent;
     }

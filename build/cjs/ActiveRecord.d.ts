@@ -70,6 +70,8 @@ export default class ActiveRecord<T> extends Core {
     isUsingModifiedEndpoint(): boolean;
     getReferencedEndpoint(): ActiveRecord<T> | undefined;
     getModifiedEndpoint(): string;
+    getQueryParam(key: string): string;
+    getQueryParams(): any;
     hasParent(): boolean;
     hasParentCollection(): boolean;
     useModifiedEndpoint(activeRecord: ActiveRecord<any>, position?: string): ActiveRecord<T>;

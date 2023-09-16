@@ -43,6 +43,12 @@ class Builder {
             ? this.activeRecord.getModifiedEndpoint()
             : this.activeRecord.getEndpoint();
     }
+    getQueryParam(key) {
+        return this.queryParams[key];
+    }
+    getQueryParams() {
+        return this.queryParams;
+    }
     getQueryParamsAsString() {
         let str = '';
         Object.entries(this.queryParams)

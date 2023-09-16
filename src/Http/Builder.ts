@@ -130,6 +130,21 @@ export default class Builder<T> {
 	}
 
 	/**
+	 * @param string key
+	 * @return string | number
+	 */
+	public getQueryParam(key: string): string {
+		return this.queryParams[key] as string;
+	}
+
+	/**
+	 * @return any
+	 */
+	public getQueryParams(): any {
+		return this.queryParams;
+	}
+
+	/**
 	 * There are alternate approaches to this logic, but this is
 	 * written verbosely to allow for conditionals, modifications,
 	 * and clarity.
