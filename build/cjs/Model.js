@@ -13,7 +13,6 @@ const ActiveRecord_js_1 = require("./ActiveRecord.js");
 class Model extends ActiveRecord_js_1.default {
     constructor(attributes = {}, options = {}) {
         super(options);
-        this.relationships = {};
         this.relationshipCache = {};
         this.dataKey = undefined;
         this.set(attributes);

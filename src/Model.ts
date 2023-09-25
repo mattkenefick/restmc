@@ -72,13 +72,6 @@ export default class Model extends ActiveRecord<Model> {
 	}
 
 	/**
-	 * List of relationships available
-	 *
-	 * @type object
-	 */
-	public relationships: object = {};
-
-	/**
 	 * Instance cache for relationships
 	 *
 	 * @type IAttributes
@@ -141,7 +134,7 @@ export default class Model extends ActiveRecord<Model> {
 					'We found an array on key: ',
 					this.dataKey,
 				].join(' '),
-				this,
+				this
 			);
 		}
 
@@ -208,10 +201,10 @@ export default class Model extends ActiveRecord<Model> {
 			const camelRelationship: string = `${relationshipName}_id`;
 			const underscoreRelationship: string = camelRelationship.replace(
 				/[A-Z]/g,
-				(x: string) => '_' + x.toLowerCase(),
+				(x: string) => '_' + x.toLowerCase()
 			);
-			const relationshipId: string | number
-				= this.attr(camelRelationship) || this.attr(underscoreRelationship) || '';
+			const relationshipId: string | number =
+				this.attr(camelRelationship) || this.attr(underscoreRelationship) || '';
 
 			model.setId(relationshipId as string);
 		}
