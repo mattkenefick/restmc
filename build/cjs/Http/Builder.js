@@ -44,7 +44,7 @@ class Builder {
             : this.activeRecord.getEndpoint();
     }
     getQueryParam(key) {
-        return this.queryParams[key];
+        return (this.queryParams[key] || '');
     }
     getQueryParams() {
         return this.queryParams;
@@ -75,6 +75,9 @@ class Builder {
         return this;
     }
     queryParam(key, value) {
+        if (typeof this.queryParams !== 'object') {
+            this.queryParams = {};
+        }
         this.queryParams[key] = value;
         return this;
     }

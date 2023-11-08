@@ -39,10 +39,10 @@ class Collection extends ActiveRecord_js_1.default {
     static paginator(collection) {
         return collection.meta.pagination;
     }
-    static hydrate(models = [], options = {}) {
+    static hydrate(models = [], options = {}, trigger = true) {
         const collection = new this(options);
         if (models) {
-            collection.add(models);
+            collection.add(models, {}, trigger);
         }
         collection.setOptions(options);
         return collection;
@@ -83,7 +83,7 @@ class Collection extends ActiveRecord_js_1.default {
     getEndpoint() {
         return super.getEndpoint() || this.model.endpoint;
     }
-    add(data, options = {}) {
+    add(data, options = {}, trigger = true) {
         if (data == undefined) {
             return this;
         }
@@ -97,7 +97,7 @@ class Collection extends ActiveRecord_js_1.default {
             if (this.referenceForModifiedEndpoint) {
                 model.useModifiedEndpoint(this.referenceForModifiedEndpoint);
             }
-            this.dispatch('add:before', { model });
+            trigger && this.dispatch('add:before', { model });
             if (options.prepend) {
                 this.models.unshift(model);
             }
@@ -105,18 +105,18 @@ class Collection extends ActiveRecord_js_1.default {
                 this.models.push(model);
             }
         });
-        this.dispatch('change', { from: 'add' });
-        this.dispatch('add');
+        trigger && this.dispatch('change', { from: 'add' });
+        trigger && this.dispatch('add');
         return this;
     }
-    remove(model) {
+    remove(model, trigger = true) {
         let i = 0;
         let ii = 0;
         const items = Array.isArray(model) ? model : [model];
         for (ii = 0; ii < items.length; ii++) {
             i = 0;
             while (i < this.models.length) {
-                this.dispatch('remove:before', { model: this.models[i] });
+                trigger && this.dispatch('remove:before', { model: this.models[i] });
                 if (this.models[i] == items[ii]) {
                     this.models.splice(i, 1);
                 }
@@ -125,16 +125,16 @@ class Collection extends ActiveRecord_js_1.default {
                 }
             }
         }
-        this.dispatch('change', { from: 'remove' });
-        this.dispatch('remove');
+        trigger && this.dispatch('change', { from: 'remove' });
+        trigger && this.dispatch('remove');
         return this;
     }
-    set(model, options = {}) {
+    set(model, options = {}, trigger = true) {
         if (!options || (options && options.merge != true)) {
             this.reset();
         }
-        this.add(model);
-        this.dispatch('set');
+        this.add(model, options, trigger);
+        trigger && this.dispatch('set');
         return this;
     }
     clear() {
@@ -227,15 +227,23 @@ class Collection extends ActiveRecord_js_1.default {
     current() {
         return this.at(this.index);
     }
-    where(attributes = {}, first = false) {
+    where(json = {}, first = false, fullMatch = false) {
         const constructor = this.constructor;
-        const collection = new constructor();
-        this.models.map((model) => {
-            const intersection = Object.keys(model.attributes).filter((k) => k in attributes && model.attr(k) == attributes[k]);
-            if (intersection.length) {
-                collection.add(model);
+        const filteredModels = [];
+        this.models.forEach((model) => {
+            const attributes = Object.keys(json);
+            const intersection = attributes.filter((key) => {
+                return (key in json &&
+                    model.attr(key) == json[key]);
+            });
+            if (fullMatch && intersection.length == attributes.length) {
+                filteredModels.push(model);
+            }
+            else if (!fullMatch && intersection.length) {
+                filteredModels.push(model);
             }
         });
+        const collection = constructor.hydrate(filteredModels, this.options, false);
         return first ? collection.first() : collection;
     }
     findWhere(attributes = {}) {

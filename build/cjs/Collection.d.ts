@@ -5,7 +5,7 @@ import Model from './Model.js';
 import { IAttributes, ICollectionMeta, IPagination } from './Interfaces.js';
 export default class Collection<GenericModel extends Model> extends ActiveRecord<Collection<GenericModel>> implements Iterable<GenericModel> {
     static paginator(collection: any): IPagination;
-    static hydrate<T>(models?: Model[] | any, options?: object): any;
+    static hydrate<T>(models?: Model[] | any, options?: object, trigger?: boolean): any;
     protected get isCollection(): boolean;
     get length(): number;
     get modelId(): string;
@@ -21,9 +21,9 @@ export default class Collection<GenericModel extends Model> extends ActiveRecord
     fetchNext(append?: boolean): Promise<HttpRequest>;
     fetchPrevious(append?: boolean): Promise<HttpRequest>;
     getEndpoint(): string;
-    add(data: GenericModel[] | GenericModel | object, options?: IAttributes): Collection<GenericModel>;
-    remove(model: Model[] | Model | object): Collection<GenericModel>;
-    set(model: Model[] | Model | object, options?: IAttributes): Collection<GenericModel>;
+    add(data: GenericModel[] | GenericModel | object, options?: IAttributes, trigger?: boolean): Collection<GenericModel>;
+    remove(model: Model[] | Model | object, trigger?: boolean): Collection<GenericModel>;
+    set(model: Model[] | Model | object, options?: IAttributes, trigger?: boolean): Collection<GenericModel>;
     clear(): Collection<GenericModel>;
     count(): number;
     delete(attributes?: IAttributes): Promise<HttpRequest>;
@@ -44,7 +44,7 @@ export default class Collection<GenericModel extends Model> extends ActiveRecord
     next(): GenericModel | undefined;
     previous(): GenericModel | undefined;
     current(): GenericModel;
-    where(attributes?: IAttributes, first?: boolean): this | Collection<GenericModel> | GenericModel;
+    where(json?: IAttributes, first?: boolean, fullMatch?: boolean): this | Collection<GenericModel> | GenericModel;
     findWhere(attributes?: IAttributes): GenericModel;
     findByCid(cid: string): GenericModel;
     sort(options?: IAttributes): Collection<GenericModel>;

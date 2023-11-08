@@ -46,7 +46,7 @@ export interface ICollectionChange {
     from: string;
 }
 export interface ICollectionMeta {
-    pagination: IPagination;
+    pagination?: IPagination;
 }
 export interface IDispatchData {
     [key: string]: unknown;
