@@ -239,6 +239,9 @@ export default class Request extends Core implements IRequest {
 					return response;
 				})
 
+				// This will catch the potential error thrown by afterParse
+				// that raises issues 400+ or missing responses
+				//
 				// @see https://axios-http.com/docs/handling_errors
 				// console.log(error.response?.data);
 				// console.log(error.response?.status);

@@ -134,7 +134,7 @@ export default class Builder<T> {
 	 * @return string | number
 	 */
 	public getQueryParam(key: string): string {
-		return this.queryParams[key] as string;
+		return (this.queryParams[key] || '') as string;
 	}
 
 	/**
@@ -206,7 +206,14 @@ export default class Builder<T> {
 	 * @return Builder
 	 */
 	public queryParam(key: string, value: number | string): Builder<T> {
+		// Make sure this.queryParams is an object
+		if (typeof this.queryParams !== 'object') {
+			this.queryParams = {};
+		}
+
+		// Set query param
 		this.queryParams[key] = value;
+
 		return this;
 	}
 

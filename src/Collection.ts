@@ -53,15 +53,16 @@ export default class Collection<GenericModel extends Model>
 	 *
 	 * @param Model[] models
 	 * @param object options
+	 * @param boolean trigger
 	 * @type Collection
 	 */
-	public static hydrate<T>(models: Model[] | any = [], options: object = {}): any {
+	public static hydrate<T>(models: Model[] | any = [], options: object = {}, trigger: boolean = true): any {
 		// Instantiate collection
 		const collection = new this(options);
 
 		// Add models to collection
 		if (models) {
-			collection.add(models);
+			collection.add(models, {}, trigger);
 		}
 
 		// Add options to collection
@@ -245,9 +246,14 @@ export default class Collection<GenericModel extends Model>
 	 *
 	 * @param  Model[] | Model | object data
 	 * @param  IAttributes options
+	 * @param  boolean trigger
 	 * @return Collection
 	 */
-	public add(data: GenericModel[] | GenericModel | object, options: IAttributes = {}): Collection<GenericModel> {
+	public add(
+		data: GenericModel[] | GenericModel | object,
+		options: IAttributes = {},
+		trigger: boolean = true
+	): Collection<GenericModel> {
 		if (data == undefined) {
 			return this;
 		}
@@ -273,7 +279,7 @@ export default class Collection<GenericModel extends Model>
 			}
 
 			// Trigger event before adding it
-			this.dispatch('add:before', { model });
+			trigger && this.dispatch('add:before', { model });
 
 			// Add to list
 			if (options.prepend) {
@@ -284,8 +290,8 @@ export default class Collection<GenericModel extends Model>
 		});
 
 		// Event for add
-		this.dispatch('change', { from: 'add' });
-		this.dispatch('add');
+		trigger && this.dispatch('change', { from: 'add' });
+		trigger && this.dispatch('add');
 
 		return this;
 	}
@@ -294,9 +300,10 @@ export default class Collection<GenericModel extends Model>
 	 * Remove a model, a set of models, or an object
 	 *
 	 * @param  Model[] | Model | object model
+	 * @param  boolean trigger
 	 * @return Collection
 	 */
-	public remove(model: Model[] | Model | object): Collection<GenericModel> {
+	public remove(model: Model[] | Model | object, trigger: boolean = true): Collection<GenericModel> {
 		let i: number = 0;
 		let ii: number = 0;
 		const items: any = Array.isArray(model) ? model : [model];
@@ -307,7 +314,7 @@ export default class Collection<GenericModel extends Model>
 			i = 0;
 
 			while (i < this.models.length) {
-				this.dispatch('remove:before', { model: this.models[i] });
+				trigger && this.dispatch('remove:before', { model: this.models[i] });
 
 				if (this.models[i] == items[ii]) {
 					this.models.splice(i, 1);
@@ -318,8 +325,8 @@ export default class Collection<GenericModel extends Model>
 		}
 
 		// Event for add
-		this.dispatch('change', { from: 'remove' });
-		this.dispatch('remove');
+		trigger && this.dispatch('change', { from: 'remove' });
+		trigger && this.dispatch('remove');
 
 		return this;
 	}
@@ -330,19 +337,24 @@ export default class Collection<GenericModel extends Model>
 	 * @todo Review this
 	 *
 	 * @param  Model[] | Model | object model
-	 * @param IAttributes options
+	 * @param  IAttributes options
+	 * @param  boolean trigger
 	 * @return Collection
 	 */
-	public set(model: Model[] | Model | object, options: IAttributes = {}): Collection<GenericModel> {
+	public set(
+		model: Model[] | Model | object,
+		options: IAttributes = {},
+		trigger: boolean = true
+	): Collection<GenericModel> {
 		if (!options || (options && options.merge != true)) {
 			this.reset();
 		}
 
 		// Add model to list
-		this.add(model);
+		this.add(model, options, trigger);
 
 		// Event for add
-		this.dispatch('set');
+		trigger && this.dispatch('set');
 
 		return this;
 	}
@@ -508,6 +520,7 @@ export default class Collection<GenericModel extends Model>
 		let item: any = this.models[index];
 
 		// Transform through
+		// mk: This doesn't look like it works yet?
 		if (this.atRelationship && this.atRelationship.length) {
 			this.atRelationship.forEach((key) => (item = item[key]));
 		}
@@ -563,24 +576,46 @@ export default class Collection<GenericModel extends Model>
 	/**
 	 * Comparing hard object attributes to model attr
 	 *
-	 * @param  IAttributes attributes
+	 * @param  IAttributes json
 	 * @param  boolean first
+	 * @param  boolean fullMatch
 	 * @return Collection | Model
 	 */
-	public where(attributes: IAttributes = {}, first: boolean = false): this | Collection<GenericModel> | GenericModel {
+	public where(
+		json: IAttributes = {},
+		first: boolean = false,
+		fullMatch: boolean = false
+	): this | Collection<GenericModel> | GenericModel {
 		const constructor: any = this.constructor;
-		const collection = new constructor();
+		const filteredModels: any[] = [];
 
-		// @todo, this code sucks but I'm not spending all day here
-		this.models.map((model: any) => {
-			const intersection: string[] = Object.keys(model.attributes).filter(
-				(k: string) => k in attributes && model.attr(k) == attributes[k]
-			);
+		this.models.forEach((model: GenericModel) => {
+			// Get assigned attributes per model
+			const attributes: string[] = Object.keys(json);
 
-			if (intersection.length) {
-				collection.add(model);
+			// Find intersection of our model and what has been passed in
+			const intersection: string[] = attributes.filter((key: string) => {
+				return (
+					// Exists in our search request
+					key in json &&
+					// The two values are equivalent
+					model.attr(key) == json[key]
+				);
+			});
+
+			// We have a full intersection
+			if (fullMatch && intersection.length == attributes.length) {
+				filteredModels.push(model);
+			}
+
+			// We have a partial intersection
+			else if (!fullMatch && intersection.length) {
+				filteredModels.push(model);
 			}
 		});
+
+		// Hydrate from models
+		const collection = constructor.hydrate(filteredModels, this.options, false);
 
 		return first ? collection.first() : collection;
 	}

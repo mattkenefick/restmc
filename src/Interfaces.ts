@@ -53,7 +53,7 @@ export interface ICollectionChange {
 }
 
 export interface ICollectionMeta {
-	pagination: IPagination;
+	pagination?: IPagination;
 }
 
 export interface IDispatchData {
