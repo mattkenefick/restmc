@@ -9,5 +9,5 @@ export default class CollectionCore<T extends Model> extends Collection<T> {
 	/**
 	 * @type string
 	 */
-	public baseUrl: string = 'https://api.shortverse.com/v1';
+	public baseUrl: string = 'https://api.chalkysticks.com/v1';
 }
