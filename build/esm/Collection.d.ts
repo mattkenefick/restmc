@@ -35,7 +35,7 @@ export default class Collection<GenericModel extends Model> extends ActiveRecord
     reset(): Collection<GenericModel>;
     unshift(model: GenericModel[] | GenericModel | object, options?: IAttributes): Collection<GenericModel>;
     shift(): Collection<GenericModel>;
-    slice(...params: any): Model[];
+    slice(...params: any): GenericModel[];
     get(query: GenericModel | number | string): Model | undefined;
     has(obj: GenericModel | number | string): boolean;
     at(index?: number): GenericModel;

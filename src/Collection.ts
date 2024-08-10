@@ -477,8 +477,8 @@ export default class Collection<GenericModel extends Model>
 	 *
 	 * @return Model[]
 	 */
-	public slice(...params: any): Model[] {
-		return <Model[]>Array.prototype.slice.apply(this.models, params);
+	public slice(...params: any): GenericModel[] {
+		return <GenericModel[]>Array.prototype.slice.apply(this.models, params);
 	}
 
 	/**
