@@ -14,11 +14,12 @@ import {
 	IResponse,
 } from './Interfaces.js';
 import { AxiosResponse } from 'axios';
-import Builder from './Http/Builder.js';
+import Builder from './Request/Builder.js';
 import Collection from './Collection.js';
 import Core from './Core.js';
 import FormData from 'form-data'; // @see https://github.com/form-data/form-data/issues/484
-import HttpRequest from './Http/Request.js';
+import HttpRequest from './Request/Http.js';
+import SocketRequest from './Request/Socket.js';
 
 /**
  * @author Matt Kenefick <matt@polymermallard.com>
@@ -79,6 +80,13 @@ export default class ActiveRecord<T> extends Core {
 	}
 
 	/**
+	 * @return boolean
+	 */
+	protected get isCollection(): boolean {
+		return false;
+	}
+
+	/**
 	 * It's a Model if it has an ID or explicitly identified by Model
 	 *
 	 * @return boolean
@@ -129,6 +137,7 @@ export default class ActiveRecord<T> extends Core {
 
 	/**
 	 * https://api.example.com/v1/{endpoint}
+	 * Used by getEndpoint()
 	 *
 	 * @type string
 	 */
@@ -192,7 +201,7 @@ export default class ActiveRecord<T> extends Core {
 	public loading: boolean = false;
 
 	/**
-	 * Meta data supplied by the server adjacent to datas
+	 * Meta data supplied by the server adjacent to data
 	 *
 	 * @type IAttributes
 	 */
@@ -207,6 +216,7 @@ export default class ActiveRecord<T> extends Core {
 
 	/**
 	 * Where to position our modified endpoint (before or after)
+	 * e.g. content/1/test versus test/x/content
 	 *
 	 * @type string
 	 */
@@ -234,9 +244,11 @@ export default class ActiveRecord<T> extends Core {
 	public parent: ActiveRecord<any> | undefined;
 
 	/**
-	 * @type HttpRequest
+	 * @todo mk: This will have to change with Socket
+	 *
+	 * @type IRequest
 	 */
-	public request?: HttpRequest;
+	public request?: IRequest;
 
 	/**
 	 * @type number
@@ -268,6 +280,7 @@ export default class ActiveRecord<T> extends Core {
 
 	/**
 	 * Function to call before a loading hook is triggered
+	 * Fired on 'requesting'
 	 *
 	 * @type function | undefined
 	 */
@@ -275,13 +288,15 @@ export default class ActiveRecord<T> extends Core {
 
 	/**
 	 * Function to call after a loading hook is triggered
+	 * Fired on 'complete' or 'error'
 	 *
 	 * @type function | undefined
 	 */
 	protected loadingHookPost: IDispatcherCallbackFunction | undefined;
 
 	/**
-	 * Reference to ActiveRecord we are using for our modified endpoint
+	 * Reference to ActiveRecord we are using for our modified endpoint,
+	 * such as the model like ModelReview
 	 *
 	 * @type ActiveRecord<any>
 	 */
@@ -388,8 +403,6 @@ export default class ActiveRecord<T> extends Core {
 		// Trigger
 		if (trigger) {
 			this.dispatch('set', { attributes });
-
-			// Hook
 			ActiveRecord.hook(`${this.constructor.name}.set`, [this, attributes]);
 		}
 
@@ -467,10 +480,6 @@ export default class ActiveRecord<T> extends Core {
 	public toJSON(): object {
 		const json: any = this.attributes;
 
-		/*
-		 * @todo is this code copasetic?
-		 * @ts-ignore
-		 */
 		// const possibleGetters = Object.getOwnPropertyNames(this.__proto__);
 		const possibleGetters = Object.keys(Object.getPrototypeOf(this));
 
@@ -486,26 +495,21 @@ export default class ActiveRecord<T> extends Core {
 		return json;
 	}
 
-	/*
-	 * region: Actions
-	 * -------------------------------------------------------------------------
-	 */
-
 	/**
 	 * @param IAttributes attributes
-	 * @return Promise<HttpRequest>
+	 * @return Promise<IRequest>
 	 */
-	public create(attributes: IAttributes): Promise<HttpRequest> {
+	public create(attributes: IAttributes): Promise<IRequest> {
 		return this.post(attributes);
 	}
 
 	/**
 	 * @param IAttributes attributes
-	 * @return Promise<HttpRequest>
+	 * @return Promise<IRequest>
 	 */
-	public delete(attributes: IAttributes = {}): Promise<HttpRequest> {
+	public delete(attributes: IAttributes = {}): Promise<IRequest> {
 		const url: string = this.builder.identifier(this.id || attributes?.id || '').getUrl();
-		const output: Promise<HttpRequest> = this._fetch(
+		const output: Promise<IRequest> = this._fetch(
 			null,
 			{},
 			'DELETE',
@@ -514,7 +518,7 @@ export default class ActiveRecord<T> extends Core {
 		);
 
 		// Check if it was successful
-		output.then((request: HttpRequest) => {
+		output.then((request: IRequest) => {
 			// Exit if we have an error
 			if (request.status < 200 || request.status > 299) {
 				return;
@@ -531,11 +535,11 @@ export default class ActiveRecord<T> extends Core {
 
 	/**
 	 * @param IAttributes attributes
-	 * @return Promise<HttpRequest>
+	 * @return Promise<IRequest>
 	 */
-	public post(attributes: IAttributes = {}): Promise<HttpRequest> {
+	public post(attributes: IAttributes = {}): Promise<IRequest> {
 		const url: string = this.builder.getUrl();
-		const output: Promise<HttpRequest> = this._fetch(
+		const output: Promise<IRequest> = this._fetch(
 			null,
 			{},
 			'POST',
@@ -548,11 +552,11 @@ export default class ActiveRecord<T> extends Core {
 
 	/**
 	 * @param IAttributes attributes
-	 * @return Promise<HttpRequest>
+	 * @return Promise<IRequest>
 	 */
-	public put(attributes: IAttributes): Promise<HttpRequest> {
+	public put(attributes: IAttributes): Promise<IRequest> {
 		const url: string = this.builder.getUrl();
-		const output: Promise<HttpRequest> = this._fetch(
+		const output: Promise<IRequest> = this._fetch(
 			null,
 			{},
 			'PUT',
@@ -565,11 +569,11 @@ export default class ActiveRecord<T> extends Core {
 
 	/**
 	 * @param IAttributes attributes
-	 * @return Promise<HttpRequest>
+	 * @return Promise<IRequest>
 	 */
-	public save(attributes: IAttributes = {}): Promise<HttpRequest> {
+	public save(attributes: IAttributes = {}): Promise<IRequest> {
 		const method: string = this.id ? 'PUT' : 'POST';
-		const output: Promise<HttpRequest> = this._fetch(
+		const output: Promise<IRequest> = this._fetch(
 			null,
 			{},
 			method,
@@ -595,11 +599,7 @@ export default class ActiveRecord<T> extends Core {
 	 */
 	public reset(): ActiveRecord<T> {
 		this.attributes = {};
-
-		// Event
 		this.dispatch('reset');
-
-		// Hook
 		ActiveRecord.hook(`${this.constructor.name}.reset`, [this]);
 
 		return this;
@@ -718,9 +718,9 @@ export default class ActiveRecord<T> extends Core {
 	 * @param string name
 	 * @param HTMLInputElement | FileList | File file
 	 * @param Record<string, any> additionalFields
-	 * @return Promise<HttpRequest>
+	 * @return Promise<IRequest>
 	 */
-	public async file(name: string, file: any, additionalFields: Record<string, any> = {}): Promise<HttpRequest> {
+	public async file(name: string, file: any, additionalFields: Record<string, any> = {}): Promise<IRequest> {
 		const url: string = this.builder.identifier(this.id).getUrl();
 
 		// const files = event.target.files
@@ -770,18 +770,21 @@ export default class ActiveRecord<T> extends Core {
 	 * @param string name
 	 * @param HTMLInputElement | FileList | File file
 	 * @param Record<string, any> additionalFields
-	 * @return Promise<HttpRequest>
+	 * @return Promise<IRequest>
 	 */
-	public async upload(name: string, file: any, additionalFields: Record<string, any> = {}): Promise<HttpRequest> {
+	public async upload(name: string, file: any, additionalFields: Record<string, any> = {}): Promise<IRequest> {
 		return this.file(name, file, additionalFields);
 	}
 
 	/**
 	 * NOTE: It is preferred to use other methods
 	 *
-	 * @param  IModelRequestOptions options
-	 * @param  IModelRequestQueryParams queryParams
-	 * @return Promise<HttpRequest>
+	 * @param IModelRequestOptions options
+	 * @param IModelRequestQueryParams queryParams
+	 * @param string method
+	 * @param IAttributes body
+	 * @param IAttributes headers
+	 * @return Promise<IRequest>
 	 */
 	public async fetch(
 		options: IModelRequestOptions = {},
@@ -789,14 +792,14 @@ export default class ActiveRecord<T> extends Core {
 		method: string = 'get',
 		body: IAttributes = {},
 		headers: IAttributes = {}
-	): Promise<HttpRequest> {
+	): Promise<IRequest> {
 		return await this._fetch(options, queryParams, method, body, headers);
 	}
 
 	/**
-	 * @return Promise<HttpRequest> | void
+	 * @return Promise<IRequest> | void
 	 */
-	public runLast(): Promise<HttpRequest> | void {
+	public runLast(): Promise<IRequest> | void {
 		// Check if we can do this
 		if (++this.runLastAttempts >= this.runLastAttemptsMax) {
 			console.warn('Run last attempts expired');
@@ -817,18 +820,13 @@ export default class ActiveRecord<T> extends Core {
 		);
 	}
 
-	// endregion: Actions
-
-	// region: Get Params
-	// -------------------------------------------------------------------------
-
 	/**
 	 * @param string method
 	 * @return string
 	 */
 	public getUrlByMethod(method: string): string {
-		let url: string = '';
 		const originalEndpoint: string = this.getEndpoint();
+		let url: string = '';
 
 		// Use a modified endpoint, if one exists
 		if (method === 'delete' && this.endpointDelete) {
@@ -853,11 +851,6 @@ export default class ActiveRecord<T> extends Core {
 		// Query params
 		return url;
 	}
-
-	// endregion: Get Params
-
-	// region: Set Params
-	// -------------------------------------------------------------------------
 
 	/**
 	 * We automatically assign modified endpoints through relationships
@@ -900,7 +893,6 @@ export default class ActiveRecord<T> extends Core {
 	public getModifiedEndpoint(): string {
 		const activeRecord: any = this.referenceForModifiedEndpoint;
 
-		// Warnings
 		if (!activeRecord || (!activeRecord.id && this.modifiedEndpointPosition == 'before')) {
 			console.warn(
 				'Modified ActiveRecord [`' +
@@ -1065,6 +1057,7 @@ export default class ActiveRecord<T> extends Core {
 		};
 
 		// Set cache to HttpRequest statically @danger
+		// @todo make compatible with SocketRequest
 		HttpRequest.cachedResponses.set(key, response, 1000 * 9999);
 
 		return this;
@@ -1075,6 +1068,7 @@ export default class ActiveRecord<T> extends Core {
 	 * @return ActiveRecord<T>
 	 */
 	public unsetMockData(key: string = 'any'): ActiveRecord<T> {
+		// @todo make compatible with SocketRequest
 		HttpRequest.cachedResponses.delete(key);
 		return this;
 	}
@@ -1134,7 +1128,7 @@ export default class ActiveRecord<T> extends Core {
 	 * @return void
 	 */
 	public setAfterResponse(e: IDispatcherEvent, options: any = {}) {
-		const request: HttpRequest = e.detail.request as HttpRequest;
+		const request: IRequest = e.detail.request as IRequest;
 		const response: IResponse = e.detail.response as IResponse;
 		const method: string = request.method || 'get';
 		const remoteJson: any = response.data;

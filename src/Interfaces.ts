@@ -35,6 +35,13 @@ export interface IAxiosResponse extends IResponse {
 	config?: any;
 }
 
+export interface ICachedItem {
+	immutable: boolean;
+	time: number;
+	ttl: number;
+	value: any;
+}
+
 export interface ICachedResponse {
 	complete?: boolean;
 	failed?: boolean;
@@ -47,7 +54,6 @@ export interface ICachedResponse {
 export interface ICachedResponses {
 	[key: string]: ICachedResponse;
 }
-
 export interface ICollectionChange {
 	from: string;
 }
@@ -92,6 +98,10 @@ export interface IModelRequestQueryParams {
 	[key: string]: any;
 }
 
+export interface IOptions {
+	[key: string]: any;
+}
+
 export interface IPagination {
 	total: number;
 	count: number;
@@ -109,14 +119,22 @@ export interface IProgressEvent {
 
 export interface IRequest {
 	dataKey: string;
-	headers: any;
+	headers: Record<string, string>;
 	loading: boolean;
+	method?: string;
 	mode: string;
 	request?: Promise<any>;
 	response?: IAxiosResponse | IAxiosSuccess;
 	responseData: IAttributes;
+	status: number;
 	url: string;
 }
+
+export interface IHttpRequest extends IRequest {
+	method: string;
+}
+
+export interface IRequestResponse extends IResponse {}
 
 export interface IRequestEvent {
 	body: any;
@@ -131,6 +149,10 @@ export interface IResponse {
 	request: XMLHttpRequest;
 	status: number;
 	statusText: string;
+}
+
+export interface IResponseError {
+	response: IRequestResponse;
 }
 
 export interface ISortOptions {

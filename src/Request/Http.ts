@@ -14,15 +14,15 @@ import {
 	IResponse,
 } from '../Interfaces.js';
 import Cache from '../Cache.js';
-import Core from '../Core.js';
-import RequestError from './RequestError.js';
+import CoreRequest from './Core.js';
+import RequestError from '../Exception/HttpRequest.js';
 
 /**
  * @author Matt Kenefick <matt@polymermallard.com>
- * @package Http
+ * @package Request
  * @project RestMC
  */
-export default class Request extends Core implements IRequest {
+export default class HttpRequest extends CoreRequest implements IRequest {
 	/**
 	 * Create a cache for previously sent requests.
 	 *
@@ -35,45 +35,11 @@ export default class Request extends Core implements IRequest {
 	public static cachedResponses: Cache = new Cache();
 
 	/**
-	 * Represents the expected key to find our data on in remote responses.
-	 * It's frequently found on 'data':
-	 *
-	 * {
-	 *     "data": [ ... ]
-	 * }
-	 *
-	 * @type string
-	 */
-	public dataKey: string = 'data';
-
-	/**
-	 * Do not set the 'Content-Type' here because it wont be
-	 * overridden; which will break file uploads.
-	 *
-	 * @type string
-	 */
-	public headers: Record<string, string> = {};
-
-	/**
-	 * If this Request is currently loading
-	 *
-	 * @type boolean
-	 */
-	public loading: boolean = false;
-
-	/**
 	 * Method (get, post, patch, ...)
 	 *
 	 * @type string
 	 */
 	public method: string = 'get';
-
-	/**
-	 * Mode (cors, no-cors, same-origin, navigate)
-	 *
-	 * @type string
-	 */
-	public mode: string = 'cors';
 
 	/**
 	 * Last fetch
@@ -87,24 +53,12 @@ export default class Request extends Core implements IRequest {
 	 *
 	 * @type Response
 	 */
-	public response?: IAxiosResponse | IAxiosSuccess;
-
-	/**
-	 * Parsed data from response
-	 *
-	 * @type object
-	 */
-	public responseData: IAttributes = {};
+	public response?: IRequestResponse;
 
 	/**
 	 * @type number
 	 */
 	public status: number = 0;
-
-	/**
-	 * @type string
-	 */
-	public url: string;
 
 	/**
 	 * @type boolean
@@ -144,7 +98,7 @@ export default class Request extends Core implements IRequest {
 		body: IAttributes = {},
 		headers: IAttributes = {},
 		ttl: number = 0
-	): Promise<Request> {
+	): Promise<HttpRequest> {
 		const params: IAttributes = {};
 		const requestEvent: IRequestEvent = {
 			body,
@@ -178,12 +132,10 @@ export default class Request extends Core implements IRequest {
 
 		// Event trigger
 		this.dispatch('fetch:before', { request: requestEvent });
+		this.dispatch('requesting', { request: requestEvent });
 
 		// Loading
 		this.loading = true;
-
-		// Events
-		this.dispatch('requesting', { request: requestEvent });
 
 		return new Promise((resolve, reject) => {
 			let cacheKey = `${params.method}.${params.url}`;
@@ -191,13 +143,13 @@ export default class Request extends Core implements IRequest {
 			// Get cache OR fetch new
 			new Promise((resolveCacheLayer) => {
 				// Find cache
-				if (Request.cachedResponses.has(cacheKey)) {
-					const result = Request.cachedResponses.get(cacheKey);
+				if (HttpRequest.cachedResponses.has(cacheKey)) {
+					const result = HttpRequest.cachedResponses.get(cacheKey);
 
 					// console.log('💾 Cached Response: ', cacheKey);
 					resolveCacheLayer(result);
-				} else if (Request.cachedResponses.has('any')) {
-					const result = Request.cachedResponses.get('any');
+				} else if (HttpRequest.cachedResponses.has('any')) {
+					const result = HttpRequest.cachedResponses.get('any');
 
 					// console.log('💿 Any Cached Response');
 					resolveCacheLayer(result);
@@ -219,7 +171,7 @@ export default class Request extends Core implements IRequest {
 
 					// Set response to cache
 					if (ttl > 0) {
-						Request.cachedResponses.set(cacheKey, response, ttl);
+						HttpRequest.cachedResponses.set(cacheKey, response, ttl);
 					}
 
 					// Nothing to report
@@ -387,149 +339,5 @@ export default class Request extends Core implements IRequest {
 	public setHeaders(headers: any): any {
 		this.headers = headers;
 		return this;
-	}
-
-	/**
-	 * Before parsing data
-	 *
-	 * @todo Check if we have valid JSON
-	 * @todo Check if the request was an error
-	 *
-	 * @param e IAxiosResponse
-	 */
-	private beforeParse(response: IAxiosSuccess): void {
-		// Trigger
-		this.dispatch('parse:before', {
-			request: this,
-			response: response,
-		});
-	}
-
-	/**
-	 * Parse data
-	 *
-	 * @param IAxiosSuccess response
-	 * @return IAxiosSuccess
-	 */
-	private parse(response: IAxiosSuccess): void {
-		// Trigger
-		this.dispatch('parse:parsing', {
-			request: this,
-			response: response,
-		});
-
-		// Set data
-		if (response.status != 204) {
-			this.responseData = response.data;
-		}
-
-		// Trigger
-		this.dispatch('parse', {
-			request: this,
-			response: response,
-		});
-	}
-
-	/**
-	 * @param IAxiosSuccess response
-	 * @return void
-	 */
-	private afterParse(response: IAxiosSuccess): void {
-		// Check if we have a status in the JSON as well
-		if (response.status >= 400 && response.data?.status) {
-			const message: string = response.data?.message || response.data || '';
-
-			throw new RequestError(response.status, message);
-		}
-
-		// Trigger
-		this.dispatch('parse:after', {
-			request: this,
-			response: response,
-		});
-	}
-
-	/**
-	 * @param IAxiosSuccess response
-	 * @return void
-	 */
-	private afterFetch(response: IAxiosSuccess): void {
-		// Trigger
-		this.dispatch('fetch', {
-			request: this,
-			response: response,
-		});
-
-		this.dispatch('fetch:after', {
-			request: this,
-			response: response,
-		});
-
-		// Not loading
-		this.loading = false;
-	}
-
-	/**
-	 * @param IAxiosSuccess response
-	 * @return void
-	 */
-	private afterAll(e: IAxiosSuccess): void {
-		if (e === undefined) {
-			return;
-		}
-
-		const data: any = e.data;
-		const status: number = e.status;
-		const method: string = (e.config?.method || 'get').toLowerCase();
-
-		// Set status
-		this.status = status;
-
-		// Check request
-		this.dispatch('complete', {
-			request: this,
-			response: e,
-		});
-
-		this.dispatch('complete:' + method, {
-			request: this,
-			response: e,
-		});
-	}
-
-	/**
-	 * @param IAxiosSuccess response
-	 * @return void
-	 */
-	private afterAllError(e: IAxiosError): void {
-		const data: any = e.message || 'Unknown error';
-		const status: number = e.response?.status || 503; // Default to 503 Service Unavailable
-		const method: string = (e.config?.method || 'get').toLowerCase();
-
-		// mk: Apparently, throw Error does same as dispatch 'error' which
-		// causes duplicates when listening on('error' ...)
-		// this.dispatch('error', e.data);
-		this.responseData = data;
-
-		// Set status
-		this.status = status;
-
-		this.dispatch('error', {
-			request: this,
-			response: e,
-		});
-
-		this.dispatch('error:' + method, {
-			request: this,
-			response: e,
-		});
-	}
-
-	/**
-	 * @param IAxiosSuccess response
-	 * @return void
-	 */
-	private afterAny(): void {
-		this.dispatch('finish', { request: this });
 	}
 }

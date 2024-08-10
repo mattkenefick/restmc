@@ -35,16 +35,16 @@ export default class CollectionIterator<GenericModel extends Model> {
 	/**
 	 * @type number
 	 */
-	protected kind: number = CollectionIterator.ITERATOR_VALUES;
+	protected type: number = CollectionIterator.ITERATOR_VALUES;
 
 	/**
 	 * @param Collection collection
-	 * @param number kind
+	 * @param number type
 	 */
-	constructor(collection: Collection<GenericModel>, kind: number = 0) {
+	constructor(collection: Collection<GenericModel>, type: number = 0) {
 		this.collection = collection;
 		this.index = 0;
-		this.kind = kind;
+		this.type = type;
 	}
 
 	/**
@@ -60,17 +60,15 @@ export default class CollectionIterator<GenericModel extends Model> {
 
 		// Only continue iterating if the iterated collection is long enough.
 		if (this.index < this.collection.length) {
+			const model: GenericModel = this.collection.at(this.index++);
 			let value;
 
-			const model: GenericModel = this.collection.at(this.index++);
-
 			// Return model as value
-			if (this.kind === CollectionIterator.ITERATOR_VALUES) {
+			if (this.type === CollectionIterator.ITERATOR_VALUES) {
 				value = model;
-			}
-			else {
-				value
-					= this.kind === CollectionIterator.ITERATOR_KEYS
+			} else {
+				value =
+					this.type === CollectionIterator.ITERATOR_KEYS
 						? (value = this.collection.modelId)
 						: (value = [this.collection.modelId, model]);
 			}

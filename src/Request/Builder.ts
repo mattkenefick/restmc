@@ -3,7 +3,7 @@ import ActiveRecord from '../ActiveRecord.js';
 
 /**
  * @author Matt Kenefick <matt@polymermallard.com>
- * @package Http
+ * @package Request
  * @project RestMC
  */
 export default class Builder<T> {

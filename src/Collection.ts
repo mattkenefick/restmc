@@ -1,6 +1,6 @@
 import ActiveRecord from './ActiveRecord.js';
 import CollectionIterator from './CollectionIterator.js';
-import HttpRequest from './Http/Request.js';
+import HttpRequest from './Request/Http.js';
 import Model from './Model.js';
 import {
 	IAttributes,
@@ -38,17 +38,6 @@ export default class Collection<GenericModel extends Model>
 	implements Iterable<GenericModel>
 {
 	/**
-	 * This static function could be overridden globally depending on the
-	 * structure of your API. By default, we assume it's within .meta
-	 *
-	 * @param Collection collection
-	 * @return object
-	 */
-	public static paginator(collection: any): IPagination {
-		return collection.meta.pagination;
-	}
-
-	/**
 	 * Hydrate a collection full of models
 	 *
 	 * @param Model[] models
@@ -57,7 +46,6 @@ export default class Collection<GenericModel extends Model>
 	 * @type Collection
 	 */
 	public static hydrate<T>(models: Model[] | any = [], options: object = {}, trigger: boolean = true): any {
-		// Instantiate collection
 		const collection = new this(options);
 
 		// Add models to collection
@@ -72,10 +60,14 @@ export default class Collection<GenericModel extends Model>
 	}
 
 	/**
-	 * @return boolean
+	 * This static function could be overridden globally depending on the
+	 * structure of your API. By default, we assume it's within .meta
+	 *
+	 * @param Collection collection
+	 * @return object
 	 */
-	protected get isCollection(): boolean {
-		return true;
+	public static paginator(collection: any): IPagination {
+		return collection.meta.pagination;
 	}
 
 	/**
@@ -98,6 +90,13 @@ export default class Collection<GenericModel extends Model>
 	 */
 	public get pagination(): IPagination {
 		return Collection.paginator(this);
+	}
+
+	/**
+	 * @return boolean
+	 */
+	protected get isCollection(): boolean {
+		return true;
 	}
 
 	/**
@@ -270,8 +269,8 @@ export default class Collection<GenericModel extends Model>
 			}
 
 			// Set references on model
-			model.parent = this;
 			model.headers = this.headers;
+			model.parent = this;
 
 			// Check the modified endpoint
 			if (this.referenceForModifiedEndpoint) {
@@ -424,7 +423,6 @@ export default class Collection<GenericModel extends Model>
 	 */
 	public push(model: Model[] | Model | object, options: object = {}): Collection<GenericModel> {
 		this.add(model, options);
-
 		return this;
 	}
 
@@ -433,7 +431,6 @@ export default class Collection<GenericModel extends Model>
 	 */
 	public pop(): Collection<GenericModel> {
 		const model: GenericModel = this.at(this.length - 1);
-
 		return this.remove(model);
 	}
 
@@ -443,10 +440,8 @@ export default class Collection<GenericModel extends Model>
 	 */
 	public reset(): Collection<GenericModel> {
 		this.models = [];
-
 		this.dispatch('change', { from: 'reset' });
 		this.dispatch('reset');
-
 		return this;
 	}
 
@@ -468,7 +463,6 @@ export default class Collection<GenericModel extends Model>
 	 */
 	public shift(): Collection<GenericModel> {
 		const model: GenericModel = this.at(0);
-
 		return this.remove(model);
 	}
 
@@ -477,8 +471,8 @@ export default class Collection<GenericModel extends Model>
 	 *
 	 * @return Model[]
 	 */
-	public slice(...params: any): Model[] {
-		return <Model[]>Array.prototype.slice.apply(this.models, params);
+	public slice(...params: any): GenericModel[] {
+		return <GenericModel[]>Array.prototype.slice.apply(this.models, params);
 	}
 
 	/**
@@ -503,74 +497,6 @@ export default class Collection<GenericModel extends Model>
 	 */
 	public has(obj: GenericModel | number | string): boolean {
 		return this.get(obj) != undefined;
-	}
-
-	/**
-	 * Get model at index
-	 *
-	 * @param number index
-	 * @return GenericModel
-	 */
-	public at(index: number = 0): GenericModel {
-		if (index < 0) {
-			index += this.length;
-		}
-
-		// Get model
-		let item: any = this.models[index];
-
-		// Transform through
-		// mk: This doesn't look like it works yet?
-		if (this.atRelationship && this.atRelationship.length) {
-			this.atRelationship.forEach((key) => (item = item[key]));
-		}
-
-		return item;
-	}
-
-	/**
-	 * Get first item
-	 *
-	 * @return GenericModel
-	 */
-	public first(): GenericModel {
-		return this.at(0);
-	}
-
-	/**
-	 * @return GenericModel
-	 */
-	public last(): GenericModel {
-		return this.at(this.length - 1);
-	}
-
-	/**
-	 * @return GenericModel | undefined
-	 */
-	public next(): GenericModel | undefined {
-		if (this.index + 1 >= this.length) {
-			return undefined;
-		}
-
-		return this.at(++this.index);
-	}
-
-	/**
-	 * @return GenericModel
-	 */
-	public previous(): GenericModel | undefined {
-		if (this.index <= 0) {
-			return undefined;
-		}
-
-		return this.at(--this.index);
-	}
-
-	/**
-	 * @return GenericModel
-	 */
-	public current(): GenericModel {
-		return this.at(this.index);
 	}
 
 	/**
@@ -629,14 +555,6 @@ export default class Collection<GenericModel extends Model>
 	}
 
 	/**
-	 * @param  string cid
-	 * @return Model | undefined
-	 */
-	public findByCid(cid: string): GenericModel {
-		return this.findWhere({ cid });
-	}
-
-	/**
 	 * Sorting models by key or in reverse
 	 *
 	 * We have a basic `sortKey` defined on the collection, but
@@ -670,9 +588,9 @@ export default class Collection<GenericModel extends Model>
 	 *     ['Ashley', 'Briana', 'Chloe', ...]
 	 *
 	 * @param  string attribute
-	 * @return any
+	 * @return any[]
 	 */
-	public pluck(attribute: string): any {
+	public pluck(attribute: string): any[] {
 		return this.models.map((model) => model.attr(attribute));
 	}
 
@@ -686,6 +604,77 @@ export default class Collection<GenericModel extends Model>
 		instance.add(this.toJSON());
 
 		return instance;
+	}
+
+	// region: Iterators
+	// ---------------------------------------------------------------------------
+
+	/**
+	 * Get model at index
+	 *
+	 * @param number index
+	 * @return GenericModel
+	 */
+	public at(index: number = 0): GenericModel {
+		if (index < 0) {
+			index += this.length;
+		}
+
+		// Get model
+		let item: any = this.models[index];
+
+		// Transform through
+		// mk: This doesn't look like it works yet?
+		if (this.atRelationship && this.atRelationship.length) {
+			this.atRelationship.forEach((key) => (item = item[key]));
+		}
+
+		return item;
+	}
+
+	/**
+	 * @return GenericModel
+	 */
+	public current(): GenericModel {
+		return this.at(this.index);
+	}
+
+	/**
+	 * Get first item
+	 *
+	 * @return GenericModel
+	 */
+	public first(): GenericModel {
+		return this.at(0);
+	}
+
+	/**
+	 * @return GenericModel
+	 */
+	public last(): GenericModel {
+		return this.at(this.length - 1);
+	}
+
+	/**
+	 * @return GenericModel | undefined
+	 */
+	public next(): GenericModel | undefined {
+		if (this.index + 1 >= this.length) {
+			return undefined;
+		}
+
+		return this.at(++this.index);
+	}
+
+	/**
+	 * @return GenericModel
+	 */
+	public previous(): GenericModel | undefined {
+		if (this.index <= 0) {
+			return undefined;
+		}
+
+		return this.at(--this.index);
 	}
 
 	/**
@@ -721,4 +710,6 @@ export default class Collection<GenericModel extends Model>
 	[Symbol.iterator](): any {
 		return new CollectionIterator<GenericModel>(this, CollectionIterator.ITERATOR_VALUES);
 	}
+
+	// endregion: Iterators
 }

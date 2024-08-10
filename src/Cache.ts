@@ -1,12 +1,4 @@
-/**
- * @type interface
- */
-interface ICachedItem {
-	immutable: boolean;
-	time: number;
-	ttl: number;
-	value: any;
-}
+import { ICachedItem } from './Interfaces';
 
 /**
  * @author Matt Kenefick <matt@polymermallard.com>
@@ -30,11 +22,22 @@ export default class Cache {
 	}
 
 	/**
+	 * Checks whether or not a cached item exists at all without
+	 * regard to the TTL
+	 *
 	 * @param string key
+	 * @return boolean
+	 */
+	public exists(key: string): boolean {
+		return this.storage[key] !== undefined;
+	}
+
+	/**
+	 * @param string key
+	 * @param boolean keep
 	 * @return any
 	 */
 	public get(key: string, keep: boolean = false): any {
-		// Check time on it
 		const item: ICachedItem = this.storage[key];
 		let value: any;
 
@@ -53,22 +56,11 @@ export default class Cache {
 		}
 
 		// Check if it's healthy within the TTL
-		else if (this.isCachedItemHealthy(item)) {
+		else if (this.isHealthy(item)) {
 			value = item.value;
 		}
 
 		return value;
-	}
-
-	/**
-	 * Checks whether or not a cached item exists at all without
-	 * regard to the TTL
-	 *
-	 * @param string key
-	 * @return boolean
-	 */
-	public exists(key: string): boolean {
-		return this.storage[key] !== undefined;
 	}
 
 	/**
@@ -93,10 +85,11 @@ export default class Cache {
 	 */
 	public set(key: string, value: any, ttl: number = 0, immutable: boolean = false): boolean {
 		const hasItem: boolean = this.has(key);
+		const item: ICachedItem = this.storage[key];
 		const time: number = Date.now();
 
 		// Do not overwrite existing item
-		if (hasItem && this.isImmutable(key)) {
+		if (hasItem && this.isImmutable(item)) {
 			return false;
 		}
 
@@ -115,7 +108,7 @@ export default class Cache {
 	 * @param ICachedItem item
 	 * @return boolean
 	 */
-	private isCachedItemHealthy(item: ICachedItem): boolean {
+	private isHealthy(item: ICachedItem): boolean {
 		const now: number = Date.now();
 		const then: number = item.time;
 		const ttl: number = item.ttl;
@@ -124,11 +117,10 @@ export default class Cache {
 	}
 
 	/**
-	 * @param string key
+	 * @param ICachedItem item
 	 * @return boolean
 	 */
-	private isImmutable(key: string): boolean {
-		const item: ICachedItem = this.storage[key];
+	private isImmutable(item: ICachedItem): boolean {
 		return !!item?.immutable;
 	}
 }

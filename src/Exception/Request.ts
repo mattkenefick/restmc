@@ -1,9 +1,9 @@
 /**
  * @author Matt Kenefick <matt@polymermallard.com>
- * @package Http
+ * @package Exception
  * @project RestMC
  */
-export default class RequestError extends Error {
+export default class ExceptionRequest extends Error {
 	/**
 	 * @type number
 	 */
