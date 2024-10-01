@@ -66,6 +66,7 @@ export default class ActiveRecord<T> extends Core {
     fetch(options?: IModelRequestOptions, queryParams?: IModelRequestQueryParams, method?: string, body?: IAttributes, headers?: IAttributes): Promise<HttpRequest>;
     runLast(): Promise<HttpRequest> | void;
     getUrlByMethod(method: string): string;
+    beforeFetch(): Promise<void>;
     cancelModifiedEndpoint(): ActiveRecord<T>;
     isUsingModifiedEndpoint(): boolean;
     getReferencedEndpoint(): ActiveRecord<T> | undefined;

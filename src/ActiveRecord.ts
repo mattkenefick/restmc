@@ -860,6 +860,13 @@ export default class ActiveRecord<T> extends Core {
 	// -------------------------------------------------------------------------
 
 	/**
+	 * @return Promise<void>
+	 */
+	public async beforeFetch(): Promise<void> {
+		// Do nothing
+	}
+
+	/**
 	 * We automatically assign modified endpoints through relationships
 	 * like hasOne/hasMany, but sometimes we may not want to change that
 	 * endpoint. This allows us to cancel the change.
@@ -1165,7 +1172,7 @@ export default class ActiveRecord<T> extends Core {
 	// endregion: Set Params
 
 	// @todo Update return
-	protected _fetch(
+	protected async _fetch(
 		options: IModelRequestOptions | null = {},
 		queryParams: IModelRequestQueryParams = {},
 		method: string = 'get',
@@ -1191,6 +1198,9 @@ export default class ActiveRecord<T> extends Core {
 		if (!this.cacheable) {
 			this.builder.qp('cb', Date.now());
 		}
+
+		// Run before fetch methods
+		await this.beforeFetch();
 
 		// Check for query params
 		this.setQueryParams(queryParams);

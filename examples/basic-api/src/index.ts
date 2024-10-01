@@ -62,6 +62,8 @@ async function fetchVenues(): Promise<void> {
 		true
 	);
 	console.log('Full Superfine Collection', parlourItem3);
+
+	venueCollection.fetch();
 }
 
 // Run

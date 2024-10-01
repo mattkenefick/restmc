@@ -281,6 +281,10 @@ class ActiveRecord extends Core_js_1.default {
         this.endpoint = originalEndpoint;
         return url;
     }
+    beforeFetch() {
+        return __awaiter(this, void 0, void 0, function* () {
+        });
+    }
     cancelModifiedEndpoint() {
         this.referenceForModifiedEndpoint = undefined;
         return this;
@@ -409,54 +413,57 @@ class ActiveRecord extends Core_js_1.default {
         this.dispatch('parse:after', e.detail);
     }
     _fetch(options = {}, queryParams = {}, method = 'get', body = {}, headers = {}) {
-        method = method ? method.toLowerCase() : 'get';
-        this.lastRequest = {
-            body,
-            headers,
-            method,
-            options,
-            queryParams,
-        };
-        this.requestTime = Date.now();
-        if (!this.cacheable) {
-            this.builder.qp('cb', Date.now());
-        }
-        this.setQueryParams(queryParams);
-        this.setHeaders(headers);
-        if (options && options.id) {
-            this.builder.identifier(options.id);
-        }
-        const url = this.getUrlByMethod(method);
-        const ttl = this.ttl || 0;
-        this.ttl = 0;
-        this.dispatch('requesting', { request: this.lastRequest });
-        this.hasFetched = true;
-        this.loading = true;
-        const request = (this.request = new Request_js_1.default(url, {
-            dataKey: this.dataKey,
-            withCredentials: this.options.withCredentials,
-        }));
-        this.request.method = method;
-        request.on('complete:delete', (e) => {
-            this.dispatch('complete:delete', e.detail);
-            this.builder.identifier('');
+        return __awaiter(this, void 0, void 0, function* () {
+            method = method ? method.toLowerCase() : 'get';
+            this.lastRequest = {
+                body,
+                headers,
+                method,
+                options,
+                queryParams,
+            };
+            this.requestTime = Date.now();
+            if (!this.cacheable) {
+                this.builder.qp('cb', Date.now());
+            }
+            yield this.beforeFetch();
+            this.setQueryParams(queryParams);
+            this.setHeaders(headers);
+            if (options && options.id) {
+                this.builder.identifier(options.id);
+            }
+            const url = this.getUrlByMethod(method);
+            const ttl = this.ttl || 0;
+            this.ttl = 0;
+            this.dispatch('requesting', { request: this.lastRequest });
+            this.hasFetched = true;
+            this.loading = true;
+            const request = (this.request = new Request_js_1.default(url, {
+                dataKey: this.dataKey,
+                withCredentials: this.options.withCredentials,
+            }));
+            this.request.method = method;
+            request.on('complete:delete', (e) => {
+                this.dispatch('complete:delete', e.detail);
+                this.builder.identifier('');
+            });
+            request.on('complete:get', (e) => this.dispatch('complete:get', e.detail));
+            request.on('complete:post', (e) => this.dispatch('complete:post', e.detail));
+            request.on('complete:put', (e) => this.dispatch('complete:put', e.detail));
+            request.on('complete', (e) => this.FetchComplete(e));
+            request.on('error:delete', (e) => this.dispatch('error:delete', e.detail));
+            request.on('error:get', (e) => this.dispatch('error:get', e.detail));
+            request.on('error:post', (e) => this.dispatch('error:post', e.detail));
+            request.on('error:put', (e) => this.dispatch('error:put', e.detail));
+            request.on('error', (e) => {
+                this.loading = false;
+                return this.dispatch('error', e.detail);
+            });
+            request.on('finish', (e) => this.dispatch('finish'));
+            request.on('parse:after', (e) => this.FetchParseAfter(e, options || {}));
+            request.on('progress', (e) => this.FetchProgress(e));
+            return request.fetch(method, Object.assign(body || {}, this.body), Object.assign(headers || {}, this.headers), ttl);
         });
-        request.on('complete:get', (e) => this.dispatch('complete:get', e.detail));
-        request.on('complete:post', (e) => this.dispatch('complete:post', e.detail));
-        request.on('complete:put', (e) => this.dispatch('complete:put', e.detail));
-        request.on('complete', (e) => this.FetchComplete(e));
-        request.on('error:delete', (e) => this.dispatch('error:delete', e.detail));
-        request.on('error:get', (e) => this.dispatch('error:get', e.detail));
-        request.on('error:post', (e) => this.dispatch('error:post', e.detail));
-        request.on('error:put', (e) => this.dispatch('error:put', e.detail));
-        request.on('error', (e) => {
-            this.loading = false;
-            return this.dispatch('error', e.detail);
-        });
-        request.on('finish', (e) => this.dispatch('finish'));
-        request.on('parse:after', (e) => this.FetchParseAfter(e, options || {}));
-        request.on('progress', (e) => this.FetchProgress(e));
-        return request.fetch(method, Object.assign(body || {}, this.body), Object.assign(headers || {}, this.headers), ttl);
     }
     FetchComplete(e) {
         this.hasLoaded = true;
