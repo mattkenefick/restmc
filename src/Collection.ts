@@ -677,18 +677,6 @@ export default class Collection<GenericModel extends Model>
 	}
 
 	/**
-	 * @param IAttributes attributes
-	 * @return Collection
-	 */
-	public clone(attributes: IAttributes = {}) {
-		// @ts-ignore
-		const instance = new this.constructor();
-		instance.add(this.toJSON());
-
-		return instance;
-	}
-
-	/**
 	 * Return an interator for values based on this collection
 	 *
 	 * @return CollectionIterator

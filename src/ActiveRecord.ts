@@ -348,6 +348,21 @@ export default class ActiveRecord<T> extends Core {
 	}
 
 	/**
+	 * @return ActiveRecord
+	 */
+	public clone() {
+		// @ts-ignore
+		const instance = new this.constructor();
+		instance.add(this.toJSON());
+
+		instance.setOptions(this.options);
+		instance.setHeaders(this.headers);
+		instance.parent = this.parent;
+
+		return instance;
+	}
+
+	/**
 	 * @return boolean
 	 */
 	public hasAttributes(): boolean {

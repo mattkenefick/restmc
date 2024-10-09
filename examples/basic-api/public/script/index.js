@@ -81,6 +81,14 @@ class ActiveRecord extends Core_js_1.default {
     attr(key) {
         return this.attributes[key];
     }
+    clone() {
+        const instance = new this.constructor();
+        instance.add(this.toJSON());
+        instance.setOptions(this.options);
+        instance.setHeaders(this.headers);
+        instance.parent = this.parent;
+        return instance;
+    }
     hasAttributes() {
         return Object.keys(this.attributes).length > 0;
     }
@@ -293,7 +301,6 @@ class ActiveRecord extends Core_js_1.default {
     }
     beforeFetch() {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('before fetch');
         });
     }
     cancelModifiedEndpoint() {
@@ -841,11 +848,6 @@ class Collection extends ActiveRecord_js_1.default {
     }
     pluck(attribute) {
         return this.models.map((model) => model.attr(attribute));
-    }
-    clone(attributes = {}) {
-        const instance = new this.constructor();
-        instance.add(this.toJSON());
-        return instance;
     }
     values() {
         return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_VALUES);
@@ -4349,6 +4351,9 @@ function addVenue(venueModel, parentElement) {
 async function fetchVenues() {
     const parentElement = document.querySelector('#app');
     const venueCollection = Venue_1.default.hydrate(api_response_1.default.data);
+    venueCollection.setOptions({
+        withCredentials: false,
+    });
     venueCollection.on('complete', (e) => {
         console.log('Received data: ', e);
     });
@@ -4359,6 +4364,8 @@ async function fetchVenues() {
     });
     const parlourItem = venueCollection.findWhere({ name: 'Parlour' });
     console.log('Parlour Item', parlourItem);
+    const clonedParlourItem = parlourItem.clone();
+    console.log(' -> Cloned Parlour', clonedParlourItem);
     const parlourItem2 = venueCollection.where({
         name: 'Parlour',
         website: 'http://superfine.nyc',
@@ -4369,7 +4376,12 @@ async function fetchVenues() {
         website: 'http://superfine.nyc',
     }, false, true);
     console.log('Full Superfine Collection', parlourItem3);
-    venueCollection.fetch();
+    const response = await venueCollection.fetch();
+    console.log('Fetch Response', response);
+    console.log('\n\n');
+    const clonedCollection = venueCollection.clone();
+    console.log('Venue Collection', venueCollection);
+    console.log(' -> Cloned Collection', clonedCollection);
 }
 fetchVenues();
 

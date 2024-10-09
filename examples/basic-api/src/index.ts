@@ -22,6 +22,10 @@ async function fetchVenues(): Promise<void> {
 	const parentElement: HTMLElement = document.querySelector('#app') as HTMLElement;
 	const venueCollection: CollectionVenue = CollectionVenue.hydrate(ApiData.data);
 
+	venueCollection.setOptions({
+		withCredentials: false,
+	});
+
 	// venueCollection.setHeader('x-foo', 'bar');
 
 	venueCollection.on('complete', (e) => {
@@ -45,6 +49,9 @@ async function fetchVenues(): Promise<void> {
 	const parlourItem = venueCollection.findWhere({ name: 'Parlour' });
 	console.log('Parlour Item', parlourItem);
 
+	const clonedParlourItem = parlourItem.clone();
+	console.log(' -> Cloned Parlour', clonedParlourItem);
+
 	// Matches both
 	const parlourItem2 = venueCollection.where({
 		name: 'Parlour',
@@ -63,7 +70,14 @@ async function fetchVenues(): Promise<void> {
 	);
 	console.log('Full Superfine Collection', parlourItem3);
 
-	venueCollection.fetch();
+	const response = await venueCollection.fetch();
+
+	console.log('Fetch Response', response);
+	console.log('\n\n');
+
+	const clonedCollection = venueCollection.clone();
+	console.log('Venue Collection', venueCollection);
+	console.log(' -> Cloned Collection', clonedCollection);
 }
 
 // Run

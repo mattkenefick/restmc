@@ -265,11 +265,6 @@ class Collection extends ActiveRecord_js_1.default {
     pluck(attribute) {
         return this.models.map((model) => model.attr(attribute));
     }
-    clone(attributes = {}) {
-        const instance = new this.constructor();
-        instance.add(this.toJSON());
-        return instance;
-    }
     values() {
         return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_VALUES);
     }

@@ -44,6 +44,7 @@ export default class ActiveRecord<T> extends Core {
     protected ttl: number;
     constructor(options?: IAttributes);
     attr(key: string): string | number | null;
+    clone(): any;
     hasAttributes(): boolean;
     set(attributes?: IAttributes, options?: IAttributes, trigger?: boolean): ActiveRecord<T>;
     unset(key: string): ActiveRecord<T>;

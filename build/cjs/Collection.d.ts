@@ -49,7 +49,6 @@ export default class Collection<GenericModel extends Model> extends ActiveRecord
     findByCid(cid: string): GenericModel;
     sort(options?: IAttributes): Collection<GenericModel>;
     pluck(attribute: string): any;
-    clone(attributes?: IAttributes): any;
     values(): CollectionIterator<GenericModel>;
     keys(attributes?: IAttributes): CollectionIterator<GenericModel>;
     entries(attributes?: IAttributes): CollectionIterator<GenericModel>;

@@ -71,6 +71,14 @@ class ActiveRecord extends Core_js_1.default {
     attr(key) {
         return this.attributes[key];
     }
+    clone() {
+        const instance = new this.constructor();
+        instance.add(this.toJSON());
+        instance.setOptions(this.options);
+        instance.setHeaders(this.headers);
+        instance.parent = this.parent;
+        return instance;
+    }
     hasAttributes() {
         return Object.keys(this.attributes).length > 0;
     }
