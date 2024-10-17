@@ -600,7 +600,6 @@ class Collection extends ActiveRecord_js_1.default {
     constructor(options = {}) {
         super(options);
         this.atRelationship = [];
-        this.index = 0;
         this.meta = {
             pagination: {
                 count: 15,
@@ -613,6 +612,7 @@ class Collection extends ActiveRecord_js_1.default {
         };
         this.models = [];
         this.sortKey = 'id';
+        this.iterator = new CollectionIterator_js_1.default(this);
         this.dataKey = 'data';
         this.setOptions(options);
         this.builder.qp('limit', options.limit || this.limit).qp('page', options.page || this.page);
@@ -796,21 +796,6 @@ class Collection extends ActiveRecord_js_1.default {
     last() {
         return this.at(this.length - 1);
     }
-    next() {
-        if (this.index + 1 >= this.length) {
-            return undefined;
-        }
-        return this.at(++this.index);
-    }
-    previous() {
-        if (this.index <= 0) {
-            return undefined;
-        }
-        return this.at(--this.index);
-    }
-    current() {
-        return this.at(this.index);
-    }
     where(json = {}, first = false, fullMatch = false) {
         const constructor = this.constructor;
         const filteredModels = [];
@@ -849,14 +834,43 @@ class Collection extends ActiveRecord_js_1.default {
     pluck(attribute) {
         return this.models.map((model) => model.attr(attribute));
     }
-    values() {
-        return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_VALUES);
+    values(filter) {
+        return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_VALUES, filter);
     }
-    keys(attributes = {}) {
-        return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_KEYS);
+    keys(filter) {
+        return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_KEYS, filter);
     }
-    entries(attributes = {}) {
-        return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_KEYSVALUES);
+    entries(filter) {
+        return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_KEYSVALUES, filter);
+    }
+    next(filter) {
+        const result = this.iterator.next(filter);
+        return result.done ? undefined : result.value;
+    }
+    previous(filter) {
+        const result = this.iterator.previous(filter);
+        return result.done ? undefined : result.value;
+    }
+    index() {
+        return this.iterator.index;
+    }
+    current(filter) {
+        const result = this.iterator.current();
+        if (!result.done && filter) {
+            const model = result.value;
+            const index = this.indexOf(model);
+            if (filter(model, index)) {
+                return model;
+            }
+            return undefined;
+        }
+        return result.done ? undefined : result.value;
+    }
+    resetIterator() {
+        this.iterator = new CollectionIterator_js_1.default(this);
+    }
+    indexOf(model) {
+        return this.models.indexOf(model);
     }
     [Symbol.iterator]() {
         return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_VALUES);
@@ -877,42 +891,76 @@ exports["default"] = Collection;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 class CollectionIterator {
-    constructor(collection, kind = 0) {
+    constructor(collection, kind = 0, filter = (model) => true) {
         this.index = 0;
         this.kind = CollectionIterator.ITERATOR_VALUES;
         this.collection = collection;
         this.index = 0;
         this.kind = kind;
+        this.filter = filter;
     }
-    next() {
-        if (!this.collection) {
-            return {
-                done: true,
-                value: void 0,
-            };
-        }
-        if (this.index < this.collection.length) {
-            let value;
-            const model = this.collection.at(this.index++);
-            if (this.kind === CollectionIterator.ITERATOR_VALUES) {
-                value = model;
+    next(filter) {
+        const iteratorFilter = filter || this.filter;
+        while (this.collection && this.index < this.collection.length) {
+            const model = this.collection.at(this.index);
+            this.index++;
+            if (iteratorFilter(model, this.index - 1)) {
+                return {
+                    done: false,
+                    value: this.getValue(model),
+                };
             }
-            else {
-                value
-                    = this.kind === CollectionIterator.ITERATOR_KEYS
-                        ? (value = this.collection.modelId)
-                        : (value = [this.collection.modelId, model]);
-            }
-            return {
-                done: this.index - 1 === this.collection.length,
-                value: value,
-            };
         }
-        this.collection = void 0;
         return {
             done: true,
-            value: void 0,
+            value: undefined,
         };
+    }
+    previous(filter) {
+        const iteratorFilter = filter || this.filter;
+        while (this.collection && this.index > 0) {
+            this.index--;
+            const model = this.collection.at(this.index);
+            if (iteratorFilter(model, this.index)) {
+                return {
+                    done: false,
+                    value: this.getValue(model),
+                };
+            }
+        }
+        return {
+            done: true,
+            value: undefined,
+        };
+    }
+    current() {
+        if (this.collection && this.index > 0 && this.index <= this.collection.length) {
+            const model = this.collection.at(this.index - 1);
+            if (this.filter(model, this.index - 1)) {
+                return {
+                    done: false,
+                    value: this.getValue(model),
+                };
+            }
+        }
+        return {
+            done: true,
+            value: undefined,
+        };
+    }
+    getValue(model) {
+        if (this.kind === CollectionIterator.ITERATOR_VALUES) {
+            return model;
+        }
+        else if (this.kind === CollectionIterator.ITERATOR_KEYS) {
+            return this.collection.modelId;
+        }
+        else {
+            return [this.collection.modelId, model];
+        }
+    }
+    [Symbol.iterator]() {
+        return this;
     }
 }
 exports["default"] = CollectionIterator;
@@ -4382,6 +4430,35 @@ async function fetchVenues() {
     const clonedCollection = venueCollection.clone();
     console.log('Venue Collection', venueCollection);
     console.log(' -> Cloned Collection', clonedCollection);
+    console.log('-----------------------------------------------------------');
+    console.log('Testing iterator filters...');
+    const iteratorFilter = (model, index) => {
+        return model.getName().indexOf('Billiards') > 0;
+    };
+    let model;
+    for (model of clonedCollection.values(iteratorFilter)) {
+        console.log('Billards Places:', model.getName());
+    }
+    console.log('-----------------------------------------------------------');
+    console.log('Using .next(...)');
+    while ((model = clonedCollection.next(iteratorFilter))) {
+        console.log('Next Iterator', clonedCollection.index(), model.getName());
+    }
+    console.log('-----------------------------------------------------------');
+    console.log('Using .previous(...)');
+    while ((model = clonedCollection.previous(iteratorFilter))) {
+        console.log('Previous Iterator', clonedCollection.index(), model.getName());
+    }
+    console.log('-----------------------------------------------------------');
+    console.log('Using .next(...)');
+    while ((model = clonedCollection.next())) {
+        console.log('Next All Iterator', clonedCollection.index(), model.getName());
+    }
+    console.log('-----------------------------------------------------------');
+    console.log('Using .previous(...)');
+    while ((model = clonedCollection.previous())) {
+        console.log('Previous All Iterator', clonedCollection.index(), model.getName());
+    }
 }
 fetchVenues();
 

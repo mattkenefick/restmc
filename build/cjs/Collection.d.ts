@@ -11,11 +11,11 @@ export default class Collection<GenericModel extends Model> extends ActiveRecord
     get modelId(): string;
     get pagination(): IPagination;
     atRelationship: string[];
-    index: number;
     meta: ICollectionMeta;
     model: GenericModel;
     models: GenericModel[];
     protected sortKey: string;
+    private iterator;
     constructor(options?: IAttributes);
     toJSON(): object;
     fetchNext(append?: boolean): Promise<HttpRequest>;
@@ -41,16 +41,19 @@ export default class Collection<GenericModel extends Model> extends ActiveRecord
     at(index?: number): GenericModel;
     first(): GenericModel;
     last(): GenericModel;
-    next(): GenericModel | undefined;
-    previous(): GenericModel | undefined;
-    current(): GenericModel;
     where(json?: IAttributes, first?: boolean, fullMatch?: boolean): this | Collection<GenericModel> | GenericModel;
     findWhere(attributes?: IAttributes): GenericModel;
     findByCid(cid: string): GenericModel;
     sort(options?: IAttributes): Collection<GenericModel>;
     pluck(attribute: string): any;
-    values(): CollectionIterator<GenericModel>;
-    keys(attributes?: IAttributes): CollectionIterator<GenericModel>;
-    entries(attributes?: IAttributes): CollectionIterator<GenericModel>;
+    values(filter?: (model: GenericModel, index: number) => boolean): CollectionIterator<GenericModel>;
+    keys(filter?: (model: GenericModel, index: number) => boolean): CollectionIterator<GenericModel>;
+    entries(filter?: (model: GenericModel, index: number) => boolean): CollectionIterator<GenericModel>;
+    next(filter?: (model: GenericModel, index: number) => boolean): GenericModel | undefined;
+    previous(filter?: (model: GenericModel, index: number) => boolean): GenericModel | undefined;
+    index(): number;
+    current(filter?: (model: GenericModel, index: number) => boolean): GenericModel | undefined;
+    resetIterator(): void;
+    indexOf(model: GenericModel): number;
     [Symbol.iterator](): any;
 }

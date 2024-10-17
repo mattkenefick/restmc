@@ -78,6 +78,52 @@ async function fetchVenues(): Promise<void> {
 	const clonedCollection = venueCollection.clone();
 	console.log('Venue Collection', venueCollection);
 	console.log(' -> Cloned Collection', clonedCollection);
+
+	//
+	console.log('-----------------------------------------------------------');
+	console.log('Testing iterator filters...');
+
+	const iteratorFilter = (model: ModelVenue, index: number) => {
+		return model.getName().indexOf('Billiards') > 0;
+	};
+
+	let model;
+
+	for (model of clonedCollection.values(iteratorFilter)) {
+		console.log('Billards Places:', model.getName());
+	}
+
+	//
+	console.log('-----------------------------------------------------------');
+	console.log('Using .next(...)');
+
+	while ((model = clonedCollection.next(iteratorFilter))) {
+		console.log('Next Iterator', clonedCollection.index(), model.getName());
+	}
+
+	//
+	console.log('-----------------------------------------------------------');
+	console.log('Using .previous(...)');
+
+	while ((model = clonedCollection.previous(iteratorFilter))) {
+		console.log('Previous Iterator', clonedCollection.index(), model.getName());
+	}
+
+	//
+	console.log('-----------------------------------------------------------');
+	console.log('Using .next(...)');
+
+	while ((model = clonedCollection.next())) {
+		console.log('Next All Iterator', clonedCollection.index(), model.getName());
+	}
+
+	//
+	console.log('-----------------------------------------------------------');
+	console.log('Using .previous(...)');
+
+	while ((model = clonedCollection.previous())) {
+		console.log('Previous All Iterator', clonedCollection.index(), model.getName());
+	}
 }
 
 // Run

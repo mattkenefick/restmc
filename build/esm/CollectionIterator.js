@@ -1,42 +1,76 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class CollectionIterator {
-    constructor(collection, kind = 0) {
+    constructor(collection, kind = 0, filter = (model) => true) {
         this.index = 0;
         this.kind = CollectionIterator.ITERATOR_VALUES;
         this.collection = collection;
         this.index = 0;
         this.kind = kind;
+        this.filter = filter;
     }
-    next() {
-        if (!this.collection) {
-            return {
-                done: true,
-                value: void 0,
-            };
-        }
-        if (this.index < this.collection.length) {
-            let value;
-            const model = this.collection.at(this.index++);
-            if (this.kind === CollectionIterator.ITERATOR_VALUES) {
-                value = model;
+    next(filter) {
+        const iteratorFilter = filter || this.filter;
+        while (this.collection && this.index < this.collection.length) {
+            const model = this.collection.at(this.index);
+            this.index++;
+            if (iteratorFilter(model, this.index - 1)) {
+                return {
+                    done: false,
+                    value: this.getValue(model),
+                };
             }
-            else {
-                value
-                    = this.kind === CollectionIterator.ITERATOR_KEYS
-                        ? (value = this.collection.modelId)
-                        : (value = [this.collection.modelId, model]);
-            }
-            return {
-                done: this.index - 1 === this.collection.length,
-                value: value,
-            };
         }
-        this.collection = void 0;
         return {
             done: true,
-            value: void 0,
+            value: undefined,
         };
+    }
+    previous(filter) {
+        const iteratorFilter = filter || this.filter;
+        while (this.collection && this.index > 0) {
+            this.index--;
+            const model = this.collection.at(this.index);
+            if (iteratorFilter(model, this.index)) {
+                return {
+                    done: false,
+                    value: this.getValue(model),
+                };
+            }
+        }
+        return {
+            done: true,
+            value: undefined,
+        };
+    }
+    current() {
+        if (this.collection && this.index > 0 && this.index <= this.collection.length) {
+            const model = this.collection.at(this.index - 1);
+            if (this.filter(model, this.index - 1)) {
+                return {
+                    done: false,
+                    value: this.getValue(model),
+                };
+            }
+        }
+        return {
+            done: true,
+            value: undefined,
+        };
+    }
+    getValue(model) {
+        if (this.kind === CollectionIterator.ITERATOR_VALUES) {
+            return model;
+        }
+        else if (this.kind === CollectionIterator.ITERATOR_KEYS) {
+            return this.collection.modelId;
+        }
+        else {
+            return [this.collection.modelId, model];
+        }
+    }
+    [Symbol.iterator]() {
+        return this;
     }
 }
 exports.default = CollectionIterator;

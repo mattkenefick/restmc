@@ -7,9 +7,11 @@ export default class CollectionIterator<GenericModel extends Model> {
     index: number;
     protected collection: Collection<GenericModel> | undefined;
     protected kind: number;
-    constructor(collection: Collection<GenericModel>, kind?: number);
-    next(): {
-        done: boolean;
-        value: any;
-    };
+    protected filter: (model: GenericModel, index: number) => boolean;
+    constructor(collection: Collection<GenericModel>, kind?: number, filter?: (model: GenericModel, index: number) => boolean);
+    next(filter?: (model: GenericModel, index: number) => boolean): IteratorResult<any>;
+    previous(filter?: (model: GenericModel, index: number) => boolean): IteratorResult<any>;
+    current(): IteratorResult<any>;
+    private getValue;
+    [Symbol.iterator](): any;
 }

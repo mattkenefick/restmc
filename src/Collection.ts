@@ -122,11 +122,6 @@ export default class Collection<GenericModel extends Model>
 	public atRelationship: string[] = [];
 
 	/**
-	 * @type number
-	 */
-	public index: number = 0;
-
-	/**
 	 * Meta data associated with collection
 	 *
 	 * @type ICollectionMeta
@@ -161,6 +156,11 @@ export default class Collection<GenericModel extends Model>
 	protected sortKey: string = 'id';
 
 	/**
+	 * @type CollectionIterator<GenericModel>
+	 */
+	private iterator: CollectionIterator<GenericModel>;
+
+	/**
 	 * We specifically don't set models here because the Model doesn't exist
 	 * until constructor is done. We must use hydrate for that. Don't add data.
 	 *
@@ -170,6 +170,9 @@ export default class Collection<GenericModel extends Model>
 	 */
 	constructor(options: IAttributes = {}) {
 		super(options);
+
+		// Setup basic class iterator
+		this.iterator = new CollectionIterator(this);
 
 		// Set default data key
 		this.dataKey = 'data';
@@ -545,35 +548,6 @@ export default class Collection<GenericModel extends Model>
 	}
 
 	/**
-	 * @return GenericModel | undefined
-	 */
-	public next(): GenericModel | undefined {
-		if (this.index + 1 >= this.length) {
-			return undefined;
-		}
-
-		return this.at(++this.index);
-	}
-
-	/**
-	 * @return GenericModel
-	 */
-	public previous(): GenericModel | undefined {
-		if (this.index <= 0) {
-			return undefined;
-		}
-
-		return this.at(--this.index);
-	}
-
-	/**
-	 * @return GenericModel
-	 */
-	public current(): GenericModel {
-		return this.at(this.index);
-	}
-
-	/**
 	 * Comparing hard object attributes to model attr
 	 *
 	 * @param  IAttributes json
@@ -677,33 +651,104 @@ export default class Collection<GenericModel extends Model>
 	}
 
 	/**
-	 * Return an interator for values based on this collection
+	 * Return an iterator for values based on this collection
 	 *
+	 * @param filter Optional filter function
 	 * @return CollectionIterator
 	 */
-	public values(): CollectionIterator<GenericModel> {
-		return new CollectionIterator<GenericModel>(this, CollectionIterator.ITERATOR_VALUES);
+	public values(filter?: (model: GenericModel, index: number) => boolean): CollectionIterator<GenericModel> {
+		return new CollectionIterator<GenericModel>(this, CollectionIterator.ITERATOR_VALUES, filter);
 	}
 
 	/**
-	 * Return an interator for keys based on this collection
+	 * Return an iterator for keys based on this collection
 	 *
+	 * @param filter Optional filter function
 	 * @return CollectionIterator
 	 */
-	public keys(attributes: IAttributes = {}): CollectionIterator<GenericModel> {
-		return new CollectionIterator<GenericModel>(this, CollectionIterator.ITERATOR_KEYS);
+	public keys(filter?: (model: GenericModel, index: number) => boolean): CollectionIterator<GenericModel> {
+		return new CollectionIterator<GenericModel>(this, CollectionIterator.ITERATOR_KEYS, filter);
 	}
 
 	/**
-	 * Return an interator for entries (key + value) based on this collection
+	 * Return an iterator for entries (key + value) based on this collection
 	 *
+	 * @param filter Optional filter function
 	 * @return CollectionIterator
 	 */
-	public entries(attributes: IAttributes = {}): CollectionIterator<GenericModel> {
-		return new CollectionIterator<GenericModel>(this, CollectionIterator.ITERATOR_KEYSVALUES);
+	public entries(filter?: (model: GenericModel, index: number) => boolean): CollectionIterator<GenericModel> {
+		return new CollectionIterator<GenericModel>(this, CollectionIterator.ITERATOR_KEYSVALUES, filter);
 	}
 
 	/**
+	 * @param filter Optional filter function
+	 * @return GenericModel | undefined
+	 */
+	public next(filter?: (model: GenericModel, index: number) => boolean): GenericModel | undefined {
+		const result = this.iterator.next(filter);
+		return result.done ? undefined : result.value;
+	}
+
+	/**
+	 * @param filter Optional filter function
+	 * @return GenericModel | undefined
+	 */
+	public previous(filter?: (model: GenericModel, index: number) => boolean): GenericModel | undefined {
+		const result = this.iterator.previous(filter);
+		return result.done ? undefined : result.value;
+	}
+
+	/**
+	 * @return number
+	 */
+	public index(): number {
+		return this.iterator.index;
+	}
+
+	/**
+	 * @param filter Optional filter function
+	 * @return GenericModel | undefined
+	 */
+	public current(filter?: (model: GenericModel, index: number) => boolean): GenericModel | undefined {
+		const result = this.iterator.current();
+
+		if (!result.done && filter) {
+			const model = result.value;
+			const index = this.indexOf(model);
+
+			if (filter(model, index)) {
+				return model;
+			}
+
+			return undefined;
+		}
+
+		return result.done ? undefined : result.value;
+	}
+
+	/**
+	 * Reset the main iterator to the beginning of the collection
+	 */
+	public resetIterator(): void {
+		this.iterator = new CollectionIterator<GenericModel>(this);
+	}
+
+	/**
+	 * Find the index of a model in the collection
+	 * @param model The model to find
+	 * @return number The index of the model, or -1 if not found
+	 */
+	public indexOf(model: GenericModel): number {
+		// Implement this method based on how you store models in your collection
+		// This is a placeholder implementation
+		return this.models.indexOf(model);
+	}
+
+	/**
+	 * Used when iterating on the class itself, like
+	 *
+	 * for (const model of collection) { ...
+	 *
 	 * @type Iterator<any>
 	 */
 	[Symbol.iterator](): any {

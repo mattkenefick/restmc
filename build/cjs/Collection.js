@@ -16,7 +16,6 @@ class Collection extends ActiveRecord_js_1.default {
     constructor(options = {}) {
         super(options);
         this.atRelationship = [];
-        this.index = 0;
         this.meta = {
             pagination: {
                 count: 15,
@@ -29,6 +28,7 @@ class Collection extends ActiveRecord_js_1.default {
         };
         this.models = [];
         this.sortKey = 'id';
+        this.iterator = new CollectionIterator_js_1.default(this);
         this.dataKey = 'data';
         this.setOptions(options);
         this.builder.qp('limit', options.limit || this.limit).qp('page', options.page || this.page);
@@ -212,21 +212,6 @@ class Collection extends ActiveRecord_js_1.default {
     last() {
         return this.at(this.length - 1);
     }
-    next() {
-        if (this.index + 1 >= this.length) {
-            return undefined;
-        }
-        return this.at(++this.index);
-    }
-    previous() {
-        if (this.index <= 0) {
-            return undefined;
-        }
-        return this.at(--this.index);
-    }
-    current() {
-        return this.at(this.index);
-    }
     where(json = {}, first = false, fullMatch = false) {
         const constructor = this.constructor;
         const filteredModels = [];
@@ -265,14 +250,43 @@ class Collection extends ActiveRecord_js_1.default {
     pluck(attribute) {
         return this.models.map((model) => model.attr(attribute));
     }
-    values() {
-        return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_VALUES);
+    values(filter) {
+        return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_VALUES, filter);
     }
-    keys(attributes = {}) {
-        return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_KEYS);
+    keys(filter) {
+        return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_KEYS, filter);
     }
-    entries(attributes = {}) {
-        return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_KEYSVALUES);
+    entries(filter) {
+        return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_KEYSVALUES, filter);
+    }
+    next(filter) {
+        const result = this.iterator.next(filter);
+        return result.done ? undefined : result.value;
+    }
+    previous(filter) {
+        const result = this.iterator.previous(filter);
+        return result.done ? undefined : result.value;
+    }
+    index() {
+        return this.iterator.index;
+    }
+    current(filter) {
+        const result = this.iterator.current();
+        if (!result.done && filter) {
+            const model = result.value;
+            const index = this.indexOf(model);
+            if (filter(model, index)) {
+                return model;
+            }
+            return undefined;
+        }
+        return result.done ? undefined : result.value;
+    }
+    resetIterator() {
+        this.iterator = new CollectionIterator_js_1.default(this);
+    }
+    indexOf(model) {
+        return this.models.indexOf(model);
     }
     [Symbol.iterator]() {
         return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_VALUES);
