@@ -260,6 +260,8 @@ export default class Collection<GenericModel extends Model>
 		if (data == undefined) {
 			return this;
 		}
+		// Ensure data is on correct key
+		data = this.cleanData(data);
 
 		// Allow multiple models/data or single
 		const models: any = Array.isArray(data) ? data : [data];

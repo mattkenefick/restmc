@@ -93,6 +93,7 @@ export default class ActiveRecord<T> extends Core {
     setToken(token: string): ActiveRecord<T>;
     setAfterResponse(e: IDispatcherEvent, options?: any): void;
     protected _fetch(options?: IModelRequestOptions | null, queryParams?: IModelRequestQueryParams, method?: string, body?: IAttributes, headers?: IAttributes): Promise<HttpRequest>;
+    protected cleanData(attributes?: IAttributes): IAttributes;
     protected FetchComplete(e: IDispatcherEvent): void;
     protected FetchProgress(e: IDispatcherEvent): void;
     protected FetchParseAfter(e: IDispatcherEvent, options?: IAttributes): void;

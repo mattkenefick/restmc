@@ -84,6 +84,7 @@ class ActiveRecord extends Core_js_1.default {
     }
     set(attributes = {}, options = {}, trigger = true) {
         const possibleSetters = Object.getOwnPropertyDescriptors(this.__proto__);
+        attributes = this.cleanData(attributes);
         for (const key in attributes) {
             this.attributes[key] = attributes[key];
             if (possibleSetters && possibleSetters[key] && possibleSetters[key].set) {
@@ -472,6 +473,15 @@ class ActiveRecord extends Core_js_1.default {
             request.on('progress', (e) => this.FetchProgress(e));
             return request.fetch(method, Object.assign(body || {}, this.body), Object.assign(headers || {}, this.headers), ttl);
         });
+    }
+    cleanData(attributes = {}) {
+        if (this.dataKey && typeof attributes === 'object' && !Array.isArray(attributes)) {
+            const keys = Object.keys(attributes);
+            if (keys.length === 1 && keys[0] === this.dataKey) {
+                return attributes[this.dataKey];
+            }
+        }
+        return attributes;
     }
     FetchComplete(e) {
         this.hasLoaded = true;

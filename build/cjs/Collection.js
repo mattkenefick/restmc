@@ -87,6 +87,7 @@ class Collection extends ActiveRecord_js_1.default {
         if (data == undefined) {
             return this;
         }
+        data = this.cleanData(data);
         const models = Array.isArray(data) ? data : [data];
         models.forEach((model) => {
             if (!(model instanceof Model_js_1.default)) {

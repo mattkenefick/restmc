@@ -140,6 +140,7 @@ export default class Model extends ActiveRecord<Model> {
 
 		// Update any relationship caches that exist
 		// Don't delete them, as to save object references
+		// How does this work if it's a { data: { ... } }?
 		for (key in attributes) {
 			if (this.relationshipCache[key]) {
 				this.relationshipCache[key].set(attributes[key]);

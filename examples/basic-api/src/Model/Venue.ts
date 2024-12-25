@@ -1,4 +1,5 @@
 import Model from './Core';
+import CollectionMedia from '../Collection/Media';
 
 /**
  * @author Matt Kenefick <matt@polymermallard.com>
@@ -10,6 +11,13 @@ export default class ModelVenue extends Model {
 	 * @type string
 	 */
 	public endpoint: string = 'venues';
+
+	/**
+	 * @return CollectionMedia
+	 */
+	public get media(): CollectionMedia {
+		return this.hasMany('media', CollectionMedia);
+	}
 
 	/**
 	 * @return string

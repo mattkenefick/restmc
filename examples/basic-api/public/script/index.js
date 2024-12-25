@@ -94,6 +94,7 @@ class ActiveRecord extends Core_js_1.default {
     }
     set(attributes = {}, options = {}, trigger = true) {
         const possibleSetters = Object.getOwnPropertyDescriptors(this.__proto__);
+        attributes = this.cleanData(attributes);
         for (const key in attributes) {
             this.attributes[key] = attributes[key];
             if (possibleSetters && possibleSetters[key] && possibleSetters[key].set) {
@@ -483,6 +484,15 @@ class ActiveRecord extends Core_js_1.default {
             return request.fetch(method, Object.assign(body || {}, this.body), Object.assign(headers || {}, this.headers), ttl);
         });
     }
+    cleanData(attributes = {}) {
+        if (this.dataKey && typeof attributes === 'object' && !Array.isArray(attributes)) {
+            const keys = Object.keys(attributes);
+            if (keys.length === 1 && keys[0] === this.dataKey) {
+                return attributes[this.dataKey];
+            }
+        }
+        return attributes;
+    }
     FetchComplete(e) {
         this.hasLoaded = true;
         this.loading = false;
@@ -671,6 +681,7 @@ class Collection extends ActiveRecord_js_1.default {
         if (data == undefined) {
             return this;
         }
+        data = this.cleanData(data);
         const models = Array.isArray(data) ? data : [data];
         models.forEach((model) => {
             if (!(model instanceof Model_js_1.default)) {
@@ -1611,6 +1622,37 @@ exports["default"] = CollectionCore;
 
 /***/ }),
 
+/***/ "./src/Collection/Media.ts":
+/*!*********************************!*\
+  !*** ./src/Collection/Media.ts ***!
+  \*********************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const Media_1 = __importDefault(__webpack_require__(/*! ../Model/Media */ "./src/Model/Media.ts"));
+const Core_1 = __importDefault(__webpack_require__(/*! ./Core */ "./src/Collection/Core.ts"));
+class Media extends Core_1.default {
+    model = new Media_1.default();
+    get images() {
+        return this.models.filter((media) => media.getType() === 'image');
+    }
+    get primary() {
+        return this.models.at(0);
+    }
+    get videos() {
+        return this.models.filter((media) => media.getType() === 'video');
+    }
+}
+exports["default"] = Media;
+
+
+/***/ }),
+
 /***/ "./src/Collection/Venue.ts":
 /*!*********************************!*\
   !*** ./src/Collection/Venue.ts ***!
@@ -1655,6 +1697,46 @@ exports["default"] = ModelCore;
 
 /***/ }),
 
+/***/ "./src/Model/Media.ts":
+/*!****************************!*\
+  !*** ./src/Model/Media.ts ***!
+  \****************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const Core_1 = __importDefault(__webpack_require__(/*! ./Core */ "./src/Model/Core.ts"));
+class Media extends Core_1.default {
+    endpoint = 'media';
+    fields = ['id', 'type', 'url', 'group', 'subgroup', 'created_at', 'updated_at'];
+    getGroup() {
+        return this.attr('group');
+    }
+    getSubgroup() {
+        return this.attr('subgroup');
+    }
+    getType() {
+        return this.attr('type');
+    }
+    getUrl() {
+        return this.attr('url');
+    }
+    getCreatedAt() {
+        return this.attr('created_at');
+    }
+    getUpdatedAt() {
+        return this.attr('updated_at');
+    }
+}
+exports["default"] = Media;
+
+
+/***/ }),
+
 /***/ "./src/Model/Venue.ts":
 /*!****************************!*\
   !*** ./src/Model/Venue.ts ***!
@@ -1668,8 +1750,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const Core_1 = __importDefault(__webpack_require__(/*! ./Core */ "./src/Model/Core.ts"));
+const Media_1 = __importDefault(__webpack_require__(/*! ../Collection/Media */ "./src/Collection/Media.ts"));
 class ModelVenue extends Core_1.default {
     endpoint = 'venues';
+    get media() {
+        return this.hasMany('media', Media_1.default);
+    }
     getAddress() {
         return this.attr('address');
     }
@@ -4390,6 +4476,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const Venue_1 = __importDefault(__webpack_require__(/*! ./Collection/Venue */ "./src/Collection/Venue.ts"));
+const Media_1 = __importDefault(__webpack_require__(/*! ./Collection/Media */ "./src/Collection/Media.ts"));
 const api_response_1 = __importDefault(__webpack_require__(/*! ./api-response */ "./src/api-response.ts"));
 function addVenue(venueModel, parentElement) {
     const element = document.createElement('div');
@@ -4410,55 +4497,15 @@ async function fetchVenues() {
     venueCollection.on('add:before', (e) => {
         console.log('Before add', e);
     });
-    const parlourItem = venueCollection.findWhere({ name: 'Parlour' });
-    console.log('Parlour Item', parlourItem);
-    const clonedParlourItem = parlourItem.clone();
-    console.log(' -> Cloned Parlour', clonedParlourItem);
-    const parlourItem2 = venueCollection.where({
-        name: 'Parlour',
-        website: 'http://superfine.nyc',
-    });
-    console.log('Superfine Collection', parlourItem2);
-    const parlourItem3 = venueCollection.where({
-        name: 'Parlour',
-        website: 'http://superfine.nyc',
-    }, false, true);
-    console.log('Full Superfine Collection', parlourItem3);
-    const response = await venueCollection.fetch();
-    console.log('Fetch Response', response);
-    console.log('\n\n');
-    const clonedCollection = venueCollection.clone();
-    console.log('Venue Collection', venueCollection);
-    console.log(' -> Cloned Collection', clonedCollection);
     console.log('-----------------------------------------------------------');
-    console.log('Testing iterator filters...');
-    const iteratorFilter = (model, index) => {
-        return model.getName().indexOf('Billiards') > 0;
-    };
-    let model;
-    for (model of clonedCollection.values(iteratorFilter)) {
-        console.log('Billards Places:', model.getName());
-    }
-    console.log('-----------------------------------------------------------');
-    console.log('Using .next(...)');
-    while ((model = clonedCollection.next(iteratorFilter))) {
-        console.log('Next Iterator', clonedCollection.index(), model.getName());
-    }
-    console.log('-----------------------------------------------------------');
-    console.log('Using .previous(...)');
-    while ((model = clonedCollection.previous(iteratorFilter))) {
-        console.log('Previous Iterator', clonedCollection.index(), model.getName());
-    }
-    console.log('-----------------------------------------------------------');
-    console.log('Using .next(...)');
-    while ((model = clonedCollection.next())) {
-        console.log('Next All Iterator', clonedCollection.index(), model.getName());
-    }
-    console.log('-----------------------------------------------------------');
-    console.log('Using .previous(...)');
-    while ((model = clonedCollection.previous())) {
-        console.log('Previous All Iterator', clonedCollection.index(), model.getName());
-    }
+    console.log('Relationships');
+    const modelA = venueCollection.first();
+    console.log('ModelA', modelA);
+    console.log('Media', modelA.media);
+    const mediaCollection = modelA.media.clone();
+    console.log('Cloned media', mediaCollection);
+    const hydratedCollection = Media_1.default.hydrate(modelA.attributes.media);
+    console.log('Hydrated media', hydratedCollection);
 }
 fetchVenues();
 

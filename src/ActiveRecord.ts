@@ -382,6 +382,9 @@ export default class ActiveRecord<T> extends Core {
 		// @ts-ignore
 		const possibleSetters = Object.getOwnPropertyDescriptors(this.__proto__);
 
+		// Check if we have a data key
+		attributes = this.cleanData(attributes);
+
 		/*
 		 * Set key/value relationship on `attributes`, but also on class if it's an intended root property
 		 * @todo I forget why we added the setters bit
@@ -1294,6 +1297,23 @@ export default class ActiveRecord<T> extends Core {
 			Object.assign(headers || {}, this.headers),
 			ttl
 		);
+	}
+
+	/**
+	 * @param object IAttributes
+	 * @return IAttributes
+	 */
+	protected cleanData(attributes: IAttributes = {}): IAttributes {
+		if (this.dataKey && typeof attributes === 'object' && !Array.isArray(attributes)) {
+			const keys = Object.keys(attributes);
+
+			// If there's only one key that matches the data key, return that
+			if (keys.length === 1 && keys[0] === this.dataKey) {
+				return attributes[this.dataKey];
+			}
+		}
+
+		return attributes;
 	}
 
 	/*
