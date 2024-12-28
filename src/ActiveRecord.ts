@@ -797,6 +797,16 @@ export default class ActiveRecord<T> extends Core {
 	/**
 	 * NOTE: It is preferred to use other methods
 	 *
+	 * Order of events:
+	 *
+	 * 	requesting
+	 * 	beforeFetch()
+	 * 	progress (potentially multiple times)
+	 * 	complete:{method}
+	 * 	parse:after
+	 * 	complete
+	 * 	finish
+	 *
 	 * @param  IModelRequestOptions options
 	 * @param  IModelRequestQueryParams queryParams
 	 * @return Promise<HttpRequest>

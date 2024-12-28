@@ -6,5 +6,6 @@ export default class Dispatcher {
     hasEvent(eventName: string): boolean;
     off(eventName: string, callback?: IDispatcherCallbackFunction): void;
     on(eventName: string, callback: IDispatcherCallbackFunction): void;
+    once(eventName: string, callback: IDispatcherCallbackFunction): void;
     trigger(eventName: string, detail?: IDispatchData): boolean;
 }

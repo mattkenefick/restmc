@@ -1,4 +1,4 @@
-import { IDispatcherCallbackFunction, IDispatchData } from '../Interfaces.js';
+import { IDispatcherCallbackFunction, IDispatcherEvent, IDispatchData } from '../Interfaces.js';
 import DispatcherEvent from './DispatcherEvent.js';
 
 /**
@@ -95,6 +95,20 @@ export default class Dispatcher {
 		}
 
 		event.registerCallback(callback);
+	}
+
+	/**
+	 * @param string eventName
+	 * @param IDispatcherCallbackFunction callback
+	 * @return void
+	 */
+	public once(eventName: string, callback: IDispatcherCallbackFunction): void {
+		const onceCallback = (event: IDispatcherEvent) => {
+			callback(event);
+			this.off(eventName, onceCallback);
+		};
+
+		this.on(eventName, onceCallback);
 	}
 
 	/**

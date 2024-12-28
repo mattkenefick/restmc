@@ -37,6 +37,13 @@ class Dispatcher {
         }
         event.registerCallback(callback);
     }
+    once(eventName, callback) {
+        const onceCallback = (event) => {
+            callback(event);
+            this.off(eventName, onceCallback);
+        };
+        this.on(eventName, onceCallback);
+    }
     trigger(eventName, detail = {}) {
         return this.dispatch(eventName, detail);
     }
