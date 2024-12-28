@@ -185,8 +185,20 @@ class Collection extends ActiveRecord_js_1.default {
         const model = this.at(0);
         return this.remove(model);
     }
+    shuffle() {
+        this.models = this.models.sort(() => Math.random() - 0.5);
+        return this;
+    }
+    reverse() {
+        this.models = this.models.reverse();
+        return this;
+    }
     slice(...params) {
         return Array.prototype.slice.apply(this.models, params);
+    }
+    unique() {
+        this.models = this.models.filter((value, index, self) => self.indexOf(value) === index);
+        return this;
     }
     get(query) {
         if (query == null) {

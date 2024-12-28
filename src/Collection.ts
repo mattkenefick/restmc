@@ -478,12 +478,39 @@ export default class Collection<GenericModel extends Model>
 	}
 
 	/**
+	 * @return Collection
+	 */
+	public shuffle(): Collection<GenericModel> {
+		this.models = this.models.sort(() => Math.random() - 0.5);
+
+		return this;
+	}
+
+	/**
+	 * @return Collection
+	 */
+	public reverse(): Collection<GenericModel> {
+		this.models = this.models.reverse();
+
+		return this;
+	}
+
+	/**
 	 * Cut up collection models
 	 *
 	 * @return Model[]
 	 */
 	public slice(...params: any): GenericModel[] {
 		return <GenericModel[]>Array.prototype.slice.apply(this.models, params);
+	}
+
+	/**
+	 * @return Collection
+	 */
+	public unique(): Collection<GenericModel> {
+		this.models = this.models.filter((value, index, self) => self.indexOf(value) === index);
+
+		return this;
 	}
 
 	/**
