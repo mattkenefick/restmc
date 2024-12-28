@@ -89,6 +89,7 @@ class Request extends Core_js_1.default {
                 this.parse(response);
                 this.afterParse(response);
                 this.afterFetch(response);
+                this.afterAll(response);
                 this.afterAny();
                 resolve(this);
             })

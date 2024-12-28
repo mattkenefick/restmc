@@ -238,6 +238,7 @@ export default class Request extends Core {
 					this.parse(response);
 					this.afterParse(response);
 					this.afterFetch(response);
+					this.afterAll(response);
 					this.afterAny();
 					resolve(this);
 				})

@@ -805,9 +805,9 @@ export default class ActiveRecord<T> extends Core {
 	 * 	requesting
 	 * 	beforeFetch()
 	 * 	progress (potentially multiple times)
-	 * 	complete:{method}
 	 * 	parse:after
 	 * 	complete
+	 * 	complete:{method}
 	 * 	finish
 	 *
 	 * @param  IModelRequestOptions options
