@@ -1,4 +1,13 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const axios_1 = require("axios");
 const Cache_js_1 = require("../Cache.js");
@@ -6,22 +15,43 @@ const Core_js_1 = require("../Core.js");
 const RequestError_js_1 = require("./RequestError.js");
 class Request extends Core_js_1.default {
     constructor(url = '', options = {}) {
+        var _a;
         super();
+        this.cacheOptions = {
+            defaultTTL: 1000 * 60 * 5,
+            enabled: true,
+            maxSize: 100,
+        };
         this.dataKey = 'data';
         this.headers = {};
         this.loading = false;
-        this.method = 'get';
+        this.method = 'GET';
         this.mode = 'cors';
         this.responseData = {};
         this.status = 0;
         this.withCredentials = true;
         this.dataKey = options.dataKey || this.dataKey;
-        this.withCredentials = options.hasOwnProperty('withCredentials') ? options.withCredentials : true;
-        this.url = url;
-        this.url = this.url.replace(/\?$/, '');
-        this.url = this.url.replace(/\?&/, '?');
+        this.withCredentials = (_a = options.withCredentials) !== null && _a !== void 0 ? _a : true;
+        this.url = url.replace(/\?$/, '').replace(/\?&/, '?');
     }
-    fetch(method = 'GET', body = {}, headers = {}, ttl = 0) {
+    generateCacheKey(params) {
+        const { method = 'GET', url = '', data = '', headers = {} } = params;
+        const serializedData = ['POST', 'PUT', 'PATCH'].includes(method.toUpperCase()) ? JSON.stringify(data) : '';
+        return [method.toUpperCase(), url, serializedData, headers['Accept'] || '', headers['Content-Type'] || '']
+            .filter(Boolean)
+            .join('|');
+    }
+    shouldUseCache(params) {
+        var _a, _b;
+        if (!this.cacheOptions.enabled || params.bypassCache)
+            return false;
+        if (((_a = params.method) === null || _a === void 0 ? void 0 : _a.toUpperCase()) !== 'GET')
+            return false;
+        const cacheControl = (_b = params.headers) === null || _b === void 0 ? void 0 : _b['Cache-Control'];
+        const output = !(cacheControl === null || cacheControl === void 0 ? void 0 : cacheControl.includes('no-cache'));
+        return output;
+    }
+    fetch(method = 'GET', body = {}, headers = {}, ttl) {
         const params = {};
         const requestEvent = {
             body,
@@ -29,6 +59,7 @@ class Request extends Core_js_1.default {
             method,
             params,
         };
+        ttl = ttl || this.cacheOptions.defaultTTL;
         this.method = (method || 'GET').toUpperCase();
         headers = Object.assign(this.headers, headers);
         params.data = body;
@@ -49,85 +80,97 @@ class Request extends Core_js_1.default {
         this.loading = true;
         this.dispatch('requesting', { request: requestEvent });
         return new Promise((resolve, reject) => {
-            let cacheKey = `${params.method}.${params.url}`;
-            new Promise((resolveCacheLayer) => {
-                if (Request.cachedResponses.has(cacheKey)) {
-                    const result = Request.cachedResponses.get(cacheKey);
-                    resolveCacheLayer(result);
-                }
-                else if (Request.cachedResponses.has('any')) {
-                    const result = Request.cachedResponses.get('any');
-                    resolveCacheLayer(result);
-                }
-                else {
-                    resolveCacheLayer((0, axios_1.default)(params));
-                }
-            })
+            const cacheKey = this.generateCacheKey(params);
+            const useCache = this.shouldUseCache(params);
+            this.handleRequest(cacheKey, params, useCache, ttl)
                 .then((response) => {
                 this.response = response;
-                if (ttl > 0) {
-                    Request.cachedResponses.set(cacheKey, response, ttl);
-                }
-                if (!this.response) {
-                    return;
-                }
-                this.beforeParse(this.response);
-                this.parse(this.response);
-                this.afterParse(this.response);
-                this.afterFetch(this.response);
-                this.afterAll(this.response);
+                this.beforeParse(response);
+                this.parse(response);
+                this.afterParse(response);
+                this.afterFetch(response);
                 this.afterAny();
                 resolve(this);
-                return response;
             })
                 .catch((error) => {
                 this.response = error.response;
                 this.afterAllError(error);
                 this.afterAny();
                 reject(this);
-                return error;
             });
         });
     }
+    handleRequest(cacheKey, params, useCache, ttl) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (useCache && Request.cachedResponses.has(cacheKey)) {
+                const cachedResponse = Request.cachedResponses.get(cacheKey);
+                this.dispatch('cache:hit', {
+                    cacheKey: cacheKey,
+                    response: cachedResponse,
+                });
+                return cachedResponse;
+            }
+            if (Request.pendingRequests.has(cacheKey)) {
+                const pendingResponse = Request.pendingRequests.get(cacheKey);
+                if (pendingResponse) {
+                    this.dispatch('request:deduped', { cacheKey });
+                    return pendingResponse;
+                }
+            }
+            const requestPromise = (0, axios_1.default)(params)
+                .then((response) => {
+                if (useCache && response.status >= 200 && response.status < 300) {
+                    Request.cachedResponses.set(cacheKey, response, ttl);
+                    this.dispatch('cache:set', { cacheKey, response });
+                }
+                Request.pendingRequests.delete(cacheKey);
+                return response;
+            })
+                .catch((error) => {
+                Request.pendingRequests.delete(cacheKey);
+                throw error;
+            });
+            Request.pendingRequests.set(cacheKey, requestPromise);
+            this.dispatch('request:pending', { cacheKey });
+            return requestPromise;
+        });
+    }
     xhrFetch(url, params) {
-        let self = this;
         let xhr = new XMLHttpRequest();
         xhr.open(params.method, url);
         for (let key in params.headers) {
             xhr.setRequestHeader(key, params.headers[key]);
         }
-        const xhrSend = xhr.send;
-        xhr.send = function () {
-            const xhrArguments = arguments;
-            return new Promise(function (resolve, reject) {
-                xhr.upload.onprogress = function (e) {
-                    const progressEvent = {
-                        loaded: e.loaded,
-                        ratio: 1,
-                        total: e.total,
-                    };
-                    if (e.lengthComputable) {
-                        progressEvent.ratio = e.loaded / e.total;
-                    }
-                    self.dispatch('progress', { progress: progressEvent });
-                };
-                xhr.onload = function () {
-                    let blob = new Blob([xhr.response], { type: 'application/json' });
-                    let init = {
-                        status: xhr.status,
-                        statusText: xhr.statusText,
-                    };
-                    let response = new Response(xhr.response ? blob : null, init);
-                    resolve(response);
-                };
-                xhr.onerror = function () {
-                    reject({ request: xhr });
-                };
-                xhrSend.apply(xhr, xhrArguments);
-            });
-        };
         xhr.withCredentials = this.withCredentials;
-        return xhr.send(params.body);
+        return new Promise((resolve, reject) => {
+            xhr.upload.onprogress = (e) => {
+                const progressEvent = {
+                    loaded: e.loaded,
+                    total: e.total,
+                    ratio: e.lengthComputable ? e.loaded / e.total : 1,
+                };
+                this.dispatch('progress', { progress: progressEvent });
+            };
+            xhr.onload = () => {
+                const blob = new Blob([xhr.response], { type: 'application/json' });
+                const response = new Response(xhr.response ? blob : null, {
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                });
+                resolve(response);
+            };
+            xhr.onerror = () => reject({ request: xhr });
+            xhr.send(params.body);
+        });
+    }
+    static clearCache() {
+        Request.cachedResponses = new Cache_js_1.default();
+    }
+    static getPendingRequests() {
+        return Request.pendingRequests;
+    }
+    static removeCacheEntry(key) {
+        Request.cachedResponses.delete(key);
     }
     setHeader(header, value) {
         this.headers[header] = value;
@@ -218,4 +261,5 @@ class Request extends Core_js_1.default {
 }
 exports.default = Request;
 Request.cachedResponses = new Cache_js_1.default();
+Request.pendingRequests = new Map();
 //# sourceMappingURL=Request.js.map

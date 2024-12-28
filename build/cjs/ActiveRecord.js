@@ -106,6 +106,9 @@ class ActiveRecord extends Core_js_1.default {
     }
     setOptions(options = {}) {
         this.options = Object.assign(this.options, options);
+        if (options.cacheable !== undefined) {
+            this.cacheable = options.cacheable;
+        }
         if (options.baseUrl) {
             this.baseUrl = options.baseUrl;
         }
@@ -443,7 +446,6 @@ class ActiveRecord extends Core_js_1.default {
             yield this.beforeFetch();
             const url = this.getUrlByMethod(method);
             const ttl = this.ttl || 0;
-            this.ttl = 0;
             this.dispatch('requesting', { request: this.lastRequest });
             this.loading = true;
             const request = (this.request = new Request_js_1.default(url, {

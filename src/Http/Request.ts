@@ -1,15 +1,10 @@
-// The node-fetch module creates failures in things like NativeScript which
-// would use a built-in version of "fetch". Do we need this?
-import axios, { AxiosResponse } from 'axios';
+import axios, { AxiosError, AxiosResponse } from 'axios';
 import {
 	IAttributes,
 	IAxiosConfig,
 	IAxiosError,
-	IAxiosResponse,
-	IAxiosSuccess,
 	IDispatchData,
 	IProgressEvent,
-	IRequest,
 	IRequestEvent,
 	IResponse,
 } from '../Interfaces.js';
@@ -18,11 +13,14 @@ import Core from '../Core.js';
 import RequestError from './RequestError.js';
 
 /**
+ * The node-fetch module creates failures in things like NativeScript which
+ * would use a built-in version of "fetch". Do we need this?
+ *
  * @author Matt Kenefick <matt@polymermallard.com>
  * @package Http
  * @project RestMC
  */
-export default class Request extends Core implements IRequest {
+export default class Request extends Core {
 	/**
 	 * Create a cache for previously sent requests.
 	 *
@@ -33,6 +31,23 @@ export default class Request extends Core implements IRequest {
 	 * @type Cache
 	 */
 	public static cachedResponses: Cache = new Cache();
+
+	/**
+	 * Tracks in-flight requests to prevent duplicates
+	 * Map of cache keys to promises
+	 *
+	 * @type Map
+	 */
+	private static pendingRequests: Map<string, Promise<AxiosResponse<any>>> = new Map();
+
+	/**
+	 * Cache configuration options
+	 */
+	public cacheOptions = {
+		defaultTTL: 1000 * 60 * 5,
+		enabled: true,
+		maxSize: 100,
+	};
 
 	/**
 	 * Represents the expected key to find our data on in remote responses.
@@ -66,7 +81,7 @@ export default class Request extends Core implements IRequest {
 	 *
 	 * @type string
 	 */
-	public method: string = 'get';
+	public method: string = 'GET';
 
 	/**
 	 * Mode (cors, no-cors, same-origin, navigate)
@@ -87,7 +102,7 @@ export default class Request extends Core implements IRequest {
 	 *
 	 * @type Response
 	 */
-	public response?: IAxiosResponse | IAxiosSuccess;
+	public response?: AxiosResponse;
 
 	/**
 	 * Parsed data from response
@@ -115,19 +130,43 @@ export default class Request extends Core implements IRequest {
 	 * @param string url
 	 * @param IAttributes options
 	 */
-	constructor(url: string = '', options: IAttributes = {}) {
+	constructor(url: string = '', options: Partial<IAttributes> = {}) {
 		super();
 
-		// Set url and datakey
 		this.dataKey = options.dataKey || this.dataKey;
+		this.withCredentials = options.withCredentials ?? true;
 
-		// Set withCredentials
-		this.withCredentials = options.hasOwnProperty('withCredentials') ? options.withCredentials : true;
+		this.url = url.replace(/\?$/, '').replace(/\?&/, '?');
+	}
 
-		// Set URL and remove common mistakes
-		this.url = url;
-		this.url = this.url.replace(/\?$/, '');
-		this.url = this.url.replace(/\?&/, '?');
+	/**
+	 * Generate a unique cache key for a request
+	 *
+	 * @param IAttributes params
+	 * @return string
+	 */
+	private generateCacheKey(params: IAttributes): string {
+		const { method = 'GET', url = '', data = '', headers = {} } = params;
+		const serializedData = ['POST', 'PUT', 'PATCH'].includes(method.toUpperCase()) ? JSON.stringify(data) : '';
+
+		return [method.toUpperCase(), url, serializedData, headers['Accept'] || '', headers['Content-Type'] || '']
+			.filter(Boolean)
+			.join('|');
+	}
+
+	/**
+	 * Determine if the request should use cache
+	 *
+	 * @param IAttributes params
+	 * @return boolean
+	 */
+	private shouldUseCache(params: IAttributes): boolean {
+		if (!this.cacheOptions.enabled || params.bypassCache) return false;
+		if (params.method?.toUpperCase() !== 'GET') return false;
+		const cacheControl = params.headers?.['Cache-Control'];
+		const output = !cacheControl?.includes('no-cache');
+
+		return output;
 	}
 
 	/**
@@ -143,7 +182,7 @@ export default class Request extends Core implements IRequest {
 		method: string = 'GET',
 		body: IAttributes = {},
 		headers: IAttributes = {},
-		ttl: number = 0
+		ttl: number
 	): Promise<Request> {
 		const params: IAttributes = {};
 		const requestEvent: IRequestEvent = {
@@ -152,6 +191,9 @@ export default class Request extends Core implements IRequest {
 			method,
 			params,
 		};
+
+		// Set ttl
+		ttl = ttl || this.cacheOptions.defaultTTL;
 
 		// Set request method
 		this.method = (method || 'GET').toUpperCase();
@@ -186,84 +228,81 @@ export default class Request extends Core implements IRequest {
 		this.dispatch('requesting', { request: requestEvent });
 
 		return new Promise((resolve, reject) => {
-			let cacheKey = `${params.method}.${params.url}`;
+			const cacheKey = this.generateCacheKey(params);
+			const useCache = this.shouldUseCache(params);
 
-			// Get cache OR fetch new
-			new Promise((resolveCacheLayer) => {
-				// Find cache
-				if (Request.cachedResponses.has(cacheKey)) {
-					const result = Request.cachedResponses.get(cacheKey);
-
-					// console.log('💾 Cached Response: ', cacheKey);
-					resolveCacheLayer(result);
-				} else if (Request.cachedResponses.has('any')) {
-					const result = Request.cachedResponses.get('any');
-
-					// console.log('💿 Any Cached Response');
-					resolveCacheLayer(result);
-				} else {
-					// console.log('🚦 Requesting remote');
-					resolveCacheLayer(axios(params));
-				}
-			})
-
-				// @see https://axios-http.com/docs/res_schema
-				// console.log(response.data);
-				// console.log(response.status);
-				// console.log(response.statusText);
-				// console.log(response.headers);
-				// console.log(response.config);
-				.then((response: AxiosResponse<any> | any) => {
-					// @ts-ignore
+			this.handleRequest(cacheKey, params, useCache, ttl)
+				.then((response: AxiosResponse<any>) => {
 					this.response = response;
-
-					// Set response to cache
-					if (ttl > 0) {
-						Request.cachedResponses.set(cacheKey, response, ttl);
-					}
-
-					// Nothing to report
-					if (!this.response) {
-						return;
-					}
-
-					this.beforeParse(this.response);
-					this.parse(this.response);
-					this.afterParse(this.response);
-					this.afterFetch(this.response);
-					this.afterAll(this.response);
+					this.beforeParse(response);
+					this.parse(response);
+					this.afterParse(response);
+					this.afterFetch(response);
 					this.afterAny();
-
 					resolve(this);
-
-					return response;
 				})
-
-				// This will catch the potential error thrown by afterParse
-				// that raises issues 400+ or missing responses
-				//
-				// @see https://axios-http.com/docs/handling_errors
-				// console.log(error.response?.data);
-				// console.log(error.response?.status);
-				// console.log(error.response?.headers);
-				// console.log(error.request?);
-				// console.log(error.message?);
-				.catch((error: IAxiosError) => {
-					this.response = error.response as IResponse;
-
-					// Network Errors will not return a response
-					// if (!this.response) {
-					// 	return;
-					// }
-
+				.catch((error: AxiosError<any>) => {
+					this.response = error.response;
 					this.afterAllError(error);
 					this.afterAny();
-
 					reject(this);
-
-					return error;
 				});
 		});
+	}
+
+	/**
+	 * Handle request logic, including caching and deduplication
+	 *
+	 * @param string cacheKey
+	 * @param IAttributes params
+	 * @param boolean useCache
+	 * @param number ttl
+	 * @return Promise<AxiosResponse<any>>
+	 */
+	private async handleRequest(
+		cacheKey: string,
+		params: IAttributes,
+		useCache: boolean,
+		ttl: number
+	): Promise<AxiosResponse<any>> {
+		if (useCache && Request.cachedResponses.has(cacheKey)) {
+			const cachedResponse = Request.cachedResponses.get(cacheKey);
+			this.dispatch('cache:hit', {
+				cacheKey: cacheKey,
+				response: cachedResponse,
+			});
+
+			return cachedResponse;
+		}
+
+		if (Request.pendingRequests.has(cacheKey)) {
+			const pendingResponse = Request.pendingRequests.get(cacheKey);
+
+			if (pendingResponse) {
+				this.dispatch('request:deduped', { cacheKey });
+				return pendingResponse;
+			}
+		}
+
+		const requestPromise = axios(params)
+			.then((response) => {
+				if (useCache && response.status >= 200 && response.status < 300) {
+					Request.cachedResponses.set(cacheKey, response, ttl);
+					this.dispatch('cache:set', { cacheKey, response });
+				}
+
+				Request.pendingRequests.delete(cacheKey);
+				return response;
+			})
+			.catch((error) => {
+				Request.pendingRequests.delete(cacheKey);
+				throw error;
+			});
+
+		Request.pendingRequests.set(cacheKey, requestPromise);
+		this.dispatch('request:pending', { cacheKey });
+
+		return requestPromise;
 	}
 
 	/**
@@ -310,10 +349,7 @@ export default class Request extends Core implements IRequest {
 	 * @return {any}
 	 */
 	public xhrFetch(url: string, params: any): any {
-		let self = this;
 		let xhr = new XMLHttpRequest();
-
-		// Open Request
 		xhr.open(params.method, url);
 
 		// Set Headers
@@ -321,51 +357,58 @@ export default class Request extends Core implements IRequest {
 			xhr.setRequestHeader(key, params.headers[key]);
 		}
 
-		// Copy old `send`
-		const xhrSend = xhr.send;
-
-		// Create new `send`
-		xhr.send = function () {
-			const xhrArguments: any = arguments;
-
-			return new Promise(function (resolve, reject) {
-				xhr.upload.onprogress = function (e) {
-					const progressEvent: IProgressEvent = {
-						loaded: e.loaded,
-						ratio: 1,
-						total: e.total,
-					};
-
-					if (e.lengthComputable) {
-						progressEvent.ratio = e.loaded / e.total;
-					}
-
-					self.dispatch('progress', { progress: progressEvent });
-				};
-
-				xhr.onload = function () {
-					let blob = new Blob([xhr.response], { type: 'application/json' });
-					let init = {
-						status: xhr.status,
-						statusText: xhr.statusText,
-					};
-					let response = new Response(xhr.response ? blob : null, init);
-
-					resolve(response);
-				};
-
-				xhr.onerror = function () {
-					reject({ request: xhr });
-				};
-
-				xhrSend.apply(xhr, xhrArguments);
-			});
-		};
-
-		// Send cookies
 		xhr.withCredentials = this.withCredentials;
 
-		return xhr.send(params.body);
+		return new Promise((resolve, reject) => {
+			xhr.upload.onprogress = (e) => {
+				const progressEvent: IProgressEvent = {
+					loaded: e.loaded,
+					total: e.total,
+					ratio: e.lengthComputable ? e.loaded / e.total : 1,
+				};
+				this.dispatch('progress', { progress: progressEvent });
+			};
+
+			xhr.onload = () => {
+				const blob = new Blob([xhr.response], { type: 'application/json' });
+				const response = new Response(xhr.response ? blob : null, {
+					status: xhr.status,
+					statusText: xhr.statusText,
+				});
+				resolve(response);
+			};
+
+			xhr.onerror = () => reject({ request: xhr });
+			xhr.send(params.body);
+		});
+	}
+
+	/**
+	 * Clear all cached responses
+	 *
+	 * @return void
+	 */
+	public static clearCache(): void {
+		Request.cachedResponses = new Cache();
+	}
+
+	/**
+	 * Get all pending requests
+	 *
+	 * @return Map<string, Promise<AxiosResponse<any>>
+	 */
+	public static getPendingRequests(): Map<string, Promise<AxiosResponse<any>>> {
+		return Request.pendingRequests;
+	}
+
+	/**
+	 * Remove a specific cache entry
+	 *
+	 * @param string key
+	 * @return void
+	 */
+	public static removeCacheEntry(key: string): void {
+		Request.cachedResponses.delete(key);
 	}
 
 	/**
@@ -395,9 +438,9 @@ export default class Request extends Core implements IRequest {
 	 * @todo Check if we have valid JSON
 	 * @todo Check if the request was an error
 	 *
-	 * @param e IAxiosResponse
+	 * @param e AxiosResponse<any>
 	 */
-	private beforeParse(response: IAxiosSuccess): void {
+	private beforeParse(response: AxiosResponse<any>): void {
 		// Trigger
 		this.dispatch('parse:before', {
 			request: this,
@@ -408,10 +451,10 @@ export default class Request extends Core implements IRequest {
 	/**
 	 * Parse data
 	 *
-	 * @param IAxiosSuccess response
-	 * @return IAxiosSuccess
+	 * @param AxiosResponse<any> response
+	 * @return AxiosResponse<any>
 	 */
-	private parse(response: IAxiosSuccess): void {
+	private parse(response: AxiosResponse<any>): void {
 		// Trigger
 		this.dispatch('parse:parsing', {
 			request: this,
@@ -431,10 +474,10 @@ export default class Request extends Core implements IRequest {
 	}
 
 	/**
-	 * @param IAxiosSuccess response
+	 * @param AxiosResponse<any> response
 	 * @return void
 	 */
-	private afterParse(response: IAxiosSuccess): void {
+	private afterParse(response: AxiosResponse<any>): void {
 		// Check if we have a status in the JSON as well
 		if (response.status >= 400 && response.data?.status) {
 			const message: string = response.data?.message || response.data || '';
@@ -450,10 +493,10 @@ export default class Request extends Core implements IRequest {
 	}
 
 	/**
-	 * @param IAxiosSuccess response
+	 * @param AxiosResponse<any> response
 	 * @return void
 	 */
-	private afterFetch(response: IAxiosSuccess): void {
+	private afterFetch(response: AxiosResponse<any>): void {
 		// Trigger
 		this.dispatch('fetch', {
 			request: this,
@@ -470,10 +513,10 @@ export default class Request extends Core implements IRequest {
 	}
 
 	/**
-	 * @param IAxiosSuccess response
+	 * @param AxiosResponse<any> response
 	 * @return void
 	 */
-	private afterAll(e: IAxiosSuccess): void {
+	private afterAll(e: AxiosResponse<any>): void {
 		if (e === undefined) {
 			return;
 		}
@@ -498,10 +541,10 @@ export default class Request extends Core implements IRequest {
 	}
 
 	/**
-	 * @param IAxiosSuccess response
+	 * @param AxiosResponse<any> response
 	 * @return void
 	 */
-	private afterAllError(e: IAxiosError): void {
+	private afterAllError(e: AxiosError<any>): void {
 		const data: any = e.message || 'Unknown error';
 		const status: number = e.response?.status || 503; // Default to 503 Service Unavailable
 		const method: string = (e.config?.method || 'get').toLowerCase();
@@ -526,7 +569,7 @@ export default class Request extends Core implements IRequest {
 	}
 
 	/**
-	 * @param IAxiosSuccess response
+	 * @param AxiosResponse<any> response
 	 * @return void
 	 */
 	private afterAny(): void {

@@ -2,8 +2,6 @@ import {
 	IAttributes,
 	IAxiosResponse,
 	IAxiosSuccess,
-	ICachedResponse,
-	ICachedResponses,
 	IDispatcherCallbackFunction,
 	IDispatcherEvent,
 	IModelRequestOptions,
@@ -437,6 +435,11 @@ export default class ActiveRecord<T> extends Core {
 	 */
 	public setOptions(options: IAttributes = {}): ActiveRecord<T> {
 		this.options = Object.assign(this.options, options);
+
+		// Set cacheable
+		if (options.cacheable !== undefined) {
+			this.cacheable = options.cacheable;
+		}
 
 		// Override baseUrl
 		if (options.baseUrl) {
@@ -1245,9 +1248,6 @@ export default class ActiveRecord<T> extends Core {
 		const url = this.getUrlByMethod(method);
 		const ttl = this.ttl || 0;
 
-		// Reset ttl
-		this.ttl = 0;
-
 		// Events
 		this.dispatch('requesting', { request: this.lastRequest });
 
@@ -1325,106 +1325,6 @@ export default class ActiveRecord<T> extends Core {
 
 		return attributes;
 	}
-
-	/*
-	 * region: Cache (mk: I think this is outdated now, but I like the subscribers part)
-	 * -------------------------------------------------------------------------
-	 */
-
-	// /**
-	//  * @type ICachedResponses
-	//  */
-	// protected static cachedResponses: ICachedResponses = {};
-
-	// /**
-	//  * Usage:
-	//  *
-	//  *     this.cache('foo', 'bar');
-	//  *
-	//  * @param string, key
-	//  * @param any value
-	//  * @param boolean isComplete
-	//  * @param number tll
-	//  * @return void
-	//  */
-	// protected cache(key: string, value: any, isComplete: boolean = false, ttl: number = 5000): void {
-	// 	// If exists, save only value as to not overwrite subscribers
-	// 	if (ActiveRecord.cachedResponses[key]) {
-	// 		ActiveRecord.cachedResponses[key].complete = isComplete;
-	// 		ActiveRecord.cachedResponses[key].time = Date.now();
-	// 		ActiveRecord.cachedResponses[key].value = value;
-	// 	}
-	// 	else {
-	// 		ActiveRecord.cachedResponses[key] = {
-	// 			complete: false,
-	// 			subscribers: [],
-	// 			time: Date.now(),
-	// 			ttl: ttl,
-	// 			value: value,
-	// 		};
-	// 	}
-	// }
-
-	// /**
-	//  * @param string key
-	//  * @return boolean
-	//  */
-	// protected isCached(key: string): boolean {
-	// 	return !!ActiveRecord.cachedResponses[key];
-
-	// 	/*
-	// 	 * return !!ActiveRecord.cachedResponses[key]
-	// 	 *     && (ActiveRecord.cachedResponses[key].time + ActiveRecord.cachedResponses[key].ttl) < Date.now();
-	// 	 */
-	// }
-
-	// /**
-	//  * @param string key
-	//  * @return boolean
-	//  */
-	// protected isCachePending(key: string): boolean {
-	// 	return !!this.isCached(key) && (!this.getCache(key).complete || !!this.getCache(key).failed);
-	// }
-
-	// /**
-	//  * @param string key
-	//  * @return ICachedResponse
-	//  */
-	// protected getCache(key: string): ICachedResponse {
-	// 	return ActiveRecord.cachedResponses[key];
-	// }
-
-	// /**
-	//  * Add subscriber
-	//  *
-	//  * @param string key
-	//  * @param any resolve
-	//  * @param any reject
-	//  * @param any collection
-	//  * @return void
-	//  */
-	// protected addCacheSubscriber(key: string, resolve: any, reject: any, collection: any): void {
-	// 	const cache: any = this.getCache(key);
-
-	/*
-	 * 	cache.subscribers.push({
-	 * 		collection,
-	 * 		reject,
-	 * 		resolve,
-	 * 	});
-	 * }
-	 */
-
-	// /**
-	//  * @param string key
-	//  * @return void
-	//  */
-	// protected clearCacheSubscribers(key: string): void {
-	// 	const cache: any = this.getCache(key);
-	// 	cache.subscribers = [];
-	// }
-
-	// endregion: Cache
 
 	/*
 	 * region: Http Events

@@ -139,6 +139,23 @@ async function fetchVenues(): Promise<void> {
 
 	const hydratedCollection = CollectionMedia.hydrate(modelA.attributes.media);
 	console.log('Hydrated media', hydratedCollection);
+
+	console.log('-----------------------------------------------------------');
+
+	// Remote Fetching
+	// -------------------------------------------------------------------------
+
+	const remoteCollection = new CollectionVenue();
+
+	remoteCollection.setOptions({
+		baseUrl: 'http://localhost:8000/v3',
+		cacheable: true,
+	});
+
+	for (let i = 0; i < 5; i++) {
+		console.log(`Fetch ${i} ---------------------------------------------- `);
+		await remoteCollection.fetch();
+	}
 }
 
 // Run

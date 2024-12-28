@@ -21,6 +21,6 @@ export default class CollectionVenue extends CollectionCore<ModelVenue> {
 	 * @return Promise<void>
 	 */
 	public async beforeFetch(): Promise<void> {
-		console.log('Set the token here');
+		// console.log('Set the token here');
 	}
 }

@@ -36,9 +36,10 @@
     },
     "scripts": {
         "build": "tsc -p tsconfig.json && tsc -p tsconfig-cjs.json",
+        "serve": "http-server",
         "test": "ts-mocha -p tsconfig.json test/unit/**/*.spec.ts test/unit/*.spec.ts ",
         "test-one": "ts-mocha -p tsconfig.json test/unit/Collection.spec.ts"
     },
     "types": "build/esm/index.d.ts",
-    "version": "0.17.0"
+    "version": "0.17.1"
 }
