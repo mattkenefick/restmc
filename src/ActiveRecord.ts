@@ -1228,15 +1228,15 @@ export default class ActiveRecord<T> extends Core {
 			this.builder.identifier(options.id);
 		}
 
+		// Run before fetch methods
+		await this.beforeFetch();
+
 		// Query params
 		const url = this.getUrlByMethod(method);
 		const ttl = this.ttl || 0;
 
 		// Reset ttl
 		this.ttl = 0;
-
-		// Run before fetch methods
-		await this.beforeFetch();
 
 		// Events
 		this.dispatch('requesting', { request: this.lastRequest });

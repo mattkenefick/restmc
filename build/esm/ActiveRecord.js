@@ -440,10 +440,10 @@ class ActiveRecord extends Core_js_1.default {
             if (options && options.id) {
                 this.builder.identifier(options.id);
             }
+            yield this.beforeFetch();
             const url = this.getUrlByMethod(method);
             const ttl = this.ttl || 0;
             this.ttl = 0;
-            yield this.beforeFetch();
             this.dispatch('requesting', { request: this.lastRequest });
             this.loading = true;
             const request = (this.request = new Request_js_1.default(url, {
