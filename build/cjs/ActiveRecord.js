@@ -435,7 +435,6 @@ class ActiveRecord extends Core_js_1.default {
             if (!this.cacheable) {
                 this.builder.qp('cb', Date.now());
             }
-            yield this.beforeFetch();
             this.setQueryParams(queryParams);
             this.setHeaders(headers);
             if (options && options.id) {
@@ -444,8 +443,8 @@ class ActiveRecord extends Core_js_1.default {
             const url = this.getUrlByMethod(method);
             const ttl = this.ttl || 0;
             this.ttl = 0;
+            yield this.beforeFetch();
             this.dispatch('requesting', { request: this.lastRequest });
-            this.hasFetched = true;
             this.loading = true;
             const request = (this.request = new Request_js_1.default(url, {
                 dataKey: this.dataKey,
@@ -471,6 +470,7 @@ class ActiveRecord extends Core_js_1.default {
             request.on('finish', (e) => this.dispatch('finish'));
             request.on('parse:after', (e) => this.FetchParseAfter(e, options || {}));
             request.on('progress', (e) => this.FetchProgress(e));
+            this.hasFetched = true;
             return request.fetch(method, Object.assign(body || {}, this.body), Object.assign(headers || {}, this.headers), ttl);
         });
     }

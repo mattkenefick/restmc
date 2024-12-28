@@ -1217,9 +1217,6 @@ export default class ActiveRecord<T> extends Core {
 			this.builder.qp('cb', Date.now());
 		}
 
-		// Run before fetch methods
-		await this.beforeFetch();
-
 		// Check for query params
 		this.setQueryParams(queryParams);
 
@@ -1232,17 +1229,17 @@ export default class ActiveRecord<T> extends Core {
 		}
 
 		// Query params
-		const url: string = this.getUrlByMethod(method);
-		const ttl: number = this.ttl || 0;
+		const url = this.getUrlByMethod(method);
+		const ttl = this.ttl || 0;
 
 		// Reset ttl
 		this.ttl = 0;
 
+		// Run before fetch methods
+		await this.beforeFetch();
+
 		// Events
 		this.dispatch('requesting', { request: this.lastRequest });
-
-		// Has fetched
-		this.hasFetched = true;
 
 		// Set loading
 		this.loading = true;
@@ -1286,6 +1283,9 @@ export default class ActiveRecord<T> extends Core {
 		request.on('finish', (e: IDispatcherEvent) => this.dispatch('finish'));
 		request.on('parse:after', (e: IDispatcherEvent) => this.FetchParseAfter(e, options || {}));
 		request.on('progress', (e: IDispatcherEvent) => this.FetchProgress(e));
+
+		// Has fetched
+		this.hasFetched = true;
 
 		/*
 		 * Request (method, body headers)
