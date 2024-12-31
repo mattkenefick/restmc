@@ -302,6 +302,13 @@ export default class ActiveRecord<T> extends Core {
 	protected runLastAttemptsMax: number = 2;
 
 	/**
+	 * User provided token
+	 *
+	 * @return string
+	 */
+	protected token: string = '';
+
+	/**
 	 * Set by the .cache(ttl) method and is applied on the next _fetch call
 	 *
 	 * @type number
@@ -1157,6 +1164,7 @@ export default class ActiveRecord<T> extends Core {
 	 * @return ActiveRecord
 	 */
 	public setToken(token: string): ActiveRecord<T> {
+		this.token = token;
 		this.setHeader('Authorization', 'Bearer ' + token);
 
 		return this;

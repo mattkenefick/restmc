@@ -41,6 +41,7 @@ export default class ActiveRecord<T> extends Core {
     protected referenceForModifiedEndpoint: ActiveRecord<any> | undefined;
     protected runLastAttempts: number;
     protected runLastAttemptsMax: number;
+    protected token: string;
     protected ttl: number;
     constructor(options?: IAttributes);
     attr(key: string): string | number | null;

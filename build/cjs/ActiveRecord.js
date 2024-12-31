@@ -40,6 +40,7 @@ class ActiveRecord extends Core_js_1.default {
         this.cidPrefix = 'c';
         this.runLastAttempts = 0;
         this.runLastAttemptsMax = 2;
+        this.token = '';
         this.ttl = 0;
         Object.assign(this, options);
         this.body = {};
@@ -404,6 +405,7 @@ class ActiveRecord extends Core_js_1.default {
         return this;
     }
     setToken(token) {
+        this.token = token;
         this.setHeader('Authorization', 'Bearer ' + token);
         return this;
     }
