@@ -222,7 +222,7 @@ export default class Request extends Core {
 		if (this.method === 'GET') {
 			params.headers = {
 				...params.headers,
-				'Content-Type': null, // This tells axios to not set the header
+				'Content-Type': false, // This tells axios to not set the header
 			};
 		}
 
