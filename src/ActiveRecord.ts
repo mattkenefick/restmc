@@ -329,9 +329,6 @@ export default class ActiveRecord<T> extends Core {
 		this.cid = this.cidPrefix + Math.random().toString(36).substr(2, 5);
 		this.parent = undefined;
 
-		// Set default content type header
-		this.setHeader('Content-Type', 'application/json; charset=utf-8');
-
 		// Setup URL builder
 		this.builder = new Builder<T>(this);
 
