@@ -285,23 +285,7 @@ export default class Request extends Core {
 			}
 		}
 
-		const requestPromise = axios({
-			...params,
-
-			// Override the transformRequest for this request.
-			transformRequest: [
-				(data, headers) => {
-					// Remove the "Content-Type" header from common headers if it exists.
-					if (headers && headers.common) {
-						delete headers.common['Content-Type'];
-					}
-
-					// Also remove it from the current request headers.
-					delete headers['Content-Type'];
-					return data;
-				},
-			],
-		})
+		const requestPromise = axios(params)
 			.then((response) => {
 				if (useCache && response.status >= 200 && response.status < 300) {
 					Request.cachedResponses.set(cacheKey, response, ttl);

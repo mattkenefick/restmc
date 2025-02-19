@@ -118,15 +118,7 @@ class Request extends Core_js_1.default {
                     return pendingResponse;
                 }
             }
-            const requestPromise = (0, axios_1.default)(Object.assign(Object.assign({}, params), { transformRequest: [
-                    (data, headers) => {
-                        if (headers && headers.common) {
-                            delete headers.common['Content-Type'];
-                        }
-                        delete headers['Content-Type'];
-                        return data;
-                    },
-                ] }))
+            const requestPromise = (0, axios_1.default)(params)
                 .then((response) => {
                 if (useCache && response.status >= 200 && response.status < 300) {
                     Request.cachedResponses.set(cacheKey, response, ttl);
