@@ -41,5 +41,5 @@
         "test-one": "ts-mocha -p tsconfig.json test/unit/Collection.spec.ts"
     },
     "types": "build/esm/index.d.ts",
-    "version": "0.17.6"
+    "version": "0.17.7"
 }

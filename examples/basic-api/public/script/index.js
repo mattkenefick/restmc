@@ -50,12 +50,12 @@ class ActiveRecord extends Core_js_1.default {
         this.cidPrefix = 'c';
         this.runLastAttempts = 0;
         this.runLastAttemptsMax = 2;
+        this.token = '';
         this.ttl = 0;
         Object.assign(this, options);
         this.body = {};
         this.cid = this.cidPrefix + Math.random().toString(36).substr(2, 5);
         this.parent = undefined;
-        this.setHeader('Content-Type', 'application/json; charset=utf-8');
         this.builder = new Builder_js_1.default(this);
         this.setOptions(options);
         ActiveRecord.hook(`${this.constructor.name}.setup`, [this]);
@@ -414,6 +414,7 @@ class ActiveRecord extends Core_js_1.default {
         return this;
     }
     setToken(token) {
+        this.token = token;
         this.setHeader('Authorization', 'Bearer ' + token);
         return this;
     }
@@ -1327,6 +1328,7 @@ class Request extends Core_js_1.default {
                 this.parse(response);
                 this.afterParse(response);
                 this.afterFetch(response);
+                this.afterAll(response);
                 this.afterAny();
                 resolve(this);
             })
@@ -1355,7 +1357,15 @@ class Request extends Core_js_1.default {
                     return pendingResponse;
                 }
             }
-            const requestPromise = (0, axios_1.default)(params)
+            const requestPromise = (0, axios_1.default)(Object.assign(Object.assign({}, params), { transformRequest: [
+                    (data, headers) => {
+                        if (headers && headers.common) {
+                            delete headers.common['Content-Type'];
+                        }
+                        delete headers['Content-Type'];
+                        return data;
+                    },
+                ] }))
                 .then((response) => {
                 if (useCache && response.status >= 200 && response.status < 300) {
                     Request.cachedResponses.set(cacheKey, response, ttl);
@@ -4573,7 +4583,7 @@ async function fetchVenues() {
     console.log('-----------------------------------------------------------');
     const remoteCollection = new Venue_1.default();
     remoteCollection.setOptions({
-        baseUrl: 'http://localhost:8000/v3',
+        baseUrl: 'https://api.chalkysticks.com/v3',
         cacheable: true,
     });
     for (let i = 0; i < 5; i++) {

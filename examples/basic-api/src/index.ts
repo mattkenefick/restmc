@@ -148,7 +148,7 @@ async function fetchVenues(): Promise<void> {
 	const remoteCollection = new CollectionVenue();
 
 	remoteCollection.setOptions({
-		baseUrl: 'http://localhost:8000/v3',
+		baseUrl: 'https://api.chalkysticks.com/v3',
 		cacheable: true,
 	});
 

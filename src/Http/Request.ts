@@ -218,14 +218,6 @@ export default class Request extends Core {
 			this.dispatch('progress', { progress: progressEvent });
 		};
 
-		// Add these to prevent axios from automatically setting Content-Type
-		if (this.method === 'GET') {
-			params.headers = {
-				...params.headers,
-				'Content-Type': false, // This tells axios to not set the header
-			};
-		}
-
 		// Event trigger
 		this.dispatch('fetch:before', { request: requestEvent });
 
@@ -293,7 +285,23 @@ export default class Request extends Core {
 			}
 		}
 
-		const requestPromise = axios(params)
+		const requestPromise = axios({
+			...params,
+
+			// Override the transformRequest for this request.
+			transformRequest: [
+				(data, headers) => {
+					// Remove the "Content-Type" header from common headers if it exists.
+					if (headers && headers.common) {
+						delete headers.common['Content-Type'];
+					}
+
+					// Also remove it from the current request headers.
+					delete headers['Content-Type'];
+					return data;
+				},
+			],
+		})
 			.then((response) => {
 				if (useCache && response.status >= 200 && response.status < 300) {
 					Request.cachedResponses.set(cacheKey, response, ttl);
