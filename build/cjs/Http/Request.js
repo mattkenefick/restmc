@@ -76,6 +76,9 @@ class Request extends Core_js_1.default {
             };
             this.dispatch('progress', { progress: progressEvent });
         };
+        if (this.method === 'GET') {
+            params.headers = Object.assign(Object.assign({}, params.headers), { 'Content-Type': null });
+        }
         this.dispatch('fetch:before', { request: requestEvent });
         this.loading = true;
         this.dispatch('requesting', { request: requestEvent });

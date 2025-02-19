@@ -218,6 +218,14 @@ export default class Request extends Core {
 			this.dispatch('progress', { progress: progressEvent });
 		};
 
+		// Add these to prevent axios from automatically setting Content-Type
+		if (this.method === 'GET') {
+			params.headers = {
+				...params.headers,
+				'Content-Type': null, // This tells axios to not set the header
+			};
+		}
+
 		// Event trigger
 		this.dispatch('fetch:before', { request: requestEvent });
 
