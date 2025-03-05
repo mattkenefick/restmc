@@ -23,6 +23,8 @@ async function fetchVenues(): Promise<void> {
 	const parentElement: HTMLElement = document.querySelector('#app') as HTMLElement;
 	const venueCollection: CollectionVenue = CollectionVenue.hydrate(ApiData.data);
 
+	console.log('RESTMC VERSION', venueCollection.restmc);
+
 	venueCollection.setOptions({
 		withCredentials: false,
 	});

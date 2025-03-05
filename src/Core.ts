@@ -8,6 +8,13 @@ import Dispatcher from './Dispatcher/Dispatcher.js';
  */
 export default class Core extends Dispatcher implements IDispatcher {
 	/**
+	 * @return string
+	 */
+	public get restmc(): string {
+		return '0.18.1';
+	}
+
+	/**
 	 * @param IAttributes options
 	 */
 	constructor(options: IAttributes = {}) {

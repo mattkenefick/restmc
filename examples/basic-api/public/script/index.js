@@ -1011,6 +1011,9 @@ CollectionIterator.ITERATOR_KEYSVALUES = 2;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const Dispatcher_js_1 = __webpack_require__(/*! ./Dispatcher/Dispatcher.js */ "../../build/esm/Dispatcher/Dispatcher.js");
 class Core extends Dispatcher_js_1.default {
+    get restmc() {
+        return '0.18.1';
+    }
     constructor(options = {}) {
         super();
         Object.assign(this, options);
@@ -4561,6 +4564,7 @@ function addVenue(venueModel, parentElement) {
 async function fetchVenues() {
     const parentElement = document.querySelector('#app');
     const venueCollection = Venue_1.default.hydrate(api_response_1.default.data);
+    console.log('RESTMC VERSION', venueCollection.restmc);
     venueCollection.setOptions({
         withCredentials: false,
     });
