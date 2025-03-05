@@ -25,7 +25,6 @@ export default class ActiveRecord<T> extends Core {
     id: string;
     limit: number;
     loading: boolean;
-    meta: IAttributes;
     mockData: IAttributes;
     modifiedEndpointPosition: string;
     options: IAttributes;
@@ -43,6 +42,7 @@ export default class ActiveRecord<T> extends Core {
     protected runLastAttemptsMax: number;
     protected token: string;
     protected ttl: number;
+    private meta;
     constructor(options?: IAttributes);
     attr(key: string): string | number | null;
     clone(): any;

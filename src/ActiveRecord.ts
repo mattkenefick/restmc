@@ -190,13 +190,6 @@ export default class ActiveRecord<T> extends Core {
 	public loading: boolean = false;
 
 	/**
-	 * Meta data supplied by the server adjacent to datas
-	 *
-	 * @type IAttributes
-	 */
-	public meta: IAttributes = {};
-
-	/**
 	 * Mock data responses to use
 	 *
 	 * @type IAttributes
@@ -314,6 +307,13 @@ export default class ActiveRecord<T> extends Core {
 	 * @type number
 	 */
 	protected ttl: number = 0;
+
+	/**
+	 * Meta data supplied by the server adjacent to datas
+	 *
+	 * @type IAttributes
+	 */
+	private meta: IAttributes = {};
 
 	/**
 	 * @param IAttributes options

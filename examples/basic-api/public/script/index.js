@@ -38,7 +38,6 @@ class ActiveRecord extends Core_js_1.default {
         this.id = '';
         this.limit = 30;
         this.loading = false;
-        this.meta = {};
         this.mockData = {};
         this.modifiedEndpointPosition = 'before';
         this.options = {
@@ -52,6 +51,7 @@ class ActiveRecord extends Core_js_1.default {
         this.runLastAttemptsMax = 2;
         this.token = '';
         this.ttl = 0;
+        this.meta = {};
         Object.assign(this, options);
         this.body = {};
         this.cid = this.cidPrefix + Math.random().toString(36).substr(2, 5);
@@ -617,16 +617,6 @@ class Collection extends ActiveRecord_js_1.default {
     constructor(options = {}) {
         super(options);
         this.atRelationship = [];
-        this.meta = {
-            pagination: {
-                count: 15,
-                current_page: 1,
-                links: {},
-                per_page: 15,
-                total: 0,
-                total_pages: 1,
-            },
-        };
         this.models = [];
         this.sortKey = 'id';
         this.iterator = new CollectionIterator_js_1.default(this);

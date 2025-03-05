@@ -16,16 +16,6 @@ class Collection extends ActiveRecord_js_1.default {
     constructor(options = {}) {
         super(options);
         this.atRelationship = [];
-        this.meta = {
-            pagination: {
-                count: 15,
-                current_page: 1,
-                links: {},
-                per_page: 15,
-                total: 0,
-                total_pages: 1,
-            },
-        };
         this.models = [];
         this.sortKey = 'id';
         this.iterator = new CollectionIterator_js_1.default(this);

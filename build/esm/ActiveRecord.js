@@ -28,7 +28,6 @@ class ActiveRecord extends Core_js_1.default {
         this.id = '';
         this.limit = 30;
         this.loading = false;
-        this.meta = {};
         this.mockData = {};
         this.modifiedEndpointPosition = 'before';
         this.options = {
@@ -42,6 +41,7 @@ class ActiveRecord extends Core_js_1.default {
         this.runLastAttemptsMax = 2;
         this.token = '';
         this.ttl = 0;
+        this.meta = {};
         Object.assign(this, options);
         this.body = {};
         this.cid = this.cidPrefix + Math.random().toString(36).substr(2, 5);
