@@ -924,6 +924,13 @@ export default class ActiveRecord<T> extends Core {
 	}
 
 	/**
+	 * @return string
+	 */
+	public getBaseUrl(): string {
+		return this.baseUrl;
+	}
+
+	/**
 	 * The endpoint we are referencing for modified endpoints
 	 *
 	 * @return ActiveRecord<T> | undefined

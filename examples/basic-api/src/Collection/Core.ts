@@ -10,4 +10,11 @@ export default class CollectionCore<T extends Model> extends Collection<T> {
 	 * @type string
 	 */
 	public baseUrl: string = 'https://api.chalkysticks.com/v1';
+
+	/**
+	 * @return string
+	 */
+	public getBaseUrl(): string {
+		return 'https://example.com';
+	}
 }

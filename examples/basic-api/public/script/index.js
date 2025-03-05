@@ -314,6 +314,9 @@ class ActiveRecord extends Core_js_1.default {
     isUsingModifiedEndpoint() {
         return !!this.referenceForModifiedEndpoint;
     }
+    getBaseUrl() {
+        return this.baseUrl;
+    }
     getReferencedEndpoint() {
         return this.referenceForModifiedEndpoint;
     }
@@ -1176,7 +1179,7 @@ class Builder {
         return urlBuilder;
     }
     getBaseUrl() {
-        return this.activeRecord.baseUrl;
+        return this.activeRecord.getBaseUrl();
     }
     getEndpoint() {
         return this.activeRecord.isUsingModifiedEndpoint()
@@ -1357,15 +1360,7 @@ class Request extends Core_js_1.default {
                     return pendingResponse;
                 }
             }
-            const requestPromise = (0, axios_1.default)(Object.assign(Object.assign({}, params), { transformRequest: [
-                    (data, headers) => {
-                        if (headers && headers.common) {
-                            delete headers.common['Content-Type'];
-                        }
-                        delete headers['Content-Type'];
-                        return data;
-                    },
-                ] }))
+            const requestPromise = (0, axios_1.default)(params)
                 .then((response) => {
                 if (useCache && response.status >= 200 && response.status < 300) {
                     Request.cachedResponses.set(cacheKey, response, ttl);
@@ -1691,6 +1686,9 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const restmc_1 = __webpack_require__(/*! restmc */ "../../build/esm/index.js");
 class CollectionCore extends restmc_1.Collection {
     baseUrl = 'https://api.chalkysticks.com/v1';
+    getBaseUrl() {
+        return 'https://example.com';
+    }
 }
 exports["default"] = CollectionCore;
 
@@ -1765,6 +1763,9 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const restmc_1 = __webpack_require__(/*! restmc */ "../../build/esm/index.js");
 class ModelCore extends restmc_1.Model {
     baseUrl = 'https://api.chalkysticks.com/v1';
+    getBaseUrl() {
+        return 'https://example.com';
+    }
 }
 exports["default"] = ModelCore;
 

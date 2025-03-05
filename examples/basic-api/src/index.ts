@@ -152,6 +152,11 @@ async function fetchVenues(): Promise<void> {
 		cacheable: true,
 	});
 
+	// remoteCollection.getBaseUrl = function () {
+	// 	console.log('Bro', this.baseUrl, this);
+	// 	return 'https://forkforkfork.com';
+	// };
+
 	for (let i = 0; i < 5; i++) {
 		console.log(`Fetch ${i} ---------------------------------------------- `);
 		await remoteCollection.fetch();

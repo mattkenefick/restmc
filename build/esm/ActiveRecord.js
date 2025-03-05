@@ -304,6 +304,9 @@ class ActiveRecord extends Core_js_1.default {
     isUsingModifiedEndpoint() {
         return !!this.referenceForModifiedEndpoint;
     }
+    getBaseUrl() {
+        return this.baseUrl;
+    }
     getReferencedEndpoint() {
         return this.referenceForModifiedEndpoint;
     }

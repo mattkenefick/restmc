@@ -71,6 +71,7 @@ export default class ActiveRecord<T> extends Core {
     beforeFetch(): Promise<void>;
     cancelModifiedEndpoint(): ActiveRecord<T>;
     isUsingModifiedEndpoint(): boolean;
+    getBaseUrl(): string;
     getReferencedEndpoint(): ActiveRecord<T> | undefined;
     getModifiedEndpoint(): string;
     getQueryParam(key: string): string;

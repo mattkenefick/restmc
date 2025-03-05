@@ -107,7 +107,8 @@ export default class Builder<T> {
 	 * @type string
 	 */
 	public getBaseUrl(): string {
-		return this.activeRecord.baseUrl;
+		// return this.activeRecord.baseUrl;
+		return this.activeRecord.getBaseUrl();
 	}
 
 	/**

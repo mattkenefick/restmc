@@ -36,7 +36,7 @@ class Builder {
         return urlBuilder;
     }
     getBaseUrl() {
-        return this.activeRecord.baseUrl;
+        return this.activeRecord.getBaseUrl();
     }
     getEndpoint() {
         return this.activeRecord.isUsingModifiedEndpoint()
