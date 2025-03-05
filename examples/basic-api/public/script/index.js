@@ -156,8 +156,9 @@ class ActiveRecord extends Core_js_1.default {
         return this.post(attributes);
     }
     delete(attributes = {}) {
-        const url = this.builder.identifier(this.id || (attributes === null || attributes === void 0 ? void 0 : attributes.id) || '').getUrl();
-        const output = this._fetch(null, {}, 'DELETE', Object.assign(attributes || {}, this.attributes), this.headers);
+        const method = 'DELETE';
+        const payload = Object.assign(attributes || {}, this.toJSON());
+        const output = this._fetch(null, {}, method, payload, this.headers);
         output.then((request) => {
             var _a;
             if (request.status < 200 || request.status > 299) {
@@ -170,18 +171,21 @@ class ActiveRecord extends Core_js_1.default {
         return output;
     }
     post(attributes = {}) {
-        const url = this.builder.getUrl();
-        const output = this._fetch(null, {}, 'POST', Object.assign(attributes || {}, this.attributes), this.headers);
+        const method = 'POST';
+        const payload = Object.assign(attributes || {}, this.toJSON());
+        const output = this._fetch(null, {}, method, payload, this.headers);
         return output;
     }
     put(attributes) {
-        const url = this.builder.getUrl();
-        const output = this._fetch(null, {}, 'PUT', Object.assign(attributes || {}, this.attributes), this.headers);
+        const method = 'PUT';
+        const payload = Object.assign(attributes || {}, this.toJSON());
+        const output = this._fetch(null, {}, method, payload, this.headers);
         return output;
     }
     save(attributes = {}) {
         const method = this.id ? 'PUT' : 'POST';
-        const output = this._fetch(null, {}, method, Object.assign(attributes || {}, this.attributes), this.headers);
+        const payload = Object.assign(attributes || {}, this.toJSON());
+        const output = this._fetch(null, {}, method, payload, this.headers);
         return output;
     }
     add(attributes) {

@@ -522,14 +522,9 @@ export default class ActiveRecord<T> extends Core {
 	 * @return Promise<HttpRequest>
 	 */
 	public delete(attributes: IAttributes = {}): Promise<HttpRequest> {
-		const url: string = this.builder.identifier(this.id || attributes?.id || '').getUrl();
-		const output: Promise<HttpRequest> = this._fetch(
-			null,
-			{},
-			'DELETE',
-			Object.assign(attributes || {}, this.attributes),
-			this.headers
-		);
+		const method: string = 'DELETE';
+		const payload: IAttributes = Object.assign(attributes || {}, this.toJSON());
+		const output: Promise<HttpRequest> = this._fetch(null, {}, method, payload, this.headers);
 
 		// Check if it was successful
 		output.then((request: HttpRequest) => {
@@ -552,14 +547,9 @@ export default class ActiveRecord<T> extends Core {
 	 * @return Promise<HttpRequest>
 	 */
 	public post(attributes: IAttributes = {}): Promise<HttpRequest> {
-		const url: string = this.builder.getUrl();
-		const output: Promise<HttpRequest> = this._fetch(
-			null,
-			{},
-			'POST',
-			Object.assign(attributes || {}, this.attributes),
-			this.headers
-		);
+		const method: string = 'POST';
+		const payload: IAttributes = Object.assign(attributes || {}, this.toJSON());
+		const output: Promise<HttpRequest> = this._fetch(null, {}, method, payload, this.headers);
 
 		return output;
 	}
@@ -569,14 +559,9 @@ export default class ActiveRecord<T> extends Core {
 	 * @return Promise<HttpRequest>
 	 */
 	public put(attributes: IAttributes): Promise<HttpRequest> {
-		const url: string = this.builder.getUrl();
-		const output: Promise<HttpRequest> = this._fetch(
-			null,
-			{},
-			'PUT',
-			Object.assign(attributes || {}, this.attributes),
-			this.headers
-		);
+		const method: string = 'PUT';
+		const payload: IAttributes = Object.assign(attributes || {}, this.toJSON());
+		const output: Promise<HttpRequest> = this._fetch(null, {}, method, payload, this.headers);
 
 		return output;
 	}
@@ -587,13 +572,8 @@ export default class ActiveRecord<T> extends Core {
 	 */
 	public save(attributes: IAttributes = {}): Promise<HttpRequest> {
 		const method: string = this.id ? 'PUT' : 'POST';
-		const output: Promise<HttpRequest> = this._fetch(
-			null,
-			{},
-			method,
-			Object.assign(attributes || {}, this.attributes),
-			this.headers
-		);
+		const payload: IAttributes = Object.assign(attributes || {}, this.toJSON());
+		const output: Promise<HttpRequest> = this._fetch(null, {}, method, payload, this.headers);
 
 		return output;
 	}
