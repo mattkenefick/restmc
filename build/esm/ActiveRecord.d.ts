@@ -32,6 +32,7 @@ export default class ActiveRecord<T> extends Core {
     parent: ActiveRecord<any> | undefined;
     request?: HttpRequest;
     requestTime: number;
+    _meta: IAttributes;
     protected builder: Builder<T>;
     protected cidPrefix: string;
     protected lastRequest: any;
@@ -42,7 +43,6 @@ export default class ActiveRecord<T> extends Core {
     protected runLastAttemptsMax: number;
     protected token: string;
     protected ttl: number;
-    private meta;
     constructor(options?: IAttributes);
     attr(key: string): string | number | null;
     clone(): any;

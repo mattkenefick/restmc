@@ -235,6 +235,13 @@ export default class ActiveRecord<T> extends Core {
 	public requestTime: number = -1;
 
 	/**
+	 * Meta data supplied by the server adjacent to datas
+	 *
+	 * @type IAttributes
+	 */
+	public _meta: IAttributes = {};
+
+	/**
 	 * @type Builder
 	 */
 	protected builder: Builder<T>;
@@ -307,13 +314,6 @@ export default class ActiveRecord<T> extends Core {
 	 * @type number
 	 */
 	protected ttl: number = 0;
-
-	/**
-	 * Meta data supplied by the server adjacent to datas
-	 *
-	 * @type IAttributes
-	 */
-	private meta: IAttributes = {};
 
 	/**
 	 * @param IAttributes options
@@ -467,13 +467,13 @@ export default class ActiveRecord<T> extends Core {
 			 * mk: This is kind of wonky...
 			 */
 			if (options.merge) {
-				if (options.meta.pagination.count && this.meta.pagination.count) {
-					options.meta.pagination.count += this.meta.pagination.count;
+				if (options.meta.pagination.count && this._meta.pagination.count) {
+					options.meta.pagination.count += this._meta.pagination.count;
 				}
 			}
 
 			// Set
-			this.meta = options.meta;
+			this._meta = options.meta;
 		}
 
 		// Check options for params

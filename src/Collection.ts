@@ -122,6 +122,22 @@ export default class Collection<GenericModel extends Model>
 	public atRelationship: string[] = [];
 
 	/**
+	 * Meta data associated with collection
+	 *
+	 * @type ICollectionMeta
+	 */
+	public _meta: ICollectionMeta = {
+		pagination: {
+			count: 15,
+			current_page: 1,
+			links: {},
+			per_page: 15,
+			total: 0,
+			total_pages: 1,
+		},
+	};
+
+	/**
 	 * Model object instantiated by this collection
 	 * This should be replaced by subclass
 	 *

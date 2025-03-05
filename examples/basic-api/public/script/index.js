@@ -46,12 +46,12 @@ class ActiveRecord extends Core_js_1.default {
         };
         this.page = 1;
         this.requestTime = -1;
+        this._meta = {};
         this.cidPrefix = 'c';
         this.runLastAttempts = 0;
         this.runLastAttemptsMax = 2;
         this.token = '';
         this.ttl = 0;
-        this.meta = {};
         Object.assign(this, options);
         this.body = {};
         this.cid = this.cidPrefix + Math.random().toString(36).substr(2, 5);
@@ -130,11 +130,11 @@ class ActiveRecord extends Core_js_1.default {
         }
         if (options.meta) {
             if (options.merge) {
-                if (options.meta.pagination.count && this.meta.pagination.count) {
-                    options.meta.pagination.count += this.meta.pagination.count;
+                if (options.meta.pagination.count && this._meta.pagination.count) {
+                    options.meta.pagination.count += this._meta.pagination.count;
                 }
             }
-            this.meta = options.meta;
+            this._meta = options.meta;
         }
         if (options.params || options.qp || options.queryParams) {
             this.setQueryParams(options.queryParams || options.qp || options.params);
@@ -617,6 +617,16 @@ class Collection extends ActiveRecord_js_1.default {
     constructor(options = {}) {
         super(options);
         this.atRelationship = [];
+        this._meta = {
+            pagination: {
+                count: 15,
+                current_page: 1,
+                links: {},
+                per_page: 15,
+                total: 0,
+                total_pages: 1,
+            },
+        };
         this.models = [];
         this.sortKey = 'id';
         this.iterator = new CollectionIterator_js_1.default(this);
