@@ -134,15 +134,14 @@ async function fetchVenues(): Promise<void> {
 
 	const modelA = venueCollection.first();
 	console.log('ModelA', modelA);
-	console.log('Media', modelA.media);
+	console.log('JSON', modelA.toJSON());
+	console.log('JSON no keys', modelA.toJSON(false));
 
 	const mediaCollection = modelA.media.clone();
 	console.log('Cloned media', mediaCollection);
 
 	const hydratedCollection = CollectionMedia.hydrate(modelA.attributes.media);
 	console.log('Hydrated media', hydratedCollection);
-
-	console.log('-----------------------------------------------------------');
 
 	// Remote Fetching
 	// -------------------------------------------------------------------------

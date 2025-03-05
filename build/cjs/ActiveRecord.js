@@ -132,10 +132,11 @@ class ActiveRecord extends Core_js_1.default {
         return this;
     }
     toJSON() {
-        const json = this.attributes;
-        const possibleGetters = Object.keys(Object.getPrototypeOf(this));
+        var _a;
+        const json = Object.assign({}, this.attributes);
+        const possibleGetters = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
         for (const key of possibleGetters) {
-            if (json[key] && this[key] && this[key].toJSON) {
+            if ((_a = this[key]) === null || _a === void 0 ? void 0 : _a.toJSON) {
                 json[key] = this[key].toJSON();
             }
         }

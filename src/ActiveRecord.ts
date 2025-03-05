@@ -487,23 +487,16 @@ export default class ActiveRecord<T> extends Core {
 	/**
 	 * Converts model to JSON object
 	 *
+	 * @param boolean preserveDataKey
 	 * @return object
 	 */
 	public toJSON(): object {
-		const json: any = this.attributes;
-
-		/*
-		 * @todo is this code copasetic?
-		 * @ts-ignore
-		 */
-		// const possibleGetters = Object.getOwnPropertyNames(this.__proto__);
-		const possibleGetters = Object.keys(Object.getPrototypeOf(this));
+		const json = { ...this.attributes };
+		const possibleGetters = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
 
 		// Convert toJSON on subobjects so they stay in sync
 		for (const key of possibleGetters) {
-			// @ts-ignore
-			if (json[key] && this[key] && this[key].toJSON) {
-				// @ts-ignore
+			if (this[key]?.toJSON) {
 				json[key] = this[key].toJSON();
 			}
 		}

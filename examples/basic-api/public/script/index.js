@@ -142,10 +142,11 @@ class ActiveRecord extends Core_js_1.default {
         return this;
     }
     toJSON() {
-        const json = this.attributes;
-        const possibleGetters = Object.keys(Object.getPrototypeOf(this));
+        var _a;
+        const json = Object.assign({}, this.attributes);
+        const possibleGetters = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
         for (const key of possibleGetters) {
-            if (json[key] && this[key] && this[key].toJSON) {
+            if ((_a = this[key]) === null || _a === void 0 ? void 0 : _a.toJSON) {
                 json[key] = this[key].toJSON();
             }
         }
@@ -4580,12 +4581,12 @@ async function fetchVenues() {
     console.log('Relationships');
     const modelA = venueCollection.first();
     console.log('ModelA', modelA);
-    console.log('Media', modelA.media);
+    console.log('JSON', modelA.toJSON());
+    console.log('JSON no keys', modelA.toJSON(false));
     const mediaCollection = modelA.media.clone();
     console.log('Cloned media', mediaCollection);
     const hydratedCollection = Media_1.default.hydrate(modelA.attributes.media);
     console.log('Hydrated media', hydratedCollection);
-    console.log('-----------------------------------------------------------');
     const remoteCollection = new Venue_1.default();
     remoteCollection.setOptions({
         baseUrl: 'https://api.chalkysticks.com/v3',
