@@ -50,7 +50,7 @@ export default class ActiveRecord<T> extends Core {
     set(attributes?: IAttributes, options?: IAttributes, trigger?: boolean): ActiveRecord<T>;
     unset(key: string): ActiveRecord<T>;
     setOptions(options?: IAttributes): ActiveRecord<T>;
-    toJSON(): object;
+    toJSON(recursiveObject?: any): object;
     create(attributes: IAttributes): Promise<HttpRequest>;
     delete(attributes?: IAttributes): Promise<HttpRequest>;
     post(attributes?: IAttributes): Promise<HttpRequest>;

@@ -15,8 +15,18 @@ import { AxiosResponse } from 'axios';
 import Builder from './Http/Builder.js';
 import Collection from './Collection.js';
 import Core from './Core.js';
-import FormData from 'form-data'; // @see https://github.com/form-data/form-data/issues/484
 import HttpRequest from './Http/Request.js';
+// import FormData from 'form-data'; // @see https://github.com/form-data/form-data/issues/484
+
+// This helper handles FormData for both Node.js and browser environments
+const createFormData = () => {
+	if (typeof window !== 'undefined' && window.FormData) {
+		return new window.FormData();
+	} else {
+		const FormData = require('form-data');
+		return new FormData();
+	}
+};
 
 /**
  * @author Matt Kenefick <matt@polymermallard.com>
@@ -485,19 +495,25 @@ export default class ActiveRecord<T> extends Core {
 	}
 
 	/**
-	 * Converts model to JSON object
-	 *
-	 * @param boolean preserveDataKey
+	 * @param object recursiveObject
 	 * @return object
 	 */
-	public toJSON(): object {
+	public toJSON(recursiveObject: any = null): object {
 		const json = { ...this.attributes };
 		const possibleGetters = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
+		const className = this.constructor.name;
+		const refKey = `${className}${this.id}`;
 
 		// Convert toJSON on subobjects so they stay in sync
 		for (const key of possibleGetters) {
 			if (this[key]?.toJSON) {
-				json[key] = this[key].toJSON();
+				if (!recursiveObject || recursiveObject[refKey] != key) {
+					recursiveObject = recursiveObject || {};
+					recursiveObject[refKey] = key;
+					json[key] = this[key].toJSON(recursiveObject);
+				} else {
+					json[key] = { _circular: true };
+				}
 			}
 		}
 
@@ -721,8 +737,8 @@ export default class ActiveRecord<T> extends Core {
 	public async file(name: string, file: any, additionalFields: Record<string, any> = {}): Promise<HttpRequest> {
 		const url: string = this.builder.identifier(this.id).getUrl();
 
-		// const files = event.target.files
-		const formData = new FormData();
+		// Use our helper function instead of direct FormData instantiation
+		const formData = createFormData();
 
 		// HTMLInputElement
 		if (file.hasOwnProperty('files') && file.files) {

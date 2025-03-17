@@ -21,8 +21,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const Builder_js_1 = __webpack_require__(/*! ./Http/Builder.js */ "../../build/esm/Http/Builder.js");
 const Core_js_1 = __webpack_require__(/*! ./Core.js */ "../../build/esm/Core.js");
-const form_data_1 = __webpack_require__(/*! form-data */ "../../node_modules/form-data/lib/browser.js");
 const Request_js_1 = __webpack_require__(/*! ./Http/Request.js */ "../../build/esm/Http/Request.js");
+const createFormData = () => {
+    if (typeof window !== 'undefined' && window.FormData) {
+        return new window.FormData();
+    }
+    else {
+        const FormData = __webpack_require__(/*! form-data */ "../../node_modules/form-data/lib/browser.js");
+        return new FormData();
+    }
+};
 class ActiveRecord extends Core_js_1.default {
     constructor(options = {}) {
         super(options);
@@ -143,14 +151,49 @@ class ActiveRecord extends Core_js_1.default {
     }
     toJSON() {
         var _a;
-        const json = Object.assign({}, this.attributes);
-        const possibleGetters = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
-        for (const key of possibleGetters) {
-            if ((_a = this[key]) === null || _a === void 0 ? void 0 : _a.toJSON) {
-                json[key] = this[key].toJSON();
+        if (!ActiveRecord._jsonProcessingSet) {
+            ActiveRecord._jsonProcessingSet = new WeakSet();
+        }
+        if (ActiveRecord._jsonProcessingSet.has(this)) {
+            return { id: this.id };
+        }
+        ActiveRecord._jsonProcessingSet.add(this);
+        try {
+            const json = Object.assign({}, this.attributes);
+            const possibleGetters = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
+            for (const key of possibleGetters) {
+                if (key === 'toJSON')
+                    continue;
+                try {
+                    const descriptor = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(this), key);
+                    if (descriptor && typeof descriptor.get === 'function') {
+                        const value = this[key];
+                        if (value === null || value === undefined) {
+                            continue;
+                        }
+                        if (typeof value === 'object' && typeof value.toJSON === 'function') {
+                            json[key] = value.toJSON();
+                        }
+                        else if (Array.isArray(value)) {
+                            json[key] = value.map((item) => item && typeof item === 'object' && typeof item.toJSON === 'function'
+                                ? item.toJSON()
+                                : item);
+                        }
+                        else if (typeof value === 'object' && !Array.isArray(value)) {
+                            json[key] = value;
+                        }
+                    }
+                }
+                catch (error) {
+                }
+            }
+            return json;
+        }
+        finally {
+            if (!((_a = new Error().stack) === null || _a === void 0 ? void 0 : _a.includes('at toJSON'))) {
+                ActiveRecord._jsonProcessingSet = null;
             }
         }
-        return json;
     }
     create(attributes) {
         return this.post(attributes);
@@ -242,7 +285,7 @@ class ActiveRecord extends Core_js_1.default {
     file(name, file, additionalFields = {}) {
         return __awaiter(this, void 0, void 0, function* () {
             const url = this.builder.identifier(this.id).getUrl();
-            const formData = new form_data_1.default();
+            const formData = createFormData();
             if (file.hasOwnProperty('files') && file.files) {
                 file = file.files[0];
             }
@@ -523,6 +566,7 @@ class ActiveRecord extends Core_js_1.default {
 }
 exports["default"] = ActiveRecord;
 ActiveRecord.hooks = new Map();
+ActiveRecord._jsonProcessingSet = null;
 //# sourceMappingURL=ActiveRecord.js.map
 
 /***/ }),
@@ -4586,7 +4630,6 @@ async function fetchVenues() {
     const modelA = venueCollection.first();
     console.log('ModelA', modelA);
     console.log('JSON', modelA.toJSON());
-    console.log('JSON no keys', modelA.toJSON(false));
     const mediaCollection = modelA.media.clone();
     console.log('Cloned media', mediaCollection);
     const hydratedCollection = Media_1.default.hydrate(modelA.attributes.media);

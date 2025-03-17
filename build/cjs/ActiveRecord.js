@@ -11,8 +11,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const Builder_js_1 = require("./Http/Builder.js");
 const Core_js_1 = require("./Core.js");
-const form_data_1 = require("form-data");
 const Request_js_1 = require("./Http/Request.js");
+const createFormData = () => {
+    if (typeof window !== 'undefined' && window.FormData) {
+        return new window.FormData();
+    }
+    else {
+        const FormData = require('form-data');
+        return new FormData();
+    }
+};
 class ActiveRecord extends Core_js_1.default {
     constructor(options = {}) {
         super(options);
@@ -131,13 +139,22 @@ class ActiveRecord extends Core_js_1.default {
         }
         return this;
     }
-    toJSON() {
+    toJSON(recursiveObject = null) {
         var _a;
         const json = Object.assign({}, this.attributes);
         const possibleGetters = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
+        const className = this.constructor.name;
+        const refKey = `${className}${this.id}`;
         for (const key of possibleGetters) {
             if ((_a = this[key]) === null || _a === void 0 ? void 0 : _a.toJSON) {
-                json[key] = this[key].toJSON();
+                if (!recursiveObject || recursiveObject[refKey] != key) {
+                    recursiveObject = recursiveObject || {};
+                    recursiveObject[refKey] = key;
+                    json[key] = this[key].toJSON(recursiveObject);
+                }
+                else {
+                    json[key] = { _circular: true };
+                }
             }
         }
         return json;
@@ -232,7 +249,7 @@ class ActiveRecord extends Core_js_1.default {
     file(name, file, additionalFields = {}) {
         return __awaiter(this, void 0, void 0, function* () {
             const url = this.builder.identifier(this.id).getUrl();
-            const formData = new form_data_1.default();
+            const formData = createFormData();
             if (file.hasOwnProperty('files') && file.files) {
                 file = file.files[0];
             }
