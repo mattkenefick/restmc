@@ -37,7 +37,7 @@ class Collection extends ActiveRecord_js_1.default {
         }
     }
     static paginator(collection) {
-        return collection.meta.pagination;
+        return collection._meta.pagination;
     }
     static hydrate(models = [], options = {}, trigger = true) {
         const collection = new this(options);

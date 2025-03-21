@@ -245,6 +245,16 @@ export default class ActiveRecord<T> extends Core {
 	public requestTime: number = -1;
 
 	/**
+	 * @type number
+	 */
+	public timeCompleted: number = -1;
+
+	/**
+	 * @type number
+	 */
+	public timeParsed: number = -1;
+
+	/**
 	 * Meta data supplied by the server adjacent to datas
 	 *
 	 * @type IAttributes
@@ -1341,7 +1351,9 @@ export default class ActiveRecord<T> extends Core {
 	protected FetchComplete(e: IDispatcherEvent): void {
 		this.hasLoaded = true;
 		this.loading = false;
+		this.timeCompleted = Date.now();
 		this.dispatch('complete', e.detail);
+		this.dispatch('success', e.detail);
 	}
 
 	/**
@@ -1369,6 +1381,9 @@ export default class ActiveRecord<T> extends Core {
 		if (code < 400) {
 			this.setAfterResponse(e, options);
 		}
+
+		// Time
+		this.timeParsed = Date.now();
 
 		// Fetched event
 		this.dispatch('fetched', e.detail);

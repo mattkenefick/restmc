@@ -44,6 +44,8 @@ class ActiveRecord extends Core_js_1.default {
         };
         this.page = 1;
         this.requestTime = -1;
+        this.timeCompleted = -1;
+        this.timeParsed = -1;
         this._meta = {};
         this.cidPrefix = 'c';
         this.runLastAttempts = 0;
@@ -514,7 +516,9 @@ class ActiveRecord extends Core_js_1.default {
     FetchComplete(e) {
         this.hasLoaded = true;
         this.loading = false;
+        this.timeCompleted = Date.now();
         this.dispatch('complete', e.detail);
+        this.dispatch('success', e.detail);
     }
     FetchProgress(e) {
         this.dispatch('progress', e.detail);
@@ -525,6 +529,7 @@ class ActiveRecord extends Core_js_1.default {
         if (code < 400) {
             this.setAfterResponse(e, options);
         }
+        this.timeParsed = Date.now();
         this.dispatch('fetched', e.detail);
     }
 }

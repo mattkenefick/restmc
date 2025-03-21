@@ -39,13 +39,13 @@ export default class Collection<GenericModel extends Model>
 {
 	/**
 	 * This static function could be overridden globally depending on the
-	 * structure of your API. By default, we assume it's within .meta
+	 * structure of your API. By default, we assume it's within ._meta
 	 *
 	 * @param Collection collection
 	 * @return object
 	 */
 	public static paginator(collection: any): IPagination {
-		return collection.meta.pagination;
+		return collection._meta.pagination;
 	}
 
 	/**

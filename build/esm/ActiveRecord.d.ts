@@ -32,6 +32,8 @@ export default class ActiveRecord<T> extends Core {
     parent: ActiveRecord<any> | undefined;
     request?: HttpRequest;
     requestTime: number;
+    timeCompleted: number;
+    timeParsed: number;
     _meta: IAttributes;
     protected builder: Builder<T>;
     protected cidPrefix: string;
