@@ -24,7 +24,6 @@ const createFormData = () => {
 class ActiveRecord extends Core_js_1.default {
     constructor(options = {}) {
         super(options);
-        this.attributes = {};
         this.baseUrl = '/v1';
         this.cacheable = true;
         this.cid = '';
@@ -32,11 +31,9 @@ class ActiveRecord extends Core_js_1.default {
         this.endpoint = '';
         this.hasFetched = false;
         this.hasLoaded = false;
-        this.headers = {};
         this.id = '';
         this.limit = 30;
         this.loading = false;
-        this.mockData = {};
         this.modifiedEndpointPosition = 'before';
         this.options = {
             dataKey: 'data',
@@ -46,14 +43,17 @@ class ActiveRecord extends Core_js_1.default {
         this.requestTime = -1;
         this.timeCompleted = -1;
         this.timeParsed = -1;
-        this._meta = {};
         this.cidPrefix = 'c';
         this.runLastAttempts = 0;
         this.runLastAttemptsMax = 2;
         this.token = '';
         this.ttl = 0;
         Object.assign(this, options);
+        this.attributes = {};
         this.body = {};
+        this.headers = {};
+        this.mockData = {};
+        this._meta = {};
         this.cid = this.cidPrefix + Math.random().toString(36).substr(2, 5);
         this.parent = undefined;
         this.builder = new Builder_js_1.default(this);

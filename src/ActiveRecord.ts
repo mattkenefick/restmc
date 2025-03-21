@@ -98,7 +98,7 @@ export default class ActiveRecord<T> extends Core {
 	/**
 	 * @type IAttributes
 	 */
-	public attributes: IAttributes = {};
+	public attributes: IAttributes;
 
 	/**
 	 * @type string
@@ -182,7 +182,7 @@ export default class ActiveRecord<T> extends Core {
 	/**
 	 * @type Record<string, null | number | string>
 	 */
-	public headers: Record<string, null | number | string> = {};
+	public headers: Record<string, null | number | string>;
 
 	/**
 	 * @type string
@@ -204,7 +204,7 @@ export default class ActiveRecord<T> extends Core {
 	 *
 	 * @type IAttributes
 	 */
-	public mockData: IAttributes = {};
+	public mockData: IAttributes;
 
 	/**
 	 * Where to position our modified endpoint (before or after)
@@ -259,7 +259,7 @@ export default class ActiveRecord<T> extends Core {
 	 *
 	 * @type IAttributes
 	 */
-	public _meta: IAttributes = {};
+	public _meta: IAttributes;
 
 	/**
 	 * @type Builder
@@ -345,7 +345,11 @@ export default class ActiveRecord<T> extends Core {
 		Object.assign(this, options);
 
 		// Set defaults
+		this.attributes = {};
 		this.body = {};
+		this.headers = {};
+		this.mockData = {};
+		this._meta = {};
 		this.cid = this.cidPrefix + Math.random().toString(36).substr(2, 5);
 		this.parent = undefined;
 
