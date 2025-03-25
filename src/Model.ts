@@ -72,6 +72,13 @@ export default class Model extends ActiveRecord<Model> {
 	}
 
 	/**
+	 * Attempt to prevent circular relationship references
+	 *
+	 * @type boolean
+	 */
+	public circularProtection: boolean = true;
+
+	/**
 	 * Instance cache for relationships
 	 *
 	 * @type IAttributes
@@ -182,6 +189,19 @@ export default class Model extends ActiveRecord<Model> {
 	 * @return ActiveRecord
 	 */
 	public hasOne<T>(relationshipName: string, relationshipClass: any): T {
+		// Temporary fix
+		if (this.circularProtection) {
+			let parent = this.parent;
+
+			while (parent) {
+				if (parent.endpoint === this.endpoint && parent.id === this.id) {
+					return undefined as unknown as T;
+				}
+
+				parent = parent.parent;
+			}
+		}
+
 		// Return cached relationship, if exists
 		if (this.relationshipCache[relationshipName]) {
 			return this.relationshipCache[relationshipName];

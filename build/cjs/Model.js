@@ -13,6 +13,7 @@ const ActiveRecord_js_1 = require("./ActiveRecord.js");
 class Model extends ActiveRecord_js_1.default {
     constructor(attributes = {}, options = {}) {
         super(options);
+        this.circularProtection = true;
         this.relationshipCache = {};
         this.dataKey = undefined;
         this.set(attributes);
@@ -59,6 +60,15 @@ class Model extends ActiveRecord_js_1.default {
         });
     }
     hasOne(relationshipName, relationshipClass) {
+        if (this.circularProtection) {
+            let parent = this.parent;
+            while (parent) {
+                if (parent.endpoint === this.endpoint && parent.id === this.id) {
+                    return undefined;
+                }
+                parent = parent.parent;
+            }
+        }
         if (this.relationshipCache[relationshipName]) {
             return this.relationshipCache[relationshipName];
         }

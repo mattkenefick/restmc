@@ -6,6 +6,7 @@ export default class Model extends ActiveRecord<Model> {
     static relationshipKey: string | null;
     static useDescendingRelationships: boolean;
     protected get isModel(): boolean;
+    circularProtection: boolean;
     private relationshipCache;
     constructor(attributes?: IAttributes, options?: IAttributes);
     set(attributes?: IAttributes): Model;
