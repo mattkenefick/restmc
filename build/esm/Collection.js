@@ -145,12 +145,12 @@ class Collection extends ActiveRecord_js_1.default {
         return this.length;
     }
     delete(attributes = {}) {
-        const url = this.builder.identifier(this.id || (attributes === null || attributes === void 0 ? void 0 : attributes.id) || '').getUrl();
-        if (this.builder.id) {
-            let model = this.findWhere(attributes);
-            model && this.remove(model);
+        if (!attributes || !attributes.id) {
+            throw new Error('No ID provided to delete');
         }
-        const body = null;
+        const model = this.findWhere({ id: attributes.id });
+        model && this.remove(model);
+        const body = undefined;
         const headers = this.headers;
         const method = 'DELETE';
         return this._fetch(null, {}, method, body, headers);

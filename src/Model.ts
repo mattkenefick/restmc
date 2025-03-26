@@ -109,7 +109,7 @@ export default class Model extends ActiveRecord<Model> {
 	 * @param IAttributes attributes
 	 * @return Model
 	 */
-	public set(attributes: IAttributes = {}): Model {
+	public set(attributes: IAttributes = {}): this {
 		let key: string;
 
 		// Trigger event

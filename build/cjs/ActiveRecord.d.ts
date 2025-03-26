@@ -49,9 +49,9 @@ export default class ActiveRecord<T> extends Core {
     attr(key: string): string | number | null;
     clone(): any;
     hasAttributes(): boolean;
-    set(attributes?: IAttributes, options?: IAttributes, trigger?: boolean): ActiveRecord<T>;
-    unset(key: string): ActiveRecord<T>;
-    setOptions(options?: IAttributes): ActiveRecord<T>;
+    set(attributes?: IAttributes, options?: IAttributes, trigger?: boolean): this;
+    unset(key: string): this;
+    setOptions(options?: IAttributes): this;
     toJSON(recursiveObject?: any): object;
     create(attributes: IAttributes): Promise<HttpRequest>;
     delete(attributes?: IAttributes): Promise<HttpRequest>;
@@ -59,7 +59,7 @@ export default class ActiveRecord<T> extends Core {
     put(attributes: IAttributes): Promise<HttpRequest>;
     save(attributes?: IAttributes): Promise<HttpRequest>;
     add(attributes: IAttributes): ActiveRecord<T>;
-    reset(): ActiveRecord<T>;
+    reset(): this;
     addLoadingHooks(view: any, preHook?: IDispatcherCallbackFunction | undefined, postHook?: IDispatcherCallbackFunction | undefined): ActiveRecord<T>;
     removeLoadingHooks(): ActiveRecord<T>;
     cache(ttl: number): ActiveRecord<T>;

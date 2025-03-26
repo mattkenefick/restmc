@@ -404,7 +404,7 @@ export default class ActiveRecord<T> extends Core {
 	 * @param boolean trigger
 	 * @return ActiveRecord
 	 */
-	public set(attributes: IAttributes = {}, options: IAttributes = {}, trigger: boolean = true): ActiveRecord<T> {
+	public set(attributes: IAttributes = {}, options: IAttributes = {}, trigger: boolean = true): this {
 		// @ts-ignore
 		const possibleSetters = Object.getOwnPropertyDescriptors(this.__proto__);
 
@@ -444,7 +444,7 @@ export default class ActiveRecord<T> extends Core {
 	 * @param string key
 	 * @return ActiveRecord
 	 */
-	public unset(key: string): ActiveRecord<T> {
+	public unset(key: string): this {
 		delete this.attributes[key];
 		return this;
 	}
@@ -461,7 +461,7 @@ export default class ActiveRecord<T> extends Core {
 	 * @param IAttributes options
 	 * @return ActiveRecord
 	 */
-	public setOptions(options: IAttributes = {}): ActiveRecord<T> {
+	public setOptions(options: IAttributes = {}): this {
 		this.options = Object.assign(this.options, options);
 
 		// Set cacheable
@@ -621,7 +621,7 @@ export default class ActiveRecord<T> extends Core {
 	/**
 	 * @return ActiveRecord
 	 */
-	public reset(): ActiveRecord<T> {
+	public reset(): this {
 		this.attributes = {};
 
 		// Event

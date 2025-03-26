@@ -252,14 +252,11 @@ export default class Collection<GenericModel extends Model>
 	 * @param  boolean trigger
 	 * @return Collection
 	 */
-	public add(
-		data: GenericModel[] | GenericModel | object,
-		options: IAttributes = {},
-		trigger: boolean = true
-	): Collection<GenericModel> {
+	public add(data: GenericModel[] | GenericModel | object, options: IAttributes = {}, trigger: boolean = true): this {
 		if (data == undefined) {
 			return this;
 		}
+
 		// Ensure data is on correct key
 		data = this.cleanData(data);
 
@@ -308,7 +305,7 @@ export default class Collection<GenericModel extends Model>
 	 * @param  boolean trigger
 	 * @return Collection
 	 */
-	public remove(model: Model[] | Model | object, trigger: boolean = true): Collection<GenericModel> {
+	public remove(model: Model[] | Model | object, trigger: boolean = true): this {
 		let i: number = 0;
 		let ii: number = 0;
 		const items: any = Array.isArray(model) ? model : [model];
@@ -346,11 +343,7 @@ export default class Collection<GenericModel extends Model>
 	 * @param  boolean trigger
 	 * @return Collection
 	 */
-	public set(
-		model: Model[] | Model | object,
-		options: IAttributes = {},
-		trigger: boolean = true
-	): Collection<GenericModel> {
+	public set(model: Model[] | Model | object, options: IAttributes = {}, trigger: boolean = true): this {
 		if (!options || (options && options.merge != true)) {
 			this.reset();
 		}
@@ -367,7 +360,7 @@ export default class Collection<GenericModel extends Model>
 	/**
 	 * @return Collection
 	 */
-	public clear(): Collection<GenericModel> {
+	public clear(): this {
 		return this.reset();
 	}
 
@@ -381,20 +374,19 @@ export default class Collection<GenericModel extends Model>
 	/**
 	 * @param IAttributes attributes
 	 */
-	public delete(attributes: IAttributes = {}) {
-		const url: string = this.builder.identifier(this.id || attributes?.id || '').getUrl();
-
-		// Check for identifier
-		if (this.builder.id) {
-			let model: Model | undefined = this.findWhere(attributes);
-
-			model && this.remove(model);
+	public delete(attributes: any = {}): Promise<HttpRequest> {
+		if (!attributes || !attributes.id) {
+			throw new Error('No ID provided to delete');
 		}
 
+		// Remove model from collection
+		const model = this.findWhere({ id: attributes.id });
+		model && this.remove(model);
+
 		// Attributes
-		const body: any = null;
-		const headers: any = this.headers;
-		const method: string = 'DELETE';
+		const body = undefined;
+		const headers = this.headers;
+		const method = 'DELETE';
 
 		return this._fetch(null, {}, method, body, headers);
 	}
@@ -436,7 +428,7 @@ export default class Collection<GenericModel extends Model>
 	/**
 	 * @return Collection
 	 */
-	public pop(): Collection<GenericModel> {
+	public pop(): this {
 		const model: GenericModel = this.at(this.length - 1);
 
 		return this.remove(model);
@@ -446,7 +438,7 @@ export default class Collection<GenericModel extends Model>
 	 * @todo Might want to do more with this
 	 * @return Collection
 	 */
-	public reset(): Collection<GenericModel> {
+	public reset(): this {
 		this.models = [];
 
 		this.dispatch('change', { from: 'reset' });
@@ -462,7 +454,7 @@ export default class Collection<GenericModel extends Model>
 	 * @param  IAttributes options
 	 * @return Collection
 	 */
-	public unshift(model: GenericModel[] | GenericModel | object, options: IAttributes = {}): Collection<GenericModel> {
+	public unshift(model: GenericModel[] | GenericModel | object, options: IAttributes = {}): this {
 		return this.add(model, Object.assign({ prepend: true }, options));
 	}
 
@@ -471,7 +463,7 @@ export default class Collection<GenericModel extends Model>
 	 *
 	 * @return Collection
 	 */
-	public shift(): Collection<GenericModel> {
+	public shift(): this {
 		const model: GenericModel = this.at(0);
 
 		return this.remove(model);
@@ -480,14 +472,14 @@ export default class Collection<GenericModel extends Model>
 	/**
 	 * @return Collection
 	 */
-	public shuffle(): Collection<GenericModel> {
+	public shuffle(): this {
 		this.models = this.models.sort(() => Math.random() - 0.5);
 
 		return this;
 	}
 
 	/**
-	 * @return Collection
+	 * @return this {
 	 */
 	public reverse(): Collection<GenericModel> {
 		this.models = this.models.reverse();
@@ -507,7 +499,7 @@ export default class Collection<GenericModel extends Model>
 	/**
 	 * @return Collection
 	 */
-	public unique(): Collection<GenericModel> {
+	public unique(): this {
 		this.models = this.models.filter((value, index, self) => self.indexOf(value) === index);
 
 		return this;

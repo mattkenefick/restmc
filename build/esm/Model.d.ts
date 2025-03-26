@@ -9,7 +9,7 @@ export default class Model extends ActiveRecord<Model> {
     circularProtection: boolean;
     private relationshipCache;
     constructor(attributes?: IAttributes, options?: IAttributes);
-    set(attributes?: IAttributes): Model;
+    set(attributes?: IAttributes): this;
     fetch(options?: IModelRequestOptions, queryParams?: IModelRequestQueryParams): Promise<Request>;
     hasOne<T>(relationshipName: string, relationshipClass: any): T;
     hasMany<T>(relationshipName: string, relationshipClass: any): T;
