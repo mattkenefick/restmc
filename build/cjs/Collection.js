@@ -148,6 +148,7 @@ class Collection extends ActiveRecord_js_1.default {
         if (!attributes || !attributes.id) {
             throw new Error('No ID provided to delete');
         }
+        this.builder.identifier((attributes === null || attributes === void 0 ? void 0 : attributes.id) || this.id || '');
         const model = this.findWhere({ id: attributes.id });
         model && this.remove(model);
         const body = undefined;

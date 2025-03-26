@@ -379,6 +379,9 @@ export default class Collection<GenericModel extends Model>
 			throw new Error('No ID provided to delete');
 		}
 
+		// Set builder identifier
+		this.builder.identifier(attributes?.id || this.id || '');
+
 		// Remove model from collection
 		const model = this.findWhere({ id: attributes.id });
 		model && this.remove(model);
