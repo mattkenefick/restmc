@@ -520,11 +520,11 @@ export default class ActiveRecord<T> extends Core {
 
 		// Convert toJSON on subobjects so they stay in sync
 		for (const key of possibleGetters) {
-			if (this[key]?.toJSON) {
+			if ((this as any)[key]?.toJSON) {
 				if (!recursiveObject || recursiveObject[refKey] != key) {
 					recursiveObject = recursiveObject || {};
 					recursiveObject[refKey] = key;
-					json[key] = this[key].toJSON(recursiveObject);
+					json[key] = (this as any)[key].toJSON(recursiveObject);
 				} else {
 					json[key] = { _circular: true };
 				}
