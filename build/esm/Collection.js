@@ -60,7 +60,12 @@ class Collection extends ActiveRecord_js_1.default {
         return Collection.paginator(this);
     }
     toJSON() {
-        return JSON.parse(JSON.stringify(this.models));
+        return this.models.map((model) => {
+            if (typeof model.toJSON === 'function') {
+                return model.toJSON();
+            }
+            return model;
+        });
     }
     fetchNext(append = false) {
         return __awaiter(this, void 0, void 0, function* () {

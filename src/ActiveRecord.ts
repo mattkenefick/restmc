@@ -513,6 +513,10 @@ export default class ActiveRecord<T> extends Core {
 	 * @return object
 	 */
 	public toJSON(recursiveObject: any = null): object {
+		if (recursiveObject !== null && typeof recursiveObject !== 'object') {
+			throw new Error(`Invalid recursiveObject passed to toJSON: ${typeof recursiveObject}`);
+		}
+
 		const json = { ...this.attributes };
 		const possibleGetters = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
 		const className = this.constructor.name;

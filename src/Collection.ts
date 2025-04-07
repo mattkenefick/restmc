@@ -193,7 +193,13 @@ export default class Collection<GenericModel extends Model>
 	 * @return object
 	 */
 	public toJSON(): object {
-		return JSON.parse(JSON.stringify(this.models));
+		return this.models.map((model) => {
+			if (typeof model.toJSON === 'function') {
+				return model.toJSON();
+			}
+
+			return model;
+		});
 	}
 
 	/**

@@ -36,4 +36,5 @@ const user = new ModelUser(data);
 const json = user.toJSON();
 const str = JSON.stringify(json, null, 4);
 
-console.log('user', json);
+console.log('----------------------------------------------------------------');
+console.log('User', json);

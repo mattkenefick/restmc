@@ -143,6 +143,9 @@ class ActiveRecord extends Core_js_1.default {
     }
     toJSON(recursiveObject = null) {
         var _a;
+        if (recursiveObject !== null && typeof recursiveObject !== 'object') {
+            throw new Error(`Invalid recursiveObject passed to toJSON: ${typeof recursiveObject}`);
+        }
         const json = Object.assign({}, this.attributes);
         const possibleGetters = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
         const className = this.constructor.name;
