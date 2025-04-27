@@ -99,6 +99,12 @@ class Model extends ActiveRecord_js_1.default {
         }
         return (this.relationshipCache[relationshipName] = collection);
     }
+    clearRelationship(relationshipName) {
+        if (this.relationshipCache[relationshipName]) {
+            delete this.relationshipCache[relationshipName];
+        }
+        return this;
+    }
     getRelationship(relationshipName) {
         if (Model.relationshipKey === null) {
             return this.attr(relationshipName);

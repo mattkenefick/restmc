@@ -13,5 +13,6 @@ export default class Model extends ActiveRecord<Model> {
     fetch(options?: IModelRequestOptions, queryParams?: IModelRequestQueryParams): Promise<Request>;
     hasOne<T>(relationshipName: string, relationshipClass: any): T;
     hasMany<T>(relationshipName: string, relationshipClass: any): T;
+    clearRelationship(relationshipName: string): this;
     protected getRelationship(relationshipName: string): any;
 }

@@ -267,6 +267,20 @@ export default class Model extends ActiveRecord<Model> {
 	}
 
 	/**
+	 * Clear a relationship from the cache
+	 *
+	 * @param string relationshipName
+	 * @return this
+	 */
+	public clearRelationship(relationshipName: string): this {
+		if (this.relationshipCache[relationshipName]) {
+			delete this.relationshipCache[relationshipName];
+		}
+
+		return this;
+	}
+
+	/**
 	 * @param string relationshipName
 	 * @return object
 	 */
