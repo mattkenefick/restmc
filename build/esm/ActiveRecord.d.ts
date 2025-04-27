@@ -72,6 +72,7 @@ export default class ActiveRecord<T> extends Core {
     upload(name: string, file: any, additionalFields?: Record<string, any>): Promise<HttpRequest>;
     fetch(options?: IModelRequestOptions, queryParams?: IModelRequestQueryParams, method?: string, body?: IAttributes, headers?: IAttributes): Promise<HttpRequest>;
     runLast(): Promise<HttpRequest> | void;
+    updateUniqueKey(): void;
     getUrlByMethod(method: string): string;
     beforeFetch(): Promise<void>;
     cancelModifiedEndpoint(): ActiveRecord<T>;

@@ -313,6 +313,10 @@ class ActiveRecord extends Core_js_1.default {
         }
         return this._fetch(this.lastRequest.options, this.lastRequest.queryParams, this.lastRequest.method, this.lastRequest.body, this.lastRequest.headers);
     }
+    updateUniqueKey() {
+        const hash = (0, Utility_js_1.compactObjectHash)(this.attributes) + Math.random().toString(36).substr(2, 5) + Date.now();
+        this.uniqueKey = hash;
+    }
     getUrlByMethod(method) {
         let url = '';
         const originalEndpoint = this.getEndpoint();
@@ -548,8 +552,12 @@ class ActiveRecord extends Core_js_1.default {
         this.dispatch('fetched', e.detail);
     }
     Handle_OnChange(e) {
-        const hash = (0, Utility_js_1.compactObjectHash)(this.attributes) + Math.random().toString(36).substr(2, 5) + Date.now();
-        this.uniqueKey = hash;
+        let parent = this.parent;
+        this.updateUniqueKey();
+        while (parent && parent.updateUniqueKey) {
+            parent.updateUniqueKey();
+            parent = parent.parent;
+        }
     }
 }
 exports.default = ActiveRecord;

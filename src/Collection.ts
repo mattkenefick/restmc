@@ -251,6 +251,19 @@ export default class Collection<GenericModel extends Model>
 	}
 
 	/**
+	 * @return void
+	 */
+	public updateUniqueKey(): void {
+		const ids = this.models.map((model: any) => model.id).join(',');
+		const hash =
+			compactObjectHash(JSON.stringify(this.attributes) + ids) +
+			Math.random().toString(36).substr(2, 5) +
+			Date.now();
+
+		this.uniqueKey = hash;
+	}
+
+	/**
 	 * Add or prepend Model(s) to our list. Set `prepend` = true on options
 	 * if you'd like to prepend the models
 	 *
@@ -785,24 +798,4 @@ export default class Collection<GenericModel extends Model>
 	[Symbol.iterator](): any {
 		return new CollectionIterator<GenericModel>(this, CollectionIterator.ITERATOR_VALUES);
 	}
-
-	// region: Event Handlers
-	// ---------------------------------------------------------------------------
-
-	/**
-	 * Handle change event
-	 * @param IDispatcherEvent e
-	 * @return void
-	 */
-	protected Handle_OnChange(e: IDispatcherEvent): void {
-		const ids = this.models.map((model: any) => model.id).join(',');
-		const hash =
-			compactObjectHash(JSON.stringify(this.attributes) + ids) +
-			Math.random().toString(36).substr(2, 5) +
-			Date.now();
-
-		this.uniqueKey = hash;
-	}
-
-	// endregion: Event Handlers
 }

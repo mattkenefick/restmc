@@ -89,6 +89,13 @@ class Collection extends ActiveRecord_js_1.default {
     getEndpoint() {
         return super.getEndpoint() || this.model.endpoint;
     }
+    updateUniqueKey() {
+        const ids = this.models.map((model) => model.id).join(',');
+        const hash = (0, Utility_js_1.compactObjectHash)(JSON.stringify(this.attributes) + ids) +
+            Math.random().toString(36).substr(2, 5) +
+            Date.now();
+        this.uniqueKey = hash;
+    }
     add(data, options = {}, trigger = true) {
         if (data == undefined) {
             return this;
@@ -310,13 +317,6 @@ class Collection extends ActiveRecord_js_1.default {
     }
     [Symbol.iterator]() {
         return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_VALUES);
-    }
-    Handle_OnChange(e) {
-        const ids = this.models.map((model) => model.id).join(',');
-        const hash = (0, Utility_js_1.compactObjectHash)(JSON.stringify(this.attributes) + ids) +
-            Math.random().toString(36).substr(2, 5) +
-            Date.now();
-        this.uniqueKey = hash;
     }
 }
 exports.default = Collection;

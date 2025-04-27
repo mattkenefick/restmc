@@ -159,9 +159,13 @@ async function fetchVenues(): Promise<void> {
 	}
 
 	setTimeout(() => {
-		remoteCollection.pop();
-		remoteCollection.shift();
-	}, 1000 * 3);
+		console.log('Remote Collection', remoteCollection);
+
+		remoteCollection.at(0).media.at(0).dispatch('change');
+
+		// remoteCollection.pop();
+		// remoteCollection.shift();
+	}, 1000 * 1);
 }
 
 // Run

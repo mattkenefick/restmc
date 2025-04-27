@@ -885,6 +885,14 @@ export default class ActiveRecord<T> extends Core {
 		);
 	}
 
+	/**
+	 * @return void
+	 */
+	public updateUniqueKey(): void {
+		const hash = compactObjectHash(this.attributes) + Math.random().toString(36).substr(2, 5) + Date.now();
+		this.uniqueKey = hash;
+	}
+
 	// endregion: Actions
 
 	// region: Get Params
@@ -1432,8 +1440,16 @@ export default class ActiveRecord<T> extends Core {
 	 * @return void
 	 */
 	protected Handle_OnChange(e: IDispatcherEvent): void {
-		const hash = compactObjectHash(this.attributes) + Math.random().toString(36).substr(2, 5) + Date.now();
-		this.uniqueKey = hash;
+		let parent: any = this.parent;
+
+		// Update this key
+		this.updateUniqueKey();
+
+		// Update keys on all parent ancestors (if it has updatekey method)
+		while (parent && parent.updateUniqueKey) {
+			parent.updateUniqueKey();
+			parent = parent.parent;
+		}
 	}
 
 	// endregion: Event Handlers
