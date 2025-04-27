@@ -181,7 +181,7 @@ class ActiveRecord extends Core_js_1.default {
     }
     delete(attributes = {}) {
         const method = 'DELETE';
-        const payload = Object.assign(attributes || {}, this.toJSON());
+        const payload = Object.assign({}, this.toJSON(), attributes);
         const output = this._fetch(null, {}, method, payload, this.headers);
         output.then((request) => {
             var _a;
@@ -196,19 +196,19 @@ class ActiveRecord extends Core_js_1.default {
     }
     post(attributes = {}) {
         const method = 'POST';
-        const payload = Object.assign(attributes || {}, this.toJSON());
+        const payload = Object.assign({}, this.toJSON(), attributes);
         const output = this._fetch(null, {}, method, payload, this.headers);
         return output;
     }
     put(attributes) {
         const method = 'PUT';
-        const payload = Object.assign(attributes || {}, this.toJSON());
+        const payload = Object.assign({}, this.toJSON(), attributes);
         const output = this._fetch(null, {}, method, payload, this.headers);
         return output;
     }
     save(attributes = {}) {
         const method = this.id ? 'PUT' : 'POST';
-        const payload = Object.assign(attributes || {}, this.toJSON());
+        const payload = Object.assign({}, this.toJSON(), attributes);
         const output = this._fetch(null, {}, method, payload, this.headers);
         return output;
     }

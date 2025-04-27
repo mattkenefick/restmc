@@ -583,7 +583,7 @@ export default class ActiveRecord<T> extends Core {
 	 */
 	public delete(attributes: IAttributes = {}): Promise<HttpRequest> {
 		const method: string = 'DELETE';
-		const payload: IAttributes = Object.assign(attributes || {}, this.toJSON());
+		const payload: IAttributes = Object.assign({}, this.toJSON(), attributes);
 		const output: Promise<HttpRequest> = this._fetch(null, {}, method, payload, this.headers);
 
 		// Check if it was successful
@@ -608,7 +608,7 @@ export default class ActiveRecord<T> extends Core {
 	 */
 	public post(attributes: IAttributes = {}): Promise<HttpRequest> {
 		const method: string = 'POST';
-		const payload: IAttributes = Object.assign(attributes || {}, this.toJSON());
+		const payload: IAttributes = Object.assign({}, this.toJSON(), attributes);
 		const output: Promise<HttpRequest> = this._fetch(null, {}, method, payload, this.headers);
 
 		return output;
@@ -620,7 +620,7 @@ export default class ActiveRecord<T> extends Core {
 	 */
 	public put(attributes: IAttributes): Promise<HttpRequest> {
 		const method: string = 'PUT';
-		const payload: IAttributes = Object.assign(attributes || {}, this.toJSON());
+		const payload: IAttributes = Object.assign({}, this.toJSON(), attributes);
 		const output: Promise<HttpRequest> = this._fetch(null, {}, method, payload, this.headers);
 
 		return output;
@@ -632,7 +632,7 @@ export default class ActiveRecord<T> extends Core {
 	 */
 	public save(attributes: IAttributes = {}): Promise<HttpRequest> {
 		const method: string = this.id ? 'PUT' : 'POST';
-		const payload: IAttributes = Object.assign(attributes || {}, this.toJSON());
+		const payload: IAttributes = Object.assign({}, this.toJSON(), attributes);
 		const output: Promise<HttpRequest> = this._fetch(null, {}, method, payload, this.headers);
 
 		return output;
