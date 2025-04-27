@@ -2,7 +2,7 @@ import ActiveRecord from './ActiveRecord.js';
 import CollectionIterator from './CollectionIterator.js';
 import HttpRequest from './Http/Request.js';
 import Model from './Model.js';
-import { IAttributes, ICollectionMeta, IPagination } from './Interfaces.js';
+import { IAttributes, ICollectionMeta, IDispatcherEvent, IPagination } from './Interfaces.js';
 export default class Collection<GenericModel extends Model> extends ActiveRecord<Collection<GenericModel>> implements Iterable<GenericModel> {
     static paginator(collection: any): IPagination;
     static hydrate<T>(models?: Model[] | any, options?: object, trigger?: boolean): any;
@@ -59,4 +59,5 @@ export default class Collection<GenericModel extends Model> extends ActiveRecord
     resetIterator(): void;
     indexOf(model: GenericModel): number;
     [Symbol.iterator](): any;
+    protected Handle_OnChange(e: IDispatcherEvent): void;
 }

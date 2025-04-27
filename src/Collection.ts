@@ -2,6 +2,7 @@ import ActiveRecord from './ActiveRecord.js';
 import CollectionIterator from './CollectionIterator.js';
 import HttpRequest from './Http/Request.js';
 import Model from './Model.js';
+import { compactObjectHash } from './Utility.js';
 import {
 	IAttributes,
 	IAxiosResponse,
@@ -488,7 +489,7 @@ export default class Collection<GenericModel extends Model>
 	}
 
 	/**
-	 * @return this {
+	 * @return this
 	 */
 	public reverse(): Collection<GenericModel> {
 		this.models = this.models.reverse();
@@ -784,4 +785,24 @@ export default class Collection<GenericModel extends Model>
 	[Symbol.iterator](): any {
 		return new CollectionIterator<GenericModel>(this, CollectionIterator.ITERATOR_VALUES);
 	}
+
+	// region: Event Handlers
+	// ---------------------------------------------------------------------------
+
+	/**
+	 * Handle change event
+	 * @param IDispatcherEvent e
+	 * @return void
+	 */
+	protected Handle_OnChange(e: IDispatcherEvent): void {
+		const ids = this.models.map((model: any) => model.id).join(',');
+		const hash =
+			compactObjectHash(JSON.stringify(this.attributes) + ids) +
+			Math.random().toString(36).substr(2, 5) +
+			Date.now();
+
+		this.uniqueKey = hash;
+	}
+
+	// endregion: Event Handlers
 }

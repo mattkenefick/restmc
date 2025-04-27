@@ -12,6 +12,7 @@ import {
 	IResponse,
 } from './Interfaces.js';
 import { AxiosResponse } from 'axios';
+import { compactObjectHash } from './Utility.js';
 import Builder from './Http/Builder.js';
 import Collection from './Collection.js';
 import Core from './Core.js';
@@ -255,6 +256,11 @@ export default class ActiveRecord<T> extends Core {
 	public timeParsed: number = -1;
 
 	/**
+	 * @type string
+	 */
+	public uniqueKey: string = '';
+
+	/**
 	 * Meta data supplied by the server adjacent to datas
 	 *
 	 * @type IAttributes
@@ -341,16 +347,19 @@ export default class ActiveRecord<T> extends Core {
 	constructor(options: IAttributes = {}) {
 		super(options);
 
+		// Bindings
+		this.Handle_OnChange = this.Handle_OnChange.bind(this);
+
 		// Set options on class
 		Object.assign(this, options);
 
 		// Set defaults
+		this._meta = {};
 		this.attributes = {};
 		this.body = {};
+		this.cid = this.cidPrefix + Math.random().toString(36).substr(2, 5);
 		this.headers = {};
 		this.mockData = {};
-		this._meta = {};
-		this.cid = this.cidPrefix + Math.random().toString(36).substr(2, 5);
 		this.parent = undefined;
 
 		// Setup URL builder
@@ -359,8 +368,27 @@ export default class ActiveRecord<T> extends Core {
 		// Set options
 		this.setOptions(options);
 
+		// Listen for change events
+		this.attachChangeListeners();
+
 		// Hook
 		ActiveRecord.hook(`${this.constructor.name}.setup`, [this]);
+	}
+
+	/**
+	 * @return void
+	 */
+	public attachChangeListeners(): void {
+		this.on('change', this.Handle_OnChange);
+		this.on('fetched', this.Handle_OnChange);
+	}
+
+	/**
+	 * @return void
+	 */
+	public detachChangeListeners(): void {
+		this.off('change', this.Handle_OnChange);
+		this.off('fetched', this.Handle_OnChange);
 	}
 
 	/**
@@ -538,10 +566,8 @@ export default class ActiveRecord<T> extends Core {
 		return json;
 	}
 
-	/*
-	 * region: Actions
-	 * -------------------------------------------------------------------------
-	 */
+	// region: Actions
+	// ---------------------------------------------------------------------------
 
 	/**
 	 * @param IAttributes attributes
@@ -1345,10 +1371,8 @@ export default class ActiveRecord<T> extends Core {
 		return attributes;
 	}
 
-	/*
-	 * region: Http Events
-	 * ---------------------------------------------------------------------------
-	 */
+	// region: Http Events
+	// -------------------------------------------------------------------------
 
 	/*
 	 * Complete from fetch request
@@ -1398,4 +1422,19 @@ export default class ActiveRecord<T> extends Core {
 	}
 
 	// endregion: Http Events
+
+	// region: Event Handlers
+	// ---------------------------------------------------------------------------
+
+	/**
+	 * Handle change event
+	 * @param IDispatcherEvent e
+	 * @return void
+	 */
+	protected Handle_OnChange(e: IDispatcherEvent): void {
+		const hash = compactObjectHash(this.attributes) + Math.random().toString(36).substr(2, 5) + Date.now();
+		this.uniqueKey = hash;
+	}
+
+	// endregion: Event Handlers
 }

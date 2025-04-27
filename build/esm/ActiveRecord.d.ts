@@ -34,6 +34,7 @@ export default class ActiveRecord<T> extends Core {
     requestTime: number;
     timeCompleted: number;
     timeParsed: number;
+    uniqueKey: string;
     _meta: IAttributes;
     protected builder: Builder<T>;
     protected cidPrefix: string;
@@ -46,6 +47,8 @@ export default class ActiveRecord<T> extends Core {
     protected token: string;
     protected ttl: number;
     constructor(options?: IAttributes);
+    attachChangeListeners(): void;
+    detachChangeListeners(): void;
     attr(key: string): string | number | null;
     clone(): any;
     hasAttributes(): boolean;
@@ -101,4 +104,5 @@ export default class ActiveRecord<T> extends Core {
     protected FetchComplete(e: IDispatcherEvent): void;
     protected FetchProgress(e: IDispatcherEvent): void;
     protected FetchParseAfter(e: IDispatcherEvent, options?: IAttributes): void;
+    protected Handle_OnChange(e: IDispatcherEvent): void;
 }

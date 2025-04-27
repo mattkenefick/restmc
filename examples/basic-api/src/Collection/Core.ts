@@ -15,6 +15,6 @@ export default class CollectionCore<T extends Model> extends Collection<T> {
 	 * @return string
 	 */
 	public getBaseUrl(): string {
-		return 'https://example.com';
+		return 'http://localhost:8000/v3';
 	}
 }

@@ -23,30 +23,26 @@ async function fetchVenues(): Promise<void> {
 	const parentElement: HTMLElement = document.querySelector('#app') as HTMLElement;
 	const venueCollection: CollectionVenue = CollectionVenue.hydrate(ApiData.data);
 
+	console.log('Venue Collection', venueCollection);
 	console.log('RESTMC VERSION', venueCollection.restmc);
 
 	venueCollection.setOptions({
 		withCredentials: false,
 	});
 
-	// venueCollection.setHeader('x-foo', 'bar');
-
 	venueCollection.on('complete', (e) => {
 		console.log('Received data: ', e);
 	});
 
-	console.log('Venue Collection', venueCollection);
-
 	// Fetch remotely
-	// await venueCollection.fetch();
 	// await venueCollection.fetch();
 
 	// Iterate through collection
-	venueCollection.each((model: ModelVenue) => addVenue(model, parentElement));
+	// venueCollection.each((model: ModelVenue) => addVenue(model, parentElement));
 
-	venueCollection.on('add:before', (e) => {
-		console.log('Before add', e);
-	});
+	// venueCollection.on('add:before', (e) => {
+	// 	console.log('Before add', e);
+	// });
 
 	// // Matches one
 	// const parlourItem = venueCollection.findWhere({ name: 'Parlour' });
@@ -128,19 +124,19 @@ async function fetchVenues(): Promise<void> {
 	// 	console.log('Previous All Iterator', clonedCollection.index(), model.getName());
 	// }
 
-	//
-	console.log('-----------------------------------------------------------');
-	console.log('Relationships');
+	// //
+	// console.log('-----------------------------------------------------------');
+	// console.log('Relationships');
 
-	const modelA = venueCollection.first();
-	console.log('ModelA', modelA);
-	console.log('JSON', modelA.toJSON());
+	// const modelA = venueCollection.first();
+	// console.log('ModelA', modelA);
+	// console.log('JSON', modelA.toJSON());
 
-	const mediaCollection = modelA.media.clone();
-	console.log('Cloned media', mediaCollection);
+	// const mediaCollection = modelA.media.clone();
+	// console.log('Cloned media', mediaCollection);
 
-	const hydratedCollection = CollectionMedia.hydrate(modelA.attributes.media);
-	console.log('Hydrated media', hydratedCollection);
+	// const hydratedCollection = CollectionMedia.hydrate(modelA.attributes.media);
+	// console.log('Hydrated media', hydratedCollection);
 
 	// Remote Fetching
 	// -------------------------------------------------------------------------
@@ -161,6 +157,11 @@ async function fetchVenues(): Promise<void> {
 		console.log(`Fetch ${i} ---------------------------------------------- `);
 		await remoteCollection.fetch();
 	}
+
+	setTimeout(() => {
+		remoteCollection.pop();
+		remoteCollection.shift();
+	}, 1000 * 3);
 }
 
 // Run

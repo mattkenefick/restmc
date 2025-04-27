@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const ActiveRecord_js_1 = require("./ActiveRecord.js");
 const CollectionIterator_js_1 = require("./CollectionIterator.js");
 const Model_js_1 = require("./Model.js");
+const Utility_js_1 = require("./Utility.js");
 class Collection extends ActiveRecord_js_1.default {
     constructor(options = {}) {
         super(options);
@@ -309,6 +310,13 @@ class Collection extends ActiveRecord_js_1.default {
     }
     [Symbol.iterator]() {
         return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_VALUES);
+    }
+    Handle_OnChange(e) {
+        const ids = this.models.map((model) => model.id).join(',');
+        const hash = (0, Utility_js_1.compactObjectHash)(JSON.stringify(this.attributes) + ids) +
+            Math.random().toString(36).substr(2, 5) +
+            Date.now();
+        this.uniqueKey = hash;
     }
 }
 exports.default = Collection;

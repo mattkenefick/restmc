@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const Utility_js_1 = require("./Utility.js");
 const Builder_js_1 = require("./Http/Builder.js");
 const Core_js_1 = require("./Core.js");
 const Request_js_1 = require("./Http/Request.js");
@@ -43,21 +44,24 @@ class ActiveRecord extends Core_js_1.default {
         this.requestTime = -1;
         this.timeCompleted = -1;
         this.timeParsed = -1;
+        this.uniqueKey = '';
         this.cidPrefix = 'c';
         this.runLastAttempts = 0;
         this.runLastAttemptsMax = 2;
         this.token = '';
         this.ttl = 0;
+        this.Handle_OnChange = this.Handle_OnChange.bind(this);
         Object.assign(this, options);
+        this._meta = {};
         this.attributes = {};
         this.body = {};
+        this.cid = this.cidPrefix + Math.random().toString(36).substr(2, 5);
         this.headers = {};
         this.mockData = {};
-        this._meta = {};
-        this.cid = this.cidPrefix + Math.random().toString(36).substr(2, 5);
         this.parent = undefined;
         this.builder = new Builder_js_1.default(this);
         this.setOptions(options);
+        this.attachChangeListeners();
         ActiveRecord.hook(`${this.constructor.name}.setup`, [this]);
     }
     static setHook(event = 'init', func) {
@@ -77,6 +81,14 @@ class ActiveRecord extends Core_js_1.default {
     }
     get isModel() {
         return this.builder.id != '';
+    }
+    attachChangeListeners() {
+        this.on('change', this.Handle_OnChange);
+        this.on('fetched', this.Handle_OnChange);
+    }
+    detachChangeListeners() {
+        this.off('change', this.Handle_OnChange);
+        this.off('fetched', this.Handle_OnChange);
     }
     attr(key) {
         return this.attributes[key];
@@ -534,6 +546,10 @@ class ActiveRecord extends Core_js_1.default {
         }
         this.timeParsed = Date.now();
         this.dispatch('fetched', e.detail);
+    }
+    Handle_OnChange(e) {
+        const hash = (0, Utility_js_1.compactObjectHash)(this.attributes) + Math.random().toString(36).substr(2, 5) + Date.now();
+        this.uniqueKey = hash;
     }
 }
 exports.default = ActiveRecord;
