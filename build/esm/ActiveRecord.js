@@ -95,10 +95,10 @@ class ActiveRecord extends Core_js_1.default {
     }
     clone() {
         const instance = new this.constructor();
-        instance.add(this.toJSON());
+        instance.parent = this.parent;
         instance.setOptions(this.options);
         instance.setHeaders(this.headers);
-        instance.parent = this.parent;
+        instance.add(this.toJSON());
         return instance;
     }
     hasAttributes() {
@@ -139,6 +139,9 @@ class ActiveRecord extends Core_js_1.default {
         }
         if (options.headers) {
             this.setHeaders(options.headers);
+        }
+        if (options.parent) {
+            this.parent = options.parent;
         }
         if (options.meta) {
             if (options.merge) {

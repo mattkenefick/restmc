@@ -407,11 +407,11 @@ export default class ActiveRecord<T> extends Core {
 	public clone() {
 		// @ts-ignore
 		const instance = new this.constructor();
-		instance.add(this.toJSON());
 
+		instance.parent = this.parent;
 		instance.setOptions(this.options);
 		instance.setHeaders(this.headers);
-		instance.parent = this.parent;
+		instance.add(this.toJSON());
 
 		return instance;
 	}
@@ -510,6 +510,11 @@ export default class ActiveRecord<T> extends Core {
 		// Check options for headers
 		if (options.headers) {
 			this.setHeaders(options.headers);
+		}
+
+		// Check options has explicit parent
+		if (options.parent) {
+			this.parent = options.parent;
 		}
 
 		// Set metadata

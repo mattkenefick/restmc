@@ -52,6 +52,8 @@ export default class Collection<GenericModel extends Model>
 	/**
 	 * Hydrate a collection full of models
 	 *
+	 * Order of options vs models matters
+	 *
 	 * @param Model[] models
 	 * @param object options
 	 * @param boolean trigger
@@ -61,13 +63,13 @@ export default class Collection<GenericModel extends Model>
 		// Instantiate collection
 		const collection = new this(options);
 
+		// Add options to collection
+		collection.setOptions(options);
+
 		// Add models to collection
 		if (models) {
 			collection.add(models, {}, trigger);
 		}
-
-		// Add options to collection
-		collection.setOptions(options);
 
 		return collection;
 	}
@@ -620,10 +622,11 @@ export default class Collection<GenericModel extends Model>
 		first: boolean = false,
 		fullMatch: boolean = false
 	): this | Collection<GenericModel> | GenericModel {
-		const constructor: any = this.constructor;
-		const filteredModels: any[] = [];
+		// Create a clone of the current collection
+		const clone = this.clone();
 
-		this.models.forEach((model: GenericModel) => {
+		// Filter the models based on the criteria
+		clone.models = this.models.filter((model: GenericModel) => {
 			// Get assigned attributes per model
 			const attributes: string[] = Object.keys(json);
 
@@ -637,21 +640,11 @@ export default class Collection<GenericModel extends Model>
 				);
 			});
 
-			// We have a full intersection
-			if (fullMatch && intersection.length == attributes.length) {
-				filteredModels.push(model);
-			}
-
-			// We have a partial intersection
-			else if (!fullMatch && intersection.length) {
-				filteredModels.push(model);
-			}
+			// Return whether this model matches our criteria
+			return fullMatch ? intersection.length === attributes.length : intersection.length > 0;
 		});
 
-		// Hydrate from models
-		const collection = constructor.hydrate(filteredModels, this.options, false);
-
-		return first ? collection.first() : collection;
+		return first ? clone.models[0] || null : clone;
 	}
 
 	/**

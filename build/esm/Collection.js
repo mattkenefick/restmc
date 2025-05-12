@@ -42,10 +42,10 @@ class Collection extends ActiveRecord_js_1.default {
     }
     static hydrate(models = [], options = {}, trigger = true) {
         const collection = new this(options);
+        collection.setOptions(options);
         if (models) {
             collection.add(models, {}, trigger);
         }
-        collection.setOptions(options);
         return collection;
     }
     get isCollection() {
@@ -250,23 +250,16 @@ class Collection extends ActiveRecord_js_1.default {
         return this.at(this.length - 1);
     }
     where(json = {}, first = false, fullMatch = false) {
-        const constructor = this.constructor;
-        const filteredModels = [];
-        this.models.forEach((model) => {
+        const clone = this.clone();
+        clone.models = this.models.filter((model) => {
             const attributes = Object.keys(json);
             const intersection = attributes.filter((key) => {
                 return (key in json &&
                     model.attr(key) == json[key]);
             });
-            if (fullMatch && intersection.length == attributes.length) {
-                filteredModels.push(model);
-            }
-            else if (!fullMatch && intersection.length) {
-                filteredModels.push(model);
-            }
+            return fullMatch ? intersection.length === attributes.length : intersection.length > 0;
         });
-        const collection = constructor.hydrate(filteredModels, this.options, false);
-        return first ? collection.first() : collection;
+        return first ? clone.models[0] || null : clone;
     }
     findWhere(attributes = {}) {
         return this.where(attributes, true);
