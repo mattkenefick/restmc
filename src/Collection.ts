@@ -622,11 +622,10 @@ export default class Collection<GenericModel extends Model>
 		first: boolean = false,
 		fullMatch: boolean = false
 	): this | Collection<GenericModel> | GenericModel {
-		// Create a clone of the current collection
-		const clone = this.clone();
+		const constructor: any = this.constructor;
+		const filteredModels: any[] = [];
 
-		// Filter the models based on the criteria
-		clone.models = this.models.filter((model: GenericModel) => {
+		this.models.forEach((model: GenericModel) => {
 			// Get assigned attributes per model
 			const attributes: string[] = Object.keys(json);
 
@@ -640,11 +639,28 @@ export default class Collection<GenericModel extends Model>
 				);
 			});
 
-			// Return whether this model matches our criteria
-			return fullMatch ? intersection.length === attributes.length : intersection.length > 0;
+			// We have a full intersection
+			if (fullMatch && intersection.length == attributes.length) {
+				filteredModels.push(model);
+			}
+
+			// We have a partial intersection
+			else if (!fullMatch && intersection.length) {
+				filteredModels.push(model);
+			}
 		});
 
-		return first ? clone.models[0] || null : clone;
+		// Hydrate from models
+		const collection = constructor.hydrate(
+			filteredModels,
+			{
+				parent: this.parent,
+				...this.options,
+			},
+			false
+		);
+
+		return first ? collection.first() : collection;
 	}
 
 	/**

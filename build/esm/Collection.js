@@ -250,16 +250,23 @@ class Collection extends ActiveRecord_js_1.default {
         return this.at(this.length - 1);
     }
     where(json = {}, first = false, fullMatch = false) {
-        const clone = this.clone();
-        clone.models = this.models.filter((model) => {
+        const constructor = this.constructor;
+        const filteredModels = [];
+        this.models.forEach((model) => {
             const attributes = Object.keys(json);
             const intersection = attributes.filter((key) => {
                 return (key in json &&
                     model.attr(key) == json[key]);
             });
-            return fullMatch ? intersection.length === attributes.length : intersection.length > 0;
+            if (fullMatch && intersection.length == attributes.length) {
+                filteredModels.push(model);
+            }
+            else if (!fullMatch && intersection.length) {
+                filteredModels.push(model);
+            }
         });
-        return first ? clone.models[0] || null : clone;
+        const collection = constructor.hydrate(filteredModels, Object.assign({ parent: this.parent }, this.options), false);
+        return first ? collection.first() : collection;
     }
     findWhere(attributes = {}) {
         return this.where(attributes, true);
