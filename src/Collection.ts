@@ -291,6 +291,13 @@ export default class Collection<GenericModel extends Model>
 				model = new this.model.constructor(model);
 			}
 
+			// Event params
+			const params = {
+				grandparent: this?.parent,
+				model: model,
+				parent: this,
+			};
+
 			// Set references on model
 			model.parent = this;
 			model.headers = this.headers;
@@ -301,7 +308,7 @@ export default class Collection<GenericModel extends Model>
 			}
 
 			// Trigger event before adding it
-			trigger && this.dispatch('add:before', { model });
+			trigger && this.dispatch('add:before', params);
 
 			// Add to list
 			if (options.prepend) {
@@ -309,6 +316,15 @@ export default class Collection<GenericModel extends Model>
 			} else {
 				this.models.push(model);
 			}
+
+			// Trigger event after adding it
+			trigger && this.dispatch('add:after', params);
+
+			// Trigger event delayed after adding it
+			trigger &&
+				setTimeout(() => {
+					this.dispatch('add:delayed', params);
+				}, 1);
 		});
 
 		// Event for add

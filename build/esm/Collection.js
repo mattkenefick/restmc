@@ -106,18 +106,28 @@ class Collection extends ActiveRecord_js_1.default {
             if (!(model instanceof Model_js_1.default)) {
                 model = new this.model.constructor(model);
             }
+            const params = {
+                grandparent: this === null || this === void 0 ? void 0 : this.parent,
+                model: model,
+                parent: this,
+            };
             model.parent = this;
             model.headers = this.headers;
             if (this.referenceForModifiedEndpoint) {
                 model.useModifiedEndpoint(this.referenceForModifiedEndpoint);
             }
-            trigger && this.dispatch('add:before', { model });
+            trigger && this.dispatch('add:before', params);
             if (options.prepend) {
                 this.models.unshift(model);
             }
             else {
                 this.models.push(model);
             }
+            trigger && this.dispatch('add:after', params);
+            trigger &&
+                setTimeout(() => {
+                    this.dispatch('add:delayed', params);
+                }, 1);
         });
         trigger && this.dispatch('change', { from: 'add' });
         trigger && this.dispatch('add');
