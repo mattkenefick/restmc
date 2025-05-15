@@ -114,7 +114,7 @@ class Collection extends ActiveRecord_js_1.default {
             model.parent = this;
             model.headers = this.headers;
             if (this.referenceForModifiedEndpoint) {
-                model.useModifiedEndpoint(this.referenceForModifiedEndpoint);
+                model.useModifiedEndpoint(this.referenceForModifiedEndpoint, this.modifiedEndpointPosition);
             }
             trigger && this.dispatch('add:before', params);
             if (options.prepend) {

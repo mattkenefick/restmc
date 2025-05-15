@@ -120,6 +120,16 @@ export default class Collection<GenericModel extends Model>
 	 *
 	 * It's sort of like a disguise for the at(x) call
 	 *
+	 * This property creates a shortcut to deeply nested properties within models.
+	 * When accessing collection items with at(), the method will automatically
+	 * traverse through the specified relationship path to return the nested object.
+	 *
+	 * The traversal happens in the at() method by following each key in the array
+	 * sequentially through the object hierarchy of the model.
+	 *
+	 * Use this when you frequently need to access the same nested property path
+	 * across multiple models in the collection to simplify your code.
+	 *
 	 * @type string[]
 	 */
 	public atRelationship: string[] = [];
@@ -306,7 +316,7 @@ export default class Collection<GenericModel extends Model>
 
 			// Check the modified endpoint
 			if (this.referenceForModifiedEndpoint) {
-				model.useModifiedEndpoint(this.referenceForModifiedEndpoint);
+				model.useModifiedEndpoint(this.referenceForModifiedEndpoint, this.modifiedEndpointPosition);
 			}
 
 			// Trigger event before adding it

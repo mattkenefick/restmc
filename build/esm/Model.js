@@ -92,11 +92,14 @@ class Model extends ActiveRecord_js_1.default {
         }
         const dataKey = new relationshipClass().dataKey;
         const content = this.getRelationship(relationshipName);
-        const collection = relationshipClass.hydrate((dataKey && content ? content[dataKey] : null) || content);
-        collection.parent = this;
+        const models = (dataKey && content ? content[dataKey] : null) || content;
+        const collection = new relationshipClass({
+            parent: this,
+        });
         if (Model.useDescendingRelationships) {
             collection.useModifiedEndpoint(this);
         }
+        collection.add(models, {}, true);
         return (this.relationshipCache[relationshipName] = collection);
     }
     clearRelationship(relationshipName) {

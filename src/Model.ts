@@ -253,15 +253,22 @@ export default class Model extends ActiveRecord<Model> {
 
 		const dataKey: string | undefined = new relationshipClass().dataKey;
 		const content: Collection<any> | Model | undefined = this.getRelationship(relationshipName);
-		const collection: any = relationshipClass.hydrate((dataKey && content ? content[dataKey] : null) || content);
+		const models: any = (dataKey && content ? content[dataKey] : null) || content;
 
-		// Reference relationship parent
-		collection.parent = this;
+		// mk: Hydrating the models here then setting the modified endpoint
+		// wont pass the modified endpoint down to the children.
+		// const collection: any = relationshipClass.hydrate((dataKey && content ? content[dataKey] : null) || content);
+		const collection: any = new relationshipClass({
+			parent: this,
+		});
 
 		// Use modified endpoints
 		if (Model.useDescendingRelationships) {
 			collection.useModifiedEndpoint(this);
 		}
+
+		// Add models to new collection
+		collection.add(models, {}, true);
 
 		return (this.relationshipCache[relationshipName] = collection) as T;
 	}
