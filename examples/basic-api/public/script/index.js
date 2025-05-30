@@ -105,10 +105,10 @@ class ActiveRecord extends Core_js_1.default {
     }
     clone() {
         const instance = new this.constructor();
-        instance.add(this.toJSON());
+        instance.parent = this.parent;
         instance.setOptions(this.options);
         instance.setHeaders(this.headers);
-        instance.parent = this.parent;
+        instance.add(this.toJSON());
         return instance;
     }
     hasAttributes() {
@@ -149,6 +149,9 @@ class ActiveRecord extends Core_js_1.default {
         }
         if (options.headers) {
             this.setHeaders(options.headers);
+        }
+        if (options.parent) {
+            this.parent = options.parent;
         }
         if (options.meta) {
             if (options.merge) {
@@ -191,7 +194,7 @@ class ActiveRecord extends Core_js_1.default {
     }
     delete(attributes = {}) {
         const method = 'DELETE';
-        const payload = Object.assign(attributes || {}, this.toJSON());
+        const payload = Object.assign({}, this.toJSON(), attributes);
         const output = this._fetch(null, {}, method, payload, this.headers);
         output.then((request) => {
             var _a;
@@ -206,19 +209,19 @@ class ActiveRecord extends Core_js_1.default {
     }
     post(attributes = {}) {
         const method = 'POST';
-        const payload = Object.assign(attributes || {}, this.toJSON());
+        const payload = Object.assign({}, this.toJSON(), attributes);
         const output = this._fetch(null, {}, method, payload, this.headers);
         return output;
     }
     put(attributes) {
         const method = 'PUT';
-        const payload = Object.assign(attributes || {}, this.toJSON());
+        const payload = Object.assign({}, this.toJSON(), attributes);
         const output = this._fetch(null, {}, method, payload, this.headers);
         return output;
     }
     save(attributes = {}) {
         const method = this.id ? 'PUT' : 'POST';
-        const payload = Object.assign(attributes || {}, this.toJSON());
+        const payload = Object.assign({}, this.toJSON(), attributes);
         const output = this._fetch(null, {}, method, payload, this.headers);
         return output;
     }
@@ -566,7 +569,6 @@ class ActiveRecord extends Core_js_1.default {
         this.updateUniqueKey();
         while (parent && parent.updateUniqueKey) {
             parent.updateUniqueKey();
-            console.log('updated parent', parent.uniqueKey, parent.cid);
             parent = parent.parent;
         }
     }
@@ -697,10 +699,10 @@ class Collection extends ActiveRecord_js_1.default {
     }
     static hydrate(models = [], options = {}, trigger = true) {
         const collection = new this(options);
+        collection.setOptions(options);
         if (models) {
             collection.add(models, {}, trigger);
         }
-        collection.setOptions(options);
         return collection;
     }
     get isCollection() {
@@ -761,18 +763,28 @@ class Collection extends ActiveRecord_js_1.default {
             if (!(model instanceof Model_js_1.default)) {
                 model = new this.model.constructor(model);
             }
+            const params = {
+                grandparent: this === null || this === void 0 ? void 0 : this.parent,
+                model: model,
+                parent: this,
+            };
             model.parent = this;
             model.headers = this.headers;
             if (this.referenceForModifiedEndpoint) {
-                model.useModifiedEndpoint(this.referenceForModifiedEndpoint);
+                model.useModifiedEndpoint(this.referenceForModifiedEndpoint, this.modifiedEndpointPosition);
             }
-            trigger && this.dispatch('add:before', { model });
+            trigger && this.dispatch('add:before', params);
             if (options.prepend) {
                 this.models.unshift(model);
             }
             else {
                 this.models.push(model);
             }
+            trigger && this.dispatch('add:after', params);
+            trigger &&
+                setTimeout(() => {
+                    this.dispatch('add:delayed', params);
+                }, 1);
         });
         trigger && this.dispatch('change', { from: 'add' });
         trigger && this.dispatch('add');
@@ -910,7 +922,7 @@ class Collection extends ActiveRecord_js_1.default {
                 filteredModels.push(model);
             }
         });
-        const collection = constructor.hydrate(filteredModels, this.options, false);
+        const collection = constructor.hydrate(filteredModels, Object.assign({ parent: this.parent }, this.options), false);
         return first ? collection.first() : collection;
     }
     findWhere(attributes = {}) {
@@ -1432,6 +1444,7 @@ class Request extends Core_js_1.default {
                     return pendingResponse;
                 }
             }
+            console.log('fuck nut', params);
             const requestPromise = (0, axios_1.default)(params)
                 .then((response) => {
                 if (useCache && response.status >= 200 && response.status < 300) {
@@ -1703,12 +1716,21 @@ class Model extends ActiveRecord_js_1.default {
         }
         const dataKey = new relationshipClass().dataKey;
         const content = this.getRelationship(relationshipName);
-        const collection = relationshipClass.hydrate((dataKey && content ? content[dataKey] : null) || content);
-        collection.parent = this;
+        const models = (dataKey && content ? content[dataKey] : null) || content;
+        const collection = new relationshipClass({
+            parent: this,
+        });
         if (Model.useDescendingRelationships) {
             collection.useModifiedEndpoint(this);
         }
+        collection.add(models, {}, true);
         return (this.relationshipCache[relationshipName] = collection);
+    }
+    clearRelationship(relationshipName) {
+        if (this.relationshipCache[relationshipName]) {
+            delete this.relationshipCache[relationshipName];
+        }
+        return this;
     }
     getRelationship(relationshipName) {
         if (Model.relationshipKey === null) {

@@ -252,16 +252,18 @@ class Collection extends ActiveRecord_js_1.default {
     where(json = {}, first = false, fullMatch = false) {
         const constructor = this.constructor;
         const filteredModels = [];
+        const searchKeys = Object.keys(json);
+        const searchKeyCount = searchKeys.length;
         this.models.forEach((model) => {
-            const attributes = Object.keys(json);
-            const intersection = attributes.filter((key) => {
-                return (key in json &&
-                    model.attr(key) == json[key]);
-            });
-            if (fullMatch && intersection.length == attributes.length) {
-                filteredModels.push(model);
+            let matchCount = 0;
+            for (let i = 0; i < searchKeyCount; i++) {
+                const key = searchKeys[i];
+                if (model.attr(key) == json[key]) {
+                    matchCount++;
+                }
             }
-            else if (!fullMatch && intersection.length) {
+            const shouldInclude = fullMatch ? matchCount === searchKeyCount : matchCount > 0;
+            if (shouldInclude) {
                 filteredModels.push(model);
             }
         });

@@ -627,6 +627,14 @@ export default class Collection<GenericModel extends Model>
 	 * @param  boolean fullMatch
 	 * @return Collection | Model
 	 */
+	/**
+	 * Filters models based on attribute matching criteria
+	 *
+	 * @param json The attributes to match against
+	 * @param first Whether to return only the first match
+	 * @param fullMatch Whether all attributes must match
+	 * @return The filtered collection or first model
+	 */
 	public where(
 		json: IAttributes = {},
 		first: boolean = false,
@@ -635,27 +643,24 @@ export default class Collection<GenericModel extends Model>
 		const constructor: any = this.constructor;
 		const filteredModels: any[] = [];
 
+		// Extract keys once to avoid reactive tracking issues
+		const searchKeys: string[] = Object.keys(json);
+		const searchKeyCount: number = searchKeys.length;
+
 		this.models.forEach((model: GenericModel) => {
-			// Get assigned attributes per model
-			const attributes: string[] = Object.keys(json);
+			let matchCount: number = 0;
 
-			// Find intersection of our model and what has been passed in
-			const intersection: string[] = attributes.filter((key: string) => {
-				return (
-					// Exists in our search request
-					key in json &&
-					// The two values are equivalent
-					model.attr(key) == json[key]
-				);
-			});
-
-			// We have a full intersection
-			if (fullMatch && intersection.length == attributes.length) {
-				filteredModels.push(model);
+			// Use traditional for loop to avoid closure issues
+			for (let i = 0; i < searchKeyCount; i++) {
+				const key: string = searchKeys[i];
+				if (model.attr(key) == json[key]) {
+					matchCount++;
+				}
 			}
 
-			// We have a partial intersection
-			else if (!fullMatch && intersection.length) {
+			const shouldInclude: boolean = fullMatch ? matchCount === searchKeyCount : matchCount > 0;
+
+			if (shouldInclude) {
 				filteredModels.push(model);
 			}
 		});
