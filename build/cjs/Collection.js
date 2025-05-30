@@ -31,7 +31,6 @@ class Collection extends ActiveRecord_js_1.default {
         this.sortKey = 'id';
         this.iterator = new CollectionIterator_js_1.default(this);
         this.dataKey = 'data';
-        this.setOptions(options);
         this.builder.qp('limit', options.limit || this.limit).qp('page', options.page || this.page);
         if (options.atRelationship) {
             this.atRelationship = options.atRelationship;
@@ -97,41 +96,50 @@ class Collection extends ActiveRecord_js_1.default {
         this.uniqueKey = hash;
     }
     add(data, options = {}, trigger = true) {
-        if (data == undefined) {
+        if (data == null) {
             return this;
         }
-        data = this.cleanData(data);
-        const models = Array.isArray(data) ? data : [data];
-        models.forEach((model) => {
-            if (!(model instanceof Model_js_1.default)) {
-                model = new this.model.constructor(model);
+        const incomingItems = Array.isArray(data) ? data : [data];
+        const newModels = [];
+        for (const item of incomingItems) {
+            let model;
+            if (item.isModel) {
+                model = item;
             }
-            const params = {
-                grandparent: this === null || this === void 0 ? void 0 : this.parent,
-                model: model,
-                parent: this,
-            };
-            model.parent = this;
-            model.headers = this.headers;
-            if (this.referenceForModifiedEndpoint) {
-                model.useModifiedEndpoint(this.referenceForModifiedEndpoint, this.modifiedEndpointPosition);
+            else {
+                model = new this.model.constructor(item);
             }
-            trigger && this.dispatch('add:before', params);
+            this.prepareModel(model);
             if (options.prepend) {
                 this.models.unshift(model);
             }
             else {
                 this.models.push(model);
             }
-            trigger && this.dispatch('add:after', params);
-            trigger &&
-                setTimeout(() => {
-                    this.dispatch('add:delayed', params);
-                }, 1);
-        });
-        trigger && this.dispatch('change', { from: 'add' });
-        trigger && this.dispatch('add');
+            newModels.push(model);
+        }
+        if (trigger && newModels.length > 0) {
+            for (const model of newModels) {
+                const params = {
+                    grandparent: this === null || this === void 0 ? void 0 : this.parent,
+                    model,
+                    parent: this,
+                };
+                this.dispatch('add:before', params);
+                this.dispatch('add:after', params);
+                setTimeout(() => this.dispatch('add:delayed', params), 1);
+            }
+            this.dispatch('change', { from: 'add' });
+            this.dispatch('add');
+        }
         return this;
+    }
+    prepareModel(model) {
+        model.parent = this;
+        model.headers = this.headers;
+        if (this.referenceForModifiedEndpoint) {
+            model.useModifiedEndpoint(this.referenceForModifiedEndpoint, this.modifiedEndpointPosition);
+        }
     }
     remove(model, trigger = true) {
         let i = 0;
@@ -249,12 +257,12 @@ class Collection extends ActiveRecord_js_1.default {
     last() {
         return this.at(this.length - 1);
     }
-    where(json = {}, first = false, fullMatch = false) {
-        const constructor = this.constructor;
-        const filteredModels = [];
+    where(json = {}, first, fullMatch, inPlace) {
+        const filterInPlace = typeof inPlace === 'boolean' ? inPlace : !!this.inPlaceWhere;
         const searchKeys = Object.keys(json);
         const searchKeyCount = searchKeys.length;
-        this.models.forEach((model) => {
+        const filteredModels = [];
+        for (const model of this.models) {
             let matchCount = 0;
             for (let i = 0; i < searchKeyCount; i++) {
                 const key = searchKeys[i];
@@ -266,9 +274,21 @@ class Collection extends ActiveRecord_js_1.default {
             if (shouldInclude) {
                 filteredModels.push(model);
             }
-        });
+        }
+        if (first && filteredModels.length > 0) {
+            return filteredModels[0];
+        }
+        if (filterInPlace) {
+            this.models = filteredModels;
+            if (typeof this.dispatch === 'function') {
+                this.dispatch('change', { from: 'where-in-place' });
+                this.dispatch('filter');
+            }
+            return this;
+        }
+        const constructor = this.constructor;
         const collection = constructor.hydrate(filteredModels, Object.assign({ parent: this.parent }, this.options), false);
-        return first ? collection.first() : collection;
+        return collection;
     }
     findWhere(attributes = {}) {
         return this.where(attributes, true);

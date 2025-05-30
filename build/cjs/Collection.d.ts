@@ -22,7 +22,8 @@ export default class Collection<GenericModel extends Model> extends ActiveRecord
     fetchPrevious(append?: boolean): Promise<HttpRequest>;
     getEndpoint(): string;
     updateUniqueKey(): void;
-    add(data: GenericModel[] | GenericModel | object, options?: IAttributes, trigger?: boolean): this;
+    add(data: GenericModel | object | Array<GenericModel | object>, options?: IAttributes, trigger?: boolean): this;
+    protected prepareModel(model: GenericModel): void;
     remove(model: Model[] | Model | object, trigger?: boolean): this;
     set(model: Model[] | Model | object, options?: IAttributes, trigger?: boolean): this;
     clear(): this;
@@ -45,7 +46,7 @@ export default class Collection<GenericModel extends Model> extends ActiveRecord
     at(index?: number): GenericModel;
     first(): GenericModel;
     last(): GenericModel;
-    where(json?: IAttributes, first?: boolean, fullMatch?: boolean): this | Collection<GenericModel> | GenericModel;
+    where(json?: IAttributes, first?: boolean, fullMatch?: boolean, inPlace?: boolean): this | Collection<GenericModel> | GenericModel;
     findWhere(attributes?: IAttributes): GenericModel;
     findByCid(cid: string): GenericModel;
     sort(options?: IAttributes): Collection<GenericModel>;

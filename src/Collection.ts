@@ -63,7 +63,7 @@ export default class Collection<GenericModel extends Model>
 		// Instantiate collection
 		const collection = new this(options);
 
-		// Add options to collection
+		// Set options after instantiation
 		collection.setOptions(options);
 
 		// Add models to collection
@@ -190,9 +190,6 @@ export default class Collection<GenericModel extends Model>
 		// Set default data key
 		this.dataKey = 'data';
 
-		// Set options
-		this.setOptions(options);
-
 		// Default builder
 		this.builder.qp('limit', options.limit || this.limit).qp('page', options.page || this.page);
 
@@ -284,66 +281,74 @@ export default class Collection<GenericModel extends Model>
 	 * @param  boolean trigger
 	 * @return Collection
 	 */
-	public add(data: GenericModel[] | GenericModel | object, options: IAttributes = {}, trigger: boolean = true): this {
-		if (data == undefined) {
+	public add(
+		data: GenericModel | object | Array<GenericModel | object>,
+		options: IAttributes = {},
+		trigger: boolean = true
+	): this {
+		if (data == null) {
 			return this;
 		}
 
-		// Ensure data is on correct key
-		data = this.cleanData(data);
+		// Always work with an array for uniformity
+		const incomingItems: Array<GenericModel | object> = Array.isArray(data) ? data : [data];
+		const newModels: GenericModel[] = [];
 
-		// Allow multiple models/data or single
-		const models: any = Array.isArray(data) ? data : [data];
+		for (const item of incomingItems) {
+			let model: GenericModel;
 
-		// Iterate through supplied models/data
-		models.forEach((model: GenericModel) => {
-			// Data supplied is an object that must be instantiated
-			if (!(model instanceof Model)) {
+			if ((item as any).isModel) {
+				model = item as GenericModel;
+			} else {
 				// @ts-ignore
-				model = new this.model.constructor(model);
+				model = new this.model.constructor(item);
 			}
 
-			// Event params
-			const params = {
-				grandparent: this?.parent,
-				model: model,
-				parent: this,
-			};
+			// Set references and run initialization
+			this.prepareModel(model);
 
-			// Set references on model
-			model.parent = this;
-			model.headers = this.headers;
-
-			// Check the modified endpoint
-			if (this.referenceForModifiedEndpoint) {
-				model.useModifiedEndpoint(this.referenceForModifiedEndpoint, this.modifiedEndpointPosition);
-			}
-
-			// Trigger event before adding it
-			trigger && this.dispatch('add:before', params);
-
-			// Add to list
+			// Optionally insert at the start or end
 			if (options.prepend) {
 				this.models.unshift(model);
 			} else {
 				this.models.push(model);
 			}
 
-			// Trigger event after adding it
-			trigger && this.dispatch('add:after', params);
+			newModels.push(model);
+		}
 
-			// Trigger event delayed after adding it
-			trigger &&
-				setTimeout(() => {
-					this.dispatch('add:delayed', params);
-				}, 1);
-		});
+		// Batched event dispatches (do not over-trigger)
+		if (trigger && newModels.length > 0) {
+			for (const model of newModels) {
+				const params = {
+					grandparent: this?.parent,
+					model,
+					parent: this,
+				};
 
-		// Event for add
-		trigger && this.dispatch('change', { from: 'add' });
-		trigger && this.dispatch('add');
+				this.dispatch('add:before', params);
+				this.dispatch('add:after', params);
+				setTimeout(() => this.dispatch('add:delayed', params), 1);
+			}
+			this.dispatch('change', { from: 'add' });
+			this.dispatch('add');
+		}
 
 		return this;
+	}
+
+	/**
+	 * Prepares a model before adding it to the collection.
+	 *
+	 * @param {GenericModel} model  The model to prepare
+	 * @returns {void}
+	 */
+	protected prepareModel(model: GenericModel): void {
+		model.parent = this;
+		model.headers = this.headers;
+		if (this.referenceForModifiedEndpoint) {
+			model.useModifiedEndpoint(this.referenceForModifiedEndpoint, this.modifiedEndpointPosition);
+		}
 	}
 
 	/**
@@ -620,39 +625,33 @@ export default class Collection<GenericModel extends Model>
 	}
 
 	/**
-	 * Comparing hard object attributes to model attr
+	 * Filters models in the collection by matching attributes.
+	 * Can filter in-place or return a new filtered collection.
 	 *
-	 * @param  IAttributes json
-	 * @param  boolean first
-	 * @param  boolean fullMatch
-	 * @return Collection | Model
-	 */
-	/**
-	 * Filters models based on attribute matching criteria
-	 *
-	 * @param json The attributes to match against
-	 * @param first Whether to return only the first match
-	 * @param fullMatch Whether all attributes must match
-	 * @return The filtered collection or first model
+	 * @param {IAttributes} json      The attributes to match against.
+	 * @param {boolean} [first=false] If true, return only the first match.
+	 * @param {boolean} [fullMatch=false] If true, require all keys to match.
+	 * @param {boolean} [inPlace]     If true, filter in place. Defaults to this.inPlaceWhere or false.
+	 * @returns {this | Collection<GenericModel> | GenericModel}
 	 */
 	public where(
 		json: IAttributes = {},
-		first: boolean = false,
-		fullMatch: boolean = false
+		first?: boolean,
+		fullMatch?: boolean,
+		inPlace?: boolean
 	): this | Collection<GenericModel> | GenericModel {
-		const constructor: any = this.constructor;
-		const filteredModels: any[] = [];
+		const filterInPlace: boolean = typeof inPlace === 'boolean' ? inPlace : !!(this as any).inPlaceWhere;
 
-		// Extract keys once to avoid reactive tracking issues
 		const searchKeys: string[] = Object.keys(json);
 		const searchKeyCount: number = searchKeys.length;
+		const filteredModels: GenericModel[] = [];
 
-		this.models.forEach((model: GenericModel) => {
+		for (const model of this.models) {
 			let matchCount: number = 0;
 
-			// Use traditional for loop to avoid closure issues
 			for (let i = 0; i < searchKeyCount; i++) {
 				const key: string = searchKeys[i];
+
 				if (model.attr(key) == json[key]) {
 					matchCount++;
 				}
@@ -663,19 +662,36 @@ export default class Collection<GenericModel extends Model>
 			if (shouldInclude) {
 				filteredModels.push(model);
 			}
-		});
+		}
 
-		// Hydrate from models
+		// If 'first', always just return the first match directly (no collection)
+		if (first && filteredModels.length > 0) {
+			return filteredModels[0];
+		}
+
+		// In-place filtering: mutate this.models and return self
+		if (filterInPlace) {
+			(this.models as GenericModel[]) = filteredModels;
+
+			if (typeof (this as any).dispatch === 'function') {
+				(this as any).dispatch('change', { from: 'where-in-place' });
+				(this as any).dispatch('filter');
+			}
+			return this;
+		}
+
+		// Standard behavior: return a new hydrated collection instance
+		const constructor: any = this.constructor;
 		const collection = constructor.hydrate(
 			filteredModels,
 			{
 				parent: this.parent,
-				...this.options,
+				...(this as any).options,
 			},
 			false
 		);
 
-		return first ? collection.first() : collection;
+		return collection;
 	}
 
 	/**
