@@ -23,7 +23,6 @@ export default class Collection<GenericModel extends Model> extends ActiveRecord
     getEndpoint(): string;
     updateUniqueKey(): void;
     add(data: GenericModel | object | Array<GenericModel | object>, options?: IAttributes, trigger?: boolean): this;
-    protected prepareModel(model: GenericModel): void;
     remove(model: Model[] | Model | object, trigger?: boolean): this;
     set(model: Model[] | Model | object, options?: IAttributes, trigger?: boolean): this;
     clear(): this;

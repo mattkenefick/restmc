@@ -290,6 +290,9 @@ export default class Collection<GenericModel extends Model>
 			return this;
 		}
 
+		// Ensure data is on correct key
+		data = this.cleanData(data);
+
 		// Always work with an array for uniformity
 		const incomingItems: Array<GenericModel | object> = Array.isArray(data) ? data : [data];
 		const newModels: GenericModel[] = [];
@@ -304,51 +307,47 @@ export default class Collection<GenericModel extends Model>
 				model = new this.model.constructor(item);
 			}
 
-			// Set references and run initialization
-			this.prepareModel(model);
+			// Event params
+			const params = {
+				grandparent: this?.parent,
+				model: model,
+				parent: this,
+			};
 
-			// Optionally insert at the start or end
+			// Set references on model
+			model.parent = this;
+			model.headers = this.headers;
+
+			// Check the modified endpoint
+			if (this.referenceForModifiedEndpoint) {
+				model.useModifiedEndpoint(this.referenceForModifiedEndpoint, this.modifiedEndpointPosition);
+			}
+
+			// Trigger event before adding it
+			trigger && this.dispatch('add:before', params);
+
+			// Add to list
 			if (options.prepend) {
 				this.models.unshift(model);
 			} else {
 				this.models.push(model);
 			}
 
-			newModels.push(model);
+			// Trigger event after adding it
+			trigger && this.dispatch('add:after', params);
+
+			// Trigger event delayed after adding it
+			trigger &&
+				setTimeout(() => {
+					this.dispatch('add:delayed', params);
+				}, 1);
 		}
 
-		// Batched event dispatches (do not over-trigger)
-		if (trigger && newModels.length > 0) {
-			for (const model of newModels) {
-				const params = {
-					grandparent: this?.parent,
-					model,
-					parent: this,
-				};
-
-				this.dispatch('add:before', params);
-				this.dispatch('add:after', params);
-				setTimeout(() => this.dispatch('add:delayed', params), 1);
-			}
-			this.dispatch('change', { from: 'add' });
-			this.dispatch('add');
-		}
+		// Event for add
+		trigger && this.dispatch('change', { from: 'add' });
+		trigger && this.dispatch('add');
 
 		return this;
-	}
-
-	/**
-	 * Prepares a model before adding it to the collection.
-	 *
-	 * @param {GenericModel} model  The model to prepare
-	 * @returns {void}
-	 */
-	protected prepareModel(model: GenericModel): void {
-		model.parent = this;
-		model.headers = this.headers;
-		if (this.referenceForModifiedEndpoint) {
-			model.useModifiedEndpoint(this.referenceForModifiedEndpoint, this.modifiedEndpointPosition);
-		}
 	}
 
 	/**

@@ -99,6 +99,7 @@ class Collection extends ActiveRecord_js_1.default {
         if (data == null) {
             return this;
         }
+        data = this.cleanData(data);
         const incomingItems = Array.isArray(data) ? data : [data];
         const newModels = [];
         for (const item of incomingItems) {
@@ -109,37 +110,32 @@ class Collection extends ActiveRecord_js_1.default {
             else {
                 model = new this.model.constructor(item);
             }
-            this.prepareModel(model);
+            const params = {
+                grandparent: this === null || this === void 0 ? void 0 : this.parent,
+                model: model,
+                parent: this,
+            };
+            model.parent = this;
+            model.headers = this.headers;
+            if (this.referenceForModifiedEndpoint) {
+                model.useModifiedEndpoint(this.referenceForModifiedEndpoint, this.modifiedEndpointPosition);
+            }
+            trigger && this.dispatch('add:before', params);
             if (options.prepend) {
                 this.models.unshift(model);
             }
             else {
                 this.models.push(model);
             }
-            newModels.push(model);
+            trigger && this.dispatch('add:after', params);
+            trigger &&
+                setTimeout(() => {
+                    this.dispatch('add:delayed', params);
+                }, 1);
         }
-        if (trigger && newModels.length > 0) {
-            for (const model of newModels) {
-                const params = {
-                    grandparent: this === null || this === void 0 ? void 0 : this.parent,
-                    model,
-                    parent: this,
-                };
-                this.dispatch('add:before', params);
-                this.dispatch('add:after', params);
-                setTimeout(() => this.dispatch('add:delayed', params), 1);
-            }
-            this.dispatch('change', { from: 'add' });
-            this.dispatch('add');
-        }
+        trigger && this.dispatch('change', { from: 'add' });
+        trigger && this.dispatch('add');
         return this;
-    }
-    prepareModel(model) {
-        model.parent = this;
-        model.headers = this.headers;
-        if (this.referenceForModifiedEndpoint) {
-            model.useModifiedEndpoint(this.referenceForModifiedEndpoint, this.modifiedEndpointPosition);
-        }
     }
     remove(model, trigger = true) {
         let i = 0;
