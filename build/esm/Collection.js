@@ -271,8 +271,8 @@ class Collection extends ActiveRecord_js_1.default {
                 filteredModels.push(model);
             }
         }
-        if (first && filteredModels.length > 0) {
-            return filteredModels[0];
+        if (first) {
+            return filteredModels.length > 0 ? filteredModels[0] : null;
         }
         if (filterInPlace) {
             this.models = filteredModels;

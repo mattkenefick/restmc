@@ -638,7 +638,7 @@ export default class Collection<GenericModel extends Model>
 		first?: boolean,
 		fullMatch?: boolean,
 		inPlace?: boolean
-	): this | Collection<GenericModel> | GenericModel {
+	): this | Collection<GenericModel> | GenericModel | null {
 		const filterInPlace: boolean = typeof inPlace === 'boolean' ? inPlace : !!(this as any).inPlaceWhere;
 
 		const searchKeys: string[] = Object.keys(json);
@@ -663,9 +663,9 @@ export default class Collection<GenericModel extends Model>
 			}
 		}
 
-		// If 'first', always just return the first match directly (no collection)
-		if (first && filteredModels.length > 0) {
-			return filteredModels[0];
+		// If 'first', return the first match or null if none found
+		if (first) {
+			return filteredModels.length > 0 ? filteredModels[0] : null;
 		}
 
 		// In-place filtering: mutate this.models and return self

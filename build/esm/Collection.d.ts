@@ -45,7 +45,7 @@ export default class Collection<GenericModel extends Model> extends ActiveRecord
     at(index?: number): GenericModel;
     first(): GenericModel;
     last(): GenericModel;
-    where(json?: IAttributes, first?: boolean, fullMatch?: boolean, inPlace?: boolean): this | Collection<GenericModel> | GenericModel;
+    where(json?: IAttributes, first?: boolean, fullMatch?: boolean, inPlace?: boolean): this | Collection<GenericModel> | GenericModel | null;
     findWhere(attributes?: IAttributes): GenericModel;
     findByCid(cid: string): GenericModel;
     sort(options?: IAttributes): Collection<GenericModel>;
