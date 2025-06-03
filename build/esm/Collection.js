@@ -203,8 +203,7 @@ class Collection extends ActiveRecord_js_1.default {
     reset() {
         this.models = [];
         this.dispatch('change', { from: 'reset' });
-        this.dispatch('reset');
-        return this;
+        return super.reset();
     }
     unshift(model, options = {}) {
         return this.add(model, Object.assign({ prepend: true }, options));

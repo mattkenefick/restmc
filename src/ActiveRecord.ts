@@ -658,6 +658,13 @@ export default class ActiveRecord<T> extends Core {
 	 */
 	public reset(): this {
 		this.attributes = {};
+		this.hasFetched = false;
+		this.hasLoaded = false;
+		this.loading = false;
+		this.requestTime = -1;
+		this.timeCompleted = -1;
+		this.timeParsed = -1;
+		this.uniqueKey = '';
 
 		// Event
 		this.dispatch('reset');

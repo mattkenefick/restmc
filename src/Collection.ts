@@ -497,9 +497,8 @@ export default class Collection<GenericModel extends Model>
 		this.models = [];
 
 		this.dispatch('change', { from: 'reset' });
-		this.dispatch('reset');
 
-		return this;
+		return super.reset();
 	}
 
 	/**
