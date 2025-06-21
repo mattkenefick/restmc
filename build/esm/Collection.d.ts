@@ -18,6 +18,8 @@ export default class Collection<GenericModel extends Model> extends ActiveRecord
     private iterator;
     constructor(options?: IAttributes);
     toJSON(): object;
+    nextPage(append?: boolean): Promise<HttpRequest | null>;
+    previousPage(append?: boolean): Promise<HttpRequest | null>;
     fetchNext(append?: boolean): Promise<HttpRequest>;
     fetchPrevious(append?: boolean): Promise<HttpRequest>;
     getEndpoint(): string;
@@ -53,6 +55,8 @@ export default class Collection<GenericModel extends Model> extends ActiveRecord
     values(filter?: (model: GenericModel, index: number) => boolean): CollectionIterator<GenericModel>;
     keys(filter?: (model: GenericModel, index: number) => boolean): CollectionIterator<GenericModel>;
     entries(filter?: (model: GenericModel, index: number) => boolean): CollectionIterator<GenericModel>;
+    hasNext(): boolean;
+    hasPrevious(): boolean;
     next(filter?: (model: GenericModel, index: number) => boolean): GenericModel | undefined;
     previous(filter?: (model: GenericModel, index: number) => boolean): GenericModel | undefined;
     index(): number;

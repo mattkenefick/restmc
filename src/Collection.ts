@@ -213,6 +213,36 @@ export default class Collection<GenericModel extends Model>
 	}
 
 	/**
+	 * Attempts to fetch the next page if available.
+	 * Returns null if there is no next page.
+	 *
+	 * @param boolean append
+	 * @return Promise<HttpRequest | null>
+	 */
+	public async nextPage(append: boolean = false): Promise<HttpRequest | null> {
+		if (!this.hasNext()) {
+			return null;
+		}
+
+		return this.fetchNext(append);
+	}
+
+	/**
+	 * Attempts to fetch the previous page if available.
+	 * Returns null if there is no previous page.
+	 *
+	 * @param boolean append
+	 * @return Promise<HttpRequest | null>
+	 */
+	public async previousPage(append: boolean = false): Promise<HttpRequest | null> {
+		if (!this.hasPrevious()) {
+			return null;
+		}
+
+		return this.fetchPrevious(append);
+	}
+
+	/**
 	 * Fetch next page with last used set of options
 	 *
 	 * @param bool append
@@ -776,6 +806,70 @@ export default class Collection<GenericModel extends Model>
 	 */
 	public entries(filter?: (model: GenericModel, index: number) => boolean): CollectionIterator<GenericModel> {
 		return new CollectionIterator<GenericModel>(this, CollectionIterator.ITERATOR_KEYSVALUES, filter);
+	}
+
+	/**
+	 * Checks if there is a next page available using multiple validation approaches
+	 *
+	 * @return boolean
+	 */
+	public hasNext(): boolean {
+		// Primary check: Laravel's computed links (most reliable)
+		if (this.pagination?.links?.next !== undefined) {
+			return true;
+		}
+
+		// Secondary check: Manual calculation as fallback
+		const currentPage = this.pagination?.current_page;
+		const totalPages = this.pagination?.total_pages;
+
+		if (typeof currentPage === 'number' && typeof totalPages === 'number') {
+			return currentPage < totalPages;
+		}
+
+		// Tertiary check: Using count and total as last resort
+		const count = this.pagination?.count;
+		const total = this.pagination?.total;
+		const perPage = this.pagination?.per_page;
+
+		if (typeof count === 'number' && typeof total === 'number' && typeof perPage === 'number') {
+			const itemsShown = ((currentPage || 1) - 1) * perPage + count;
+			return itemsShown < total;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Checks if there is a previous page available using multiple validation approaches
+	 *
+	 * @return boolean
+	 */
+	public hasPrevious(): boolean {
+		// Primary check: Laravel's computed links (most reliable)
+		if (this.pagination?.links?.previous !== undefined) {
+			return true;
+		}
+
+		// Secondary check: Manual calculation as fallback
+		const currentPage = this.pagination?.current_page;
+
+		if (typeof currentPage === 'number') {
+			return currentPage > 1;
+		}
+
+		// Tertiary check: If we have count but no current_page, assume we're not on first page
+		// if there are items and we don't have a complete set
+		const count = this.pagination?.count;
+		const perPage = this.pagination?.per_page;
+
+		if (typeof count === 'number' && typeof perPage === 'number') {
+			// If we have fewer items than per_page, we might be on the last page
+			// But without current_page, we can't be certain about previous pages
+			return false;
+		}
+
+		return false;
 	}
 
 	/**

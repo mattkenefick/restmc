@@ -67,6 +67,22 @@ class Collection extends ActiveRecord_js_1.default {
             return model;
         });
     }
+    nextPage(append = false) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!this.hasNext()) {
+                return null;
+            }
+            return this.fetchNext(append);
+        });
+    }
+    previousPage(append = false) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!this.hasPrevious()) {
+                return null;
+            }
+            return this.fetchPrevious(append);
+        });
+    }
     fetchNext(append = false) {
         return __awaiter(this, void 0, void 0, function* () {
             let options = Object.assign({}, this.lastRequest.options);
@@ -312,6 +328,41 @@ class Collection extends ActiveRecord_js_1.default {
     }
     entries(filter) {
         return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_KEYSVALUES, filter);
+    }
+    hasNext() {
+        var _a, _b, _c, _d, _e, _f, _g;
+        if (((_b = (_a = this.pagination) === null || _a === void 0 ? void 0 : _a.links) === null || _b === void 0 ? void 0 : _b.next) !== undefined) {
+            return true;
+        }
+        const currentPage = (_c = this.pagination) === null || _c === void 0 ? void 0 : _c.current_page;
+        const totalPages = (_d = this.pagination) === null || _d === void 0 ? void 0 : _d.total_pages;
+        if (typeof currentPage === 'number' && typeof totalPages === 'number') {
+            return currentPage < totalPages;
+        }
+        const count = (_e = this.pagination) === null || _e === void 0 ? void 0 : _e.count;
+        const total = (_f = this.pagination) === null || _f === void 0 ? void 0 : _f.total;
+        const perPage = (_g = this.pagination) === null || _g === void 0 ? void 0 : _g.per_page;
+        if (typeof count === 'number' && typeof total === 'number' && typeof perPage === 'number') {
+            const itemsShown = ((currentPage || 1) - 1) * perPage + count;
+            return itemsShown < total;
+        }
+        return false;
+    }
+    hasPrevious() {
+        var _a, _b, _c, _d, _e;
+        if (((_b = (_a = this.pagination) === null || _a === void 0 ? void 0 : _a.links) === null || _b === void 0 ? void 0 : _b.previous) !== undefined) {
+            return true;
+        }
+        const currentPage = (_c = this.pagination) === null || _c === void 0 ? void 0 : _c.current_page;
+        if (typeof currentPage === 'number') {
+            return currentPage > 1;
+        }
+        const count = (_d = this.pagination) === null || _d === void 0 ? void 0 : _d.count;
+        const perPage = (_e = this.pagination) === null || _e === void 0 ? void 0 : _e.per_page;
+        if (typeof count === 'number' && typeof perPage === 'number') {
+            return false;
+        }
+        return false;
     }
     next(filter) {
         const result = this.iterator.next(filter);
