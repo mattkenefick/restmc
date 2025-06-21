@@ -503,9 +503,12 @@ class ActiveRecord extends Core_js_1.default {
             yield this.beforeFetch();
             const url = this.getUrlByMethod(method);
             const ttl = this.ttl || 0;
-            this.dispatch('requesting', { request: this.lastRequest });
             this.loading = true;
             const request = (this.request = new Request_js_1.default(url, {
+                cacheOptions: {
+                    enabled: ttl > 0,
+                    ttl: ttl,
+                },
                 dataKey: this.dataKey,
                 withCredentials: this.options.withCredentials,
             }));

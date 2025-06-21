@@ -29,5 +29,5 @@
         "watch": "webpack --watch --mode development --config webpack.config.js"
     },
     "types": "public/script/index.d.ts",
-    "version": "0.0.1"
+    "version": "0.0.2"
 }

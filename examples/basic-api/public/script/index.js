@@ -230,6 +230,13 @@ class ActiveRecord extends Core_js_1.default {
     }
     reset() {
         this.attributes = {};
+        this.hasFetched = false;
+        this.hasLoaded = false;
+        this.loading = false;
+        this.requestTime = -1;
+        this.timeCompleted = -1;
+        this.timeParsed = -1;
+        this.uniqueKey = '';
         this.dispatch('reset');
         ActiveRecord.hook(`${this.constructor.name}.reset`, [this]);
         return this;
@@ -506,9 +513,12 @@ class ActiveRecord extends Core_js_1.default {
             yield this.beforeFetch();
             const url = this.getUrlByMethod(method);
             const ttl = this.ttl || 0;
-            this.dispatch('requesting', { request: this.lastRequest });
             this.loading = true;
             const request = (this.request = new Request_js_1.default(url, {
+                cacheOptions: {
+                    enabled: ttl > 0,
+                    ttl: ttl,
+                },
                 dataKey: this.dataKey,
                 withCredentials: this.options.withCredentials,
             }));
@@ -688,7 +698,6 @@ class Collection extends ActiveRecord_js_1.default {
         this.sortKey = 'id';
         this.iterator = new CollectionIterator_js_1.default(this);
         this.dataKey = 'data';
-        this.setOptions(options);
         this.builder.qp('limit', options.limit || this.limit).qp('page', options.page || this.page);
         if (options.atRelationship) {
             this.atRelationship = options.atRelationship;
@@ -754,14 +763,19 @@ class Collection extends ActiveRecord_js_1.default {
         this.uniqueKey = hash;
     }
     add(data, options = {}, trigger = true) {
-        if (data == undefined) {
+        if (data == null) {
             return this;
         }
         data = this.cleanData(data);
-        const models = Array.isArray(data) ? data : [data];
-        models.forEach((model) => {
-            if (!(model instanceof Model_js_1.default)) {
-                model = new this.model.constructor(model);
+        const incomingItems = Array.isArray(data) ? data : [data];
+        const newModels = [];
+        for (const item of incomingItems) {
+            let model;
+            if (item.isModel) {
+                model = item;
+            }
+            else {
+                model = new this.model.constructor(item);
             }
             const params = {
                 grandparent: this === null || this === void 0 ? void 0 : this.parent,
@@ -785,7 +799,7 @@ class Collection extends ActiveRecord_js_1.default {
                 setTimeout(() => {
                     this.dispatch('add:delayed', params);
                 }, 1);
-        });
+        }
         trigger && this.dispatch('change', { from: 'add' });
         trigger && this.dispatch('add');
         return this;
@@ -856,8 +870,7 @@ class Collection extends ActiveRecord_js_1.default {
     reset() {
         this.models = [];
         this.dispatch('change', { from: 'reset' });
-        this.dispatch('reset');
-        return this;
+        return super.reset();
     }
     unshift(model, options = {}) {
         return this.add(model, Object.assign({ prepend: true }, options));
@@ -906,24 +919,38 @@ class Collection extends ActiveRecord_js_1.default {
     last() {
         return this.at(this.length - 1);
     }
-    where(json = {}, first = false, fullMatch = false) {
-        const constructor = this.constructor;
+    where(json = {}, first, fullMatch, inPlace) {
+        const filterInPlace = typeof inPlace === 'boolean' ? inPlace : !!this.inPlaceWhere;
+        const searchKeys = Object.keys(json);
+        const searchKeyCount = searchKeys.length;
         const filteredModels = [];
-        this.models.forEach((model) => {
-            const attributes = Object.keys(json);
-            const intersection = attributes.filter((key) => {
-                return (key in json &&
-                    model.attr(key) == json[key]);
-            });
-            if (fullMatch && intersection.length == attributes.length) {
+        for (const model of this.models) {
+            let matchCount = 0;
+            for (let i = 0; i < searchKeyCount; i++) {
+                const key = searchKeys[i];
+                if (model.attr(key) == json[key]) {
+                    matchCount++;
+                }
+            }
+            const shouldInclude = fullMatch ? matchCount === searchKeyCount : matchCount > 0;
+            if (shouldInclude) {
                 filteredModels.push(model);
             }
-            else if (!fullMatch && intersection.length) {
-                filteredModels.push(model);
+        }
+        if (first) {
+            return filteredModels.length > 0 ? filteredModels[0] : null;
+        }
+        if (filterInPlace) {
+            this.models = filteredModels;
+            if (typeof this.dispatch === 'function') {
+                this.dispatch('change', { from: 'where-in-place' });
+                this.dispatch('filter');
             }
-        });
+            return this;
+        }
+        const constructor = this.constructor;
         const collection = constructor.hydrate(filteredModels, Object.assign({ parent: this.parent }, this.options), false);
-        return first ? collection.first() : collection;
+        return collection;
     }
     findWhere(attributes = {}) {
         return this.where(attributes, true);
@@ -1356,6 +1383,7 @@ class Request extends Core_js_1.default {
         this.responseData = {};
         this.status = 0;
         this.withCredentials = true;
+        this.cacheOptions = Object.assign(Object.assign({}, this.cacheOptions), (options.cacheOptions || {}));
         this.dataKey = options.dataKey || this.dataKey;
         this.withCredentials = (_a = options.withCredentials) !== null && _a !== void 0 ? _a : true;
         this.url = url.replace(/\?$/, '').replace(/\?&/, '?');
@@ -1385,7 +1413,9 @@ class Request extends Core_js_1.default {
             method,
             params,
         };
-        ttl = ttl || this.cacheOptions.defaultTTL;
+        if (typeof ttl !== 'number' || isNaN(ttl)) {
+            ttl = this.cacheOptions.defaultTTL;
+        }
         this.method = (method || 'GET').toUpperCase();
         headers = Object.assign(this.headers, headers);
         params.data = body;
@@ -1444,7 +1474,6 @@ class Request extends Core_js_1.default {
                     return pendingResponse;
                 }
             }
-            console.log('fuck nut', params);
             const requestPromise = (0, axios_1.default)(params)
                 .then((response) => {
                 if (useCache && response.status >= 200 && response.status < 300) {

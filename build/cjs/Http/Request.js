@@ -30,6 +30,7 @@ class Request extends Core_js_1.default {
         this.responseData = {};
         this.status = 0;
         this.withCredentials = true;
+        this.cacheOptions = Object.assign(Object.assign({}, this.cacheOptions), (options.cacheOptions || {}));
         this.dataKey = options.dataKey || this.dataKey;
         this.withCredentials = (_a = options.withCredentials) !== null && _a !== void 0 ? _a : true;
         this.url = url.replace(/\?$/, '').replace(/\?&/, '?');
@@ -59,7 +60,9 @@ class Request extends Core_js_1.default {
             method,
             params,
         };
-        ttl = ttl || this.cacheOptions.defaultTTL;
+        if (typeof ttl !== 'number' || isNaN(ttl)) {
+            ttl = this.cacheOptions.defaultTTL;
+        }
         this.method = (method || 'GET').toUpperCase();
         headers = Object.assign(this.headers, headers);
         params.data = body;

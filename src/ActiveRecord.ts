@@ -1313,14 +1313,15 @@ export default class ActiveRecord<T> extends Core {
 		const url = this.getUrlByMethod(method);
 		const ttl = this.ttl || 0;
 
-		// Events
-		this.dispatch('requesting', { request: this.lastRequest });
-
 		// Set loading
 		this.loading = true;
 
 		// Setup request
 		const request = (this.request = new HttpRequest(url, {
+			cacheOptions: {
+				enabled: ttl > 0,
+				ttl: ttl,
+			},
 			dataKey: this.dataKey,
 			withCredentials: this.options.withCredentials,
 		}));

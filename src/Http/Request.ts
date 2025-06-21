@@ -133,6 +133,10 @@ export default class Request extends Core {
 	constructor(url: string = '', options: Partial<IAttributes> = {}) {
 		super();
 
+		this.cacheOptions = {
+			...this.cacheOptions,
+			...(options.cacheOptions || {}),
+		};
 		this.dataKey = options.dataKey || this.dataKey;
 		this.withCredentials = options.withCredentials ?? true;
 
@@ -193,7 +197,9 @@ export default class Request extends Core {
 		};
 
 		// Set ttl
-		ttl = ttl || this.cacheOptions.defaultTTL;
+		if (typeof ttl !== 'number' || isNaN(ttl)) {
+			ttl = this.cacheOptions.defaultTTL;
+		}
 
 		// Set request method
 		this.method = (method || 'GET').toUpperCase();
