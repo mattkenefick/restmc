@@ -47,7 +47,7 @@ class ActiveRecord extends Core_js_1.default {
         this.uniqueKey = '';
         this.updatesUniqueKey = true;
         this.updatesUniqueKeyDeep = true;
-        this.useRandomUniqueKeySalt = true;
+        this.useRandomUniqueKeySalt = false;
         this.cidPrefix = 'c';
         this.runLastAttempts = 0;
         this.runLastAttemptsMax = 2;

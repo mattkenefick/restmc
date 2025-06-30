@@ -273,7 +273,7 @@ export default class ActiveRecord<T> extends Core {
 	/**
 	 * @type boolean
 	 */
-	public useRandomUniqueKeySalt: boolean = true;
+	public useRandomUniqueKeySalt: boolean = false;
 
 	/**
 	 * Meta data supplied by the server adjacent to datas
