@@ -35,6 +35,8 @@ export default class ActiveRecord<T> extends Core {
     timeCompleted: number;
     timeParsed: number;
     uniqueKey: string;
+    updatesUniqueKey: boolean;
+    updatesUniqueKeyDeep: boolean;
     _meta: IAttributes;
     protected builder: Builder<T>;
     protected cidPrefix: string;
@@ -56,6 +58,7 @@ export default class ActiveRecord<T> extends Core {
     unset(key: string): this;
     setOptions(options?: IAttributes): this;
     toJSON(recursiveObject?: any): object;
+    disableUniqueKeys(includeDeep?: boolean): this;
     create(attributes: IAttributes): Promise<HttpRequest>;
     delete(attributes?: IAttributes): Promise<HttpRequest>;
     post(attributes?: IAttributes): Promise<HttpRequest>;

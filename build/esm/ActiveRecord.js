@@ -45,6 +45,8 @@ class ActiveRecord extends Core_js_1.default {
         this.timeCompleted = -1;
         this.timeParsed = -1;
         this.uniqueKey = '';
+        this.updatesUniqueKey = true;
+        this.updatesUniqueKeyDeep = true;
         this.cidPrefix = 'c';
         this.runLastAttempts = 0;
         this.runLastAttemptsMax = 2;
@@ -178,6 +180,13 @@ class ActiveRecord extends Core_js_1.default {
             }
         }
         return json;
+    }
+    disableUniqueKeys(includeDeep = true) {
+        this.updatesUniqueKey = false;
+        if (includeDeep) {
+            this.updatesUniqueKeyDeep = false;
+        }
+        return this;
     }
     create(attributes) {
         return this.post(attributes);
@@ -566,10 +575,12 @@ class ActiveRecord extends Core_js_1.default {
     }
     Handle_OnChange(e) {
         let parent = this.parent;
-        this.updateUniqueKey();
-        while (parent && parent.updateUniqueKey) {
-            parent.updateUniqueKey();
-            parent = parent.parent;
+        this.updatesUniqueKey && this.updateUniqueKey();
+        if (this.updatesUniqueKeyDeep) {
+            while (parent && parent.updateUniqueKey) {
+                parent.updateUniqueKey();
+                parent = parent.parent;
+            }
         }
     }
 }

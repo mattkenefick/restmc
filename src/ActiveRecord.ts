@@ -261,6 +261,16 @@ export default class ActiveRecord<T> extends Core {
 	public uniqueKey: string = '';
 
 	/**
+	 * @type boolean
+	 */
+	public updatesUniqueKey: boolean = true;
+
+	/**
+	 * @type boolean
+	 */
+	public updatesUniqueKeyDeep: boolean = true;
+
+	/**
 	 * Meta data supplied by the server adjacent to datas
 	 *
 	 * @type IAttributes
@@ -569,6 +579,20 @@ export default class ActiveRecord<T> extends Core {
 		}
 
 		return json;
+	}
+
+	/**
+	 * @param boolean includeDeep
+	 * @return this
+	 */
+	public disableUniqueKeys(includeDeep: boolean = true): this {
+		this.updatesUniqueKey = false;
+
+		if (includeDeep) {
+			this.updatesUniqueKeyDeep = false;
+		}
+
+		return this;
 	}
 
 	// region: Actions
@@ -1456,12 +1480,14 @@ export default class ActiveRecord<T> extends Core {
 		let parent: any = this.parent;
 
 		// Update this key
-		this.updateUniqueKey();
+		this.updatesUniqueKey && this.updateUniqueKey();
 
 		// Update keys on all parent ancestors (if it has updatekey method)
-		while (parent && parent.updateUniqueKey) {
-			parent.updateUniqueKey();
-			parent = parent.parent;
+		if (this.updatesUniqueKeyDeep) {
+			while (parent && parent.updateUniqueKey) {
+				parent.updateUniqueKey();
+				parent = parent.parent;
+			}
 		}
 	}
 

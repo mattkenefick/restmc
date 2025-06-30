@@ -628,7 +628,6 @@ export default class Collection<GenericModel extends Model>
 		let item: any = this.models[index];
 
 		// Transform through
-		// mk: This doesn't look like it works yet?
 		if (this.atRelationship && this.atRelationship.length) {
 			this.atRelationship.forEach((key) => (item = item[key]));
 		}
