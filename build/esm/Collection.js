@@ -106,9 +106,10 @@ class Collection extends ActiveRecord_js_1.default {
     }
     updateUniqueKey() {
         const ids = this.models.map((model) => model.id).join(',');
-        const hash = (0, Utility_js_1.compactObjectHash)(JSON.stringify(this.attributes) + ids) +
-            Math.random().toString(36).substr(2, 5) +
-            Date.now();
+        let hash = (0, Utility_js_1.compactObjectHash)(JSON.stringify(this.attributes) + ids);
+        if (this.useRandomUniqueKeySalt) {
+            hash += Math.random().toString(36).substr(2, 5) + Date.now();
+        }
         this.uniqueKey = hash;
     }
     add(data, options = {}, trigger = true) {

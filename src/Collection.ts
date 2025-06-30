@@ -294,10 +294,11 @@ export default class Collection<GenericModel extends Model>
 	 */
 	public updateUniqueKey(): void {
 		const ids = this.models.map((model: any) => model.id).join(',');
-		const hash =
-			compactObjectHash(JSON.stringify(this.attributes) + ids) +
-			Math.random().toString(36).substr(2, 5) +
-			Date.now();
+		let hash = compactObjectHash(JSON.stringify(this.attributes) + ids);
+
+		if (this.useRandomUniqueKeySalt) {
+			hash += Math.random().toString(36).substr(2, 5) + Date.now();
+		}
 
 		this.uniqueKey = hash;
 	}

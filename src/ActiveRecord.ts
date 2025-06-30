@@ -271,6 +271,11 @@ export default class ActiveRecord<T> extends Core {
 	public updatesUniqueKeyDeep: boolean = true;
 
 	/**
+	 * @type boolean
+	 */
+	public useRandomUniqueKeySalt: boolean = true;
+
+	/**
 	 * Meta data supplied by the server adjacent to datas
 	 *
 	 * @type IAttributes
@@ -585,12 +590,10 @@ export default class ActiveRecord<T> extends Core {
 	 * @param boolean includeDeep
 	 * @return this
 	 */
-	public disableUniqueKeys(includeDeep: boolean = true): this {
+	public disableUniqueKeys(): this {
 		this.updatesUniqueKey = false;
-
-		if (includeDeep) {
-			this.updatesUniqueKeyDeep = false;
-		}
+		this.useRandomUniqueKeySalt = false;
+		this.updatesUniqueKeyDeep = false;
 
 		return this;
 	}
@@ -925,7 +928,12 @@ export default class ActiveRecord<T> extends Core {
 	 * @return void
 	 */
 	public updateUniqueKey(): void {
-		const hash = compactObjectHash(this.attributes) + Math.random().toString(36).substr(2, 5) + Date.now();
+		let hash = compactObjectHash(this.attributes);
+
+		if (this.useRandomUniqueKeySalt) {
+			hash += Math.random().toString(36).substr(2, 5) + Date.now();
+		}
+
 		this.uniqueKey = hash;
 	}
 

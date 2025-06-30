@@ -47,6 +47,7 @@ class ActiveRecord extends Core_js_1.default {
         this.uniqueKey = '';
         this.updatesUniqueKey = true;
         this.updatesUniqueKeyDeep = true;
+        this.useRandomUniqueKeySalt = true;
         this.cidPrefix = 'c';
         this.runLastAttempts = 0;
         this.runLastAttemptsMax = 2;
@@ -181,11 +182,10 @@ class ActiveRecord extends Core_js_1.default {
         }
         return json;
     }
-    disableUniqueKeys(includeDeep = true) {
+    disableUniqueKeys() {
         this.updatesUniqueKey = false;
-        if (includeDeep) {
-            this.updatesUniqueKeyDeep = false;
-        }
+        this.useRandomUniqueKeySalt = false;
+        this.updatesUniqueKeyDeep = false;
         return this;
     }
     create(attributes) {
@@ -333,7 +333,10 @@ class ActiveRecord extends Core_js_1.default {
         return this._fetch(this.lastRequest.options, this.lastRequest.queryParams, this.lastRequest.method, this.lastRequest.body, this.lastRequest.headers);
     }
     updateUniqueKey() {
-        const hash = (0, Utility_js_1.compactObjectHash)(this.attributes) + Math.random().toString(36).substr(2, 5) + Date.now();
+        let hash = (0, Utility_js_1.compactObjectHash)(this.attributes);
+        if (this.useRandomUniqueKeySalt) {
+            hash += Math.random().toString(36).substr(2, 5) + Date.now();
+        }
         this.uniqueKey = hash;
     }
     getUrlByMethod(method) {
