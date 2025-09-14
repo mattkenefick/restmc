@@ -17,6 +17,7 @@ class Request extends Core_js_1.default {
     constructor(url = '', options = {}) {
         var _a;
         super();
+        this.dryRun = false;
         this.cacheOptions = {
             defaultTTL: 1000 * 60 * 5,
             enabled: true,
@@ -33,6 +34,9 @@ class Request extends Core_js_1.default {
         this.cacheOptions = Object.assign(Object.assign({}, this.cacheOptions), (options.cacheOptions || {}));
         this.dataKey = options.dataKey || this.dataKey;
         this.withCredentials = (_a = options.withCredentials) !== null && _a !== void 0 ? _a : true;
+        if (typeof options.dryRun === 'boolean') {
+            this.dryRun = options.dryRun;
+        }
         this.url = url.replace(/\?$/, '').replace(/\?&/, '?');
     }
     generateCacheKey(params) {
@@ -85,6 +89,24 @@ class Request extends Core_js_1.default {
         return new Promise((resolve, reject) => {
             const cacheKey = this.generateCacheKey(params);
             const useCache = this.shouldUseCache(params);
+            if (this.dryRun) {
+                const dryRunDetail = {
+                    axios: params,
+                    body: params.data,
+                    cacheKey,
+                    headers: params.headers,
+                    method: params.method,
+                    request: requestEvent,
+                    url: params.url,
+                    useCache,
+                };
+                this.dispatch('dryrun', dryRunDetail);
+                this.loading = false;
+                this.status = 0;
+                this.afterAny();
+                resolve(this);
+                return;
+            }
             this.handleRequest(cacheKey, params, useCache, ttl)
                 .then((response) => {
                 this.response = response;

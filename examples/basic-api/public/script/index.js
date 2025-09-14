@@ -50,11 +50,15 @@ class ActiveRecord extends Core_js_1.default {
             dataKey: 'data',
             withCredentials: true,
         };
+        this.dryRun = false;
         this.page = 1;
         this.requestTime = -1;
         this.timeCompleted = -1;
         this.timeParsed = -1;
         this.uniqueKey = '';
+        this.updatesUniqueKey = true;
+        this.updatesUniqueKeyDeep = true;
+        this.useRandomUniqueKeySalt = false;
         this.cidPrefix = 'c';
         this.runLastAttempts = 0;
         this.runLastAttemptsMax = 2;
@@ -188,6 +192,12 @@ class ActiveRecord extends Core_js_1.default {
             }
         }
         return json;
+    }
+    disableUniqueKeys() {
+        this.updatesUniqueKey = false;
+        this.useRandomUniqueKeySalt = false;
+        this.updatesUniqueKeyDeep = false;
+        return this;
     }
     create(attributes) {
         return this.post(attributes);
@@ -334,7 +344,10 @@ class ActiveRecord extends Core_js_1.default {
         return this._fetch(this.lastRequest.options, this.lastRequest.queryParams, this.lastRequest.method, this.lastRequest.body, this.lastRequest.headers);
     }
     updateUniqueKey() {
-        const hash = (0, Utility_js_1.compactObjectHash)(this.attributes) + Math.random().toString(36).substr(2, 5) + Date.now();
+        let hash = (0, Utility_js_1.compactObjectHash)(this.attributes);
+        if (this.useRandomUniqueKeySalt) {
+            hash += Math.random().toString(36).substr(2, 5) + Date.now();
+        }
         this.uniqueKey = hash;
     }
     getUrlByMethod(method) {
@@ -455,6 +468,10 @@ class ActiveRecord extends Core_js_1.default {
         Request_js_1.default.cachedResponses.delete(key);
         return this;
     }
+    setDryRun(enable = true) {
+        this.dryRun = !!enable;
+        return this;
+    }
     setQueryParam(key, value) {
         this.builder.qp(key, value);
         return this;
@@ -520,6 +537,7 @@ class ActiveRecord extends Core_js_1.default {
                     ttl: ttl,
                 },
                 dataKey: this.dataKey,
+                dryRun: this.dryRun,
                 withCredentials: this.options.withCredentials,
             }));
             this.request.method = method;
@@ -542,6 +560,7 @@ class ActiveRecord extends Core_js_1.default {
             request.on('finish', (e) => this.dispatch('finish'));
             request.on('parse:after', (e) => this.FetchParseAfter(e, options || {}));
             request.on('progress', (e) => this.FetchProgress(e));
+            request.on('dryrun', (e) => this.dispatch('dryrun', e.detail));
             this.hasFetched = true;
             return request.fetch(method, Object.assign(body || {}, this.body), Object.assign(headers || {}, this.headers), ttl);
         });
@@ -576,10 +595,12 @@ class ActiveRecord extends Core_js_1.default {
     }
     Handle_OnChange(e) {
         let parent = this.parent;
-        this.updateUniqueKey();
-        while (parent && parent.updateUniqueKey) {
-            parent.updateUniqueKey();
-            parent = parent.parent;
+        this.updatesUniqueKey && this.updateUniqueKey();
+        if (this.updatesUniqueKeyDeep) {
+            while (parent && parent.updateUniqueKey) {
+                parent.updateUniqueKey();
+                parent = parent.parent;
+            }
         }
     }
 }
@@ -734,6 +755,22 @@ class Collection extends ActiveRecord_js_1.default {
             return model;
         });
     }
+    nextPage(append = false) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!this.hasNext()) {
+                return null;
+            }
+            return this.fetchNext(append);
+        });
+    }
+    previousPage(append = false) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!this.hasPrevious()) {
+                return null;
+            }
+            return this.fetchPrevious(append);
+        });
+    }
     fetchNext(append = false) {
         return __awaiter(this, void 0, void 0, function* () {
             let options = Object.assign({}, this.lastRequest.options);
@@ -757,9 +794,10 @@ class Collection extends ActiveRecord_js_1.default {
     }
     updateUniqueKey() {
         const ids = this.models.map((model) => model.id).join(',');
-        const hash = (0, Utility_js_1.compactObjectHash)(JSON.stringify(this.attributes) + ids) +
-            Math.random().toString(36).substr(2, 5) +
-            Date.now();
+        let hash = (0, Utility_js_1.compactObjectHash)(JSON.stringify(this.attributes) + ids);
+        if (this.useRandomUniqueKeySalt) {
+            hash += Math.random().toString(36).substr(2, 5) + Date.now();
+        }
         this.uniqueKey = hash;
     }
     add(data, options = {}, trigger = true) {
@@ -979,6 +1017,41 @@ class Collection extends ActiveRecord_js_1.default {
     }
     entries(filter) {
         return new CollectionIterator_js_1.default(this, CollectionIterator_js_1.default.ITERATOR_KEYSVALUES, filter);
+    }
+    hasNext() {
+        var _a, _b, _c, _d, _e, _f, _g;
+        if (((_b = (_a = this.pagination) === null || _a === void 0 ? void 0 : _a.links) === null || _b === void 0 ? void 0 : _b.next) !== undefined) {
+            return true;
+        }
+        const currentPage = (_c = this.pagination) === null || _c === void 0 ? void 0 : _c.current_page;
+        const totalPages = (_d = this.pagination) === null || _d === void 0 ? void 0 : _d.total_pages;
+        if (typeof currentPage === 'number' && typeof totalPages === 'number') {
+            return currentPage < totalPages;
+        }
+        const count = (_e = this.pagination) === null || _e === void 0 ? void 0 : _e.count;
+        const total = (_f = this.pagination) === null || _f === void 0 ? void 0 : _f.total;
+        const perPage = (_g = this.pagination) === null || _g === void 0 ? void 0 : _g.per_page;
+        if (typeof count === 'number' && typeof total === 'number' && typeof perPage === 'number') {
+            const itemsShown = ((currentPage || 1) - 1) * perPage + count;
+            return itemsShown < total;
+        }
+        return false;
+    }
+    hasPrevious() {
+        var _a, _b, _c, _d, _e;
+        if (((_b = (_a = this.pagination) === null || _a === void 0 ? void 0 : _a.links) === null || _b === void 0 ? void 0 : _b.previous) !== undefined) {
+            return true;
+        }
+        const currentPage = (_c = this.pagination) === null || _c === void 0 ? void 0 : _c.current_page;
+        if (typeof currentPage === 'number') {
+            return currentPage > 1;
+        }
+        const count = (_d = this.pagination) === null || _d === void 0 ? void 0 : _d.count;
+        const perPage = (_e = this.pagination) === null || _e === void 0 ? void 0 : _e.per_page;
+        if (typeof count === 'number' && typeof perPage === 'number') {
+            return false;
+        }
+        return false;
     }
     next(filter) {
         const result = this.iterator.next(filter);
@@ -1370,6 +1443,7 @@ class Request extends Core_js_1.default {
     constructor(url = '', options = {}) {
         var _a;
         super();
+        this.dryRun = false;
         this.cacheOptions = {
             defaultTTL: 1000 * 60 * 5,
             enabled: true,
@@ -1386,6 +1460,9 @@ class Request extends Core_js_1.default {
         this.cacheOptions = Object.assign(Object.assign({}, this.cacheOptions), (options.cacheOptions || {}));
         this.dataKey = options.dataKey || this.dataKey;
         this.withCredentials = (_a = options.withCredentials) !== null && _a !== void 0 ? _a : true;
+        if (typeof options.dryRun === 'boolean') {
+            this.dryRun = options.dryRun;
+        }
         this.url = url.replace(/\?$/, '').replace(/\?&/, '?');
     }
     generateCacheKey(params) {
@@ -1438,6 +1515,24 @@ class Request extends Core_js_1.default {
         return new Promise((resolve, reject) => {
             const cacheKey = this.generateCacheKey(params);
             const useCache = this.shouldUseCache(params);
+            if (this.dryRun) {
+                const dryRunDetail = {
+                    axios: params,
+                    body: params.data,
+                    cacheKey,
+                    headers: params.headers,
+                    method: params.method,
+                    request: requestEvent,
+                    url: params.url,
+                    useCache,
+                };
+                this.dispatch('dryrun', dryRunDetail);
+                this.loading = false;
+                this.status = 0;
+                this.afterAny();
+                resolve(this);
+                return;
+            }
             this.handleRequest(cacheKey, params, useCache, ttl)
                 .then((response) => {
                 this.response = response;
@@ -6872,14 +6967,15 @@ async function fetchVenues() {
         baseUrl: 'https://api.chalkysticks.com/v3',
         cacheable: true,
     });
-    for (let i = 0; i < 5; i++) {
-        console.log(`Fetch ${i} ---------------------------------------------- `);
-        await remoteCollection.fetch();
-    }
-    setTimeout(() => {
-        console.log('Remote Collection', remoteCollection);
-        remoteCollection.at(0).media.at(0).dispatch('change');
-    }, 1000 * 1);
+    await remoteCollection.fetch();
+    const model = remoteCollection.at(0);
+    const media = model?.media.at(0);
+    console.log('fork', model, media);
+    media.setDryRun(true);
+    media.on('dryrun', (e) => {
+        console.log('Dry Run Event', e.detail);
+    });
+    await media.delete();
 }
 fetchVenues();
 

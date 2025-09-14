@@ -40,6 +40,7 @@ class ActiveRecord extends Core_js_1.default {
             dataKey: 'data',
             withCredentials: true,
         };
+        this.dryRun = false;
         this.page = 1;
         this.requestTime = -1;
         this.timeCompleted = -1;
@@ -457,6 +458,10 @@ class ActiveRecord extends Core_js_1.default {
         Request_js_1.default.cachedResponses.delete(key);
         return this;
     }
+    setDryRun(enable = true) {
+        this.dryRun = !!enable;
+        return this;
+    }
     setQueryParam(key, value) {
         this.builder.qp(key, value);
         return this;
@@ -522,6 +527,7 @@ class ActiveRecord extends Core_js_1.default {
                     ttl: ttl,
                 },
                 dataKey: this.dataKey,
+                dryRun: this.dryRun,
                 withCredentials: this.options.withCredentials,
             }));
             this.request.method = method;
@@ -544,6 +550,7 @@ class ActiveRecord extends Core_js_1.default {
             request.on('finish', (e) => this.dispatch('finish'));
             request.on('parse:after', (e) => this.FetchParseAfter(e, options || {}));
             request.on('progress', (e) => this.FetchProgress(e));
+            request.on('dryrun', (e) => this.dispatch('dryrun', e.detail));
             this.hasFetched = true;
             return request.fetch(method, Object.assign(body || {}, this.body), Object.assign(headers || {}, this.headers), ttl);
         });

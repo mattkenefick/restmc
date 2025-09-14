@@ -28,6 +28,7 @@ export default class ActiveRecord<T> extends Core {
     mockData: IAttributes;
     modifiedEndpointPosition: string;
     options: IAttributes;
+    dryRun: boolean;
     page: number;
     parent: ActiveRecord<any> | undefined;
     request?: HttpRequest;
@@ -99,6 +100,7 @@ export default class ActiveRecord<T> extends Core {
     unsetHeader(header: string): ActiveRecord<T>;
     setMockData(key: string | undefined, jsonData: IAttributes): ActiveRecord<T>;
     unsetMockData(key?: string): ActiveRecord<T>;
+    setDryRun(enable?: boolean): this;
     setQueryParam(key: string, value: string): ActiveRecord<T>;
     setQueryParams(params: Record<string, number | string>): ActiveRecord<T>;
     unsetQueryParam(param: string): ActiveRecord<T>;

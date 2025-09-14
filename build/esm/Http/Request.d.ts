@@ -3,6 +3,7 @@ import { IAttributes } from '../Interfaces.js';
 import Cache from '../Cache.js';
 import Core from '../Core.js';
 export default class Request extends Core {
+    dryRun: boolean;
     static cachedResponses: Cache;
     private static pendingRequests;
     cacheOptions: {

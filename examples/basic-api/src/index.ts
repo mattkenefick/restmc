@@ -153,19 +153,34 @@ async function fetchVenues(): Promise<void> {
 	// 	return 'https://forkforkfork.com';
 	// };
 
-	for (let i = 0; i < 5; i++) {
-		console.log(`Fetch ${i} ---------------------------------------------- `);
-		await remoteCollection.fetch();
-	}
+	// for (let i = 0; i < 5; i++) {
+	// 	console.log(`Fetch ${i} ---------------------------------------------- `);
+	// 	await remoteCollection.fetch();
+	// }
 
-	setTimeout(() => {
-		console.log('Remote Collection', remoteCollection);
+	// setTimeout(() => {
+	// 	console.log('Remote Collection', remoteCollection);
 
-		remoteCollection.at(0).media.at(0).dispatch('change');
+	// 	remoteCollection.at(0).media.at(0).dispatch('change');
 
-		// remoteCollection.pop();
-		// remoteCollection.shift();
-	}, 1000 * 1);
+	// 	// remoteCollection.pop();
+	// 	// remoteCollection.shift();
+	// }, 1000 * 1);
+
+	await remoteCollection.fetch();
+
+	const model = remoteCollection.at(0);
+	const media = model?.media.at(0);
+
+	console.log('fork', model, media);
+
+	media.setDryRun(true);
+
+	media.on('dryrun', (e) => {
+		console.log('Dry Run Event', e.detail);
+	});
+
+	await media.delete();
 }
 
 // Run

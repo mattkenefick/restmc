@@ -223,6 +223,12 @@ export default class ActiveRecord<T> extends Core {
 	};
 
 	/**
+	 * Enable dry-run to preview HTTP calls without side effects.
+	 * Passed to HttpRequest to short-circuit actual axios calls.
+	 */
+	public dryRun: boolean = false;
+
+	/**
 	 * @type number
 	 */
 	public page: number = 1;
@@ -1214,6 +1220,17 @@ export default class ActiveRecord<T> extends Core {
 	}
 
 	/**
+	 * Enable/disable dry-run mode for this instance.
+	 *
+	 * @param boolean enable
+	 * @return this
+	 */
+	public setDryRun(enable: boolean = true): this {
+		this.dryRun = !!enable;
+		return this;
+	}
+
+	/**
 	 * @param string key
 	 * @param string value
 	 * @return ActiveRecord
@@ -1355,6 +1372,7 @@ export default class ActiveRecord<T> extends Core {
 				ttl: ttl,
 			},
 			dataKey: this.dataKey,
+			dryRun: this.dryRun,
 			withCredentials: this.options.withCredentials,
 		}));
 
@@ -1391,6 +1409,9 @@ export default class ActiveRecord<T> extends Core {
 		request.on('finish', (e: IDispatcherEvent) => this.dispatch('finish'));
 		request.on('parse:after', (e: IDispatcherEvent) => this.FetchParseAfter(e, options || {}));
 		request.on('progress', (e: IDispatcherEvent) => this.FetchProgress(e));
+
+		// Bubble dryrun details for external listeners
+		request.on('dryrun', (e: IDispatcherEvent) => this.dispatch('dryrun', e.detail));
 
 		// Has fetched
 		this.hasFetched = true;

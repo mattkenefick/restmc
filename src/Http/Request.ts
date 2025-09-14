@@ -22,6 +22,14 @@ import RequestError from './RequestError.js';
  */
 export default class Request extends Core {
 	/**
+	 * Enable dry-run mode to inspect requests without sending them.
+	 *
+	 * When true, fetch() will emit a 'dryrun' event with the would-be
+	 * axios params and resolve immediately without performing the request.
+	 */
+	public dryRun: boolean = false;
+
+	/**
 	 * Create a cache for previously sent requests.
 	 *
 	 * 11/07/22
@@ -140,6 +148,13 @@ export default class Request extends Core {
 		this.dataKey = options.dataKey || this.dataKey;
 		this.withCredentials = options.withCredentials ?? true;
 
+		// Pass-through for dry-run enablement
+		// @ts-ignore allow arbitrary options merged by Core
+		if (typeof (options as any).dryRun === 'boolean') {
+			// @ts-ignore
+			this.dryRun = (options as any).dryRun;
+		}
+
 		this.url = url.replace(/\?$/, '').replace(/\?&/, '?');
 	}
 
@@ -236,6 +251,29 @@ export default class Request extends Core {
 		return new Promise((resolve, reject) => {
 			const cacheKey = this.generateCacheKey(params);
 			const useCache = this.shouldUseCache(params);
+
+			// Dry-run: emit details and resolve without network
+			if (this.dryRun) {
+				const dryRunDetail = {
+					axios: params,
+					body: params.data,
+					cacheKey,
+					headers: params.headers,
+					method: params.method,
+					request: requestEvent,
+					url: params.url,
+					useCache,
+				};
+
+				this.dispatch('dryrun', dryRunDetail as unknown as IDispatchData);
+				this.loading = false;
+				this.status = 0; // non-2xx so callers won't treat as success side-effect
+
+				// Finish lifecycle for listeners that expect finish toggles
+				this.afterAny();
+				resolve(this);
+				return;
+			}
 
 			this.handleRequest(cacheKey, params, useCache, ttl)
 				.then((response: AxiosResponse<any>) => {
