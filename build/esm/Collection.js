@@ -59,7 +59,8 @@ class Collection extends ActiveRecord_js_1.default {
     get pagination() {
         return Collection.paginator(this);
     }
-    toJSON(path = new Set(), maxDepth = 5) {
+    toJSON(pathOrKey = new Set(), maxDepth = 5) {
+        const path = pathOrKey instanceof Set ? pathOrKey : new Set();
         return this.models.map((model) => model.toJSON(path, maxDepth));
     }
     nextPage(append = false) {

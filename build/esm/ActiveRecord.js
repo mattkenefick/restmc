@@ -160,10 +160,8 @@ class ActiveRecord extends Core_js_1.default {
         }
         return this;
     }
-    toJSON(path = new Set(), maxDepth = 5) {
-        if (!(path instanceof Set)) {
-            path = new Set();
-        }
+    toJSON(pathOrKey = new Set(), maxDepth = 5) {
+        const path = pathOrKey instanceof Set ? pathOrKey : new Set();
         const refId = `${this.endpoint}.${this.id}`;
         const json = Object.assign({}, this.attributes);
         if (path.has(refId)) {
@@ -171,6 +169,9 @@ class ActiveRecord extends Core_js_1.default {
         }
         if (path.size >= maxDepth) {
             return json;
+        }
+        if (typeof pathOrKey === 'string') {
+            return Object.assign({}, this.attributes);
         }
         const currentPath = new Set(path);
         currentPath.add(refId);

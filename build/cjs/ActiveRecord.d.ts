@@ -59,7 +59,7 @@ export default class ActiveRecord<T> extends Core {
     set(attributes?: IAttributes, options?: IAttributes, trigger?: boolean): this;
     unset(key: string): this;
     setOptions(options?: IAttributes): this;
-    toJSON(path?: Set<string>, maxDepth?: number): object;
+    toJSON(pathOrKey?: Set<string> | string, maxDepth?: number): object;
     protected isEmptyRelationship(value: any): boolean;
     disableUniqueKeys(): this;
     create(attributes: IAttributes): Promise<HttpRequest>;

@@ -563,47 +563,17 @@ export default class ActiveRecord<T> extends Core {
 	}
 
 	/**
-	 * @param object recursiveObject
-	 * @return object
-	 */
-	// public toJSON(recursiveObject: any = null): object {
-	// 	if (recursiveObject !== null && typeof recursiveObject !== 'object') {
-	// 		throw new Error(`Invalid recursiveObject passed to toJSON: ${typeof recursiveObject}`);
-	// 	}
-
-	// 	const json = { ...this.attributes };
-	// 	const possibleGetters = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
-	// 	const className = this.constructor.name;
-	// 	const refKey = `${className}${this.id}`;
-
-	// 	// Convert toJSON on subobjects so they stay in sync
-	// 	for (const key of possibleGetters) {
-	// 		if ((this as any)[key]?.toJSON) {
-	// 			if (!recursiveObject || recursiveObject[refKey] != key) {
-	// 				recursiveObject = recursiveObject || {};
-	// 				recursiveObject[refKey] = key;
-	// 				json[key] = (this as any)[key].toJSON(recursiveObject);
-	// 			} else {
-	// 				json[key] = { _circular: true };
-	// 			}
-	// 		}
-	// 	}
-
-	// 	return json;
-	// }
-
-	/**
-	 * Attempts to track stacks and prevent circular references in toJSON
+	 * Attempts to track stacks and prevent circular references in toJSON.
 	 *
-	 * @param Set<string> path
+	 * IMPORTANT:
+	 * JSON.stringify() calls toJSON(key: string), so we must tolerate a string first arg.
+	 *
+	 * @param Set<string> | string pathOrKey
 	 * @param number maxDepth
 	 * @return object
 	 */
-	public toJSON(path: Set<string> = new Set(), maxDepth: number = 5): object {
-		if (!(path instanceof Set)) {
-			path = new Set();
-		}
-
+	public toJSON(pathOrKey: Set<string> | string = new Set(), maxDepth: number = 5): object {
+		const path: Set<string> = pathOrKey instanceof Set ? pathOrKey : new Set();
 		const refId = `${this.endpoint}.${this.id}`;
 		const json: Record<string, any> = { ...this.attributes };
 
@@ -615,6 +585,11 @@ export default class ActiveRecord<T> extends Core {
 		// Hit depth limit
 		if (path.size >= maxDepth) {
 			return json;
+		}
+
+		// If called by JSON.stringify, just return attributes
+		if (typeof pathOrKey === 'string') {
+			return { ...this.attributes };
 		}
 
 		// Add self to current path

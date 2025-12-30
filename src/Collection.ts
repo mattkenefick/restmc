@@ -200,24 +200,17 @@ export default class Collection<GenericModel extends Model>
 	}
 
 	/**
-	 * @return object
-	 */
-	// public toJSON(): object {
-	// 	return this.models.map((model) => {
-	// 		if (typeof model.toJSON === 'function') {
-	// 			return model.toJSON();
-	// 		}
-
-	// 		return model;
-	// 	});
-	// }
-
-	/**
-	 * @param Set<string> path
+	 * Serialize collection models.
+	 *
+	 * IMPORTANT:
+	 * JSON.stringify() calls toJSON(key: string), so we must tolerate a string first arg.
+	 *
+	 * @param Set<string> | string pathOrKey
 	 * @param number maxDepth
 	 * @return object[]
 	 */
-	public toJSON(path: Set<string> = new Set(), maxDepth: number = 5): object[] {
+	public toJSON(pathOrKey: Set<string> | string = new Set(), maxDepth: number = 5): object[] {
+		const path: Set<string> = pathOrKey instanceof Set ? pathOrKey : new Set();
 		return this.models.map((model) => model.toJSON(path, maxDepth));
 	}
 
