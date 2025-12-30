@@ -161,6 +161,9 @@ class ActiveRecord extends Core_js_1.default {
         return this;
     }
     toJSON(path = new Set(), maxDepth = 5) {
+        if (!(path instanceof Set)) {
+            path = new Set();
+        }
         const refId = `${this.endpoint}.${this.id}`;
         const json = Object.assign({}, this.attributes);
         if (path.has(refId)) {

@@ -600,6 +600,10 @@ export default class ActiveRecord<T> extends Core {
 	 * @return object
 	 */
 	public toJSON(path: Set<string> = new Set(), maxDepth: number = 5): object {
+		if (!(path instanceof Set)) {
+			path = new Set();
+		}
+
 		const refId = `${this.endpoint}.${this.id}`;
 		const json: Record<string, any> = { ...this.attributes };
 
