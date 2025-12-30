@@ -170,28 +170,40 @@ class ActiveRecord extends Core_js_1.default {
         }
         return this;
     }
-    toJSON(recursiveObject = null) {
-        var _a;
-        if (recursiveObject !== null && typeof recursiveObject !== 'object') {
-            throw new Error(`Invalid recursiveObject passed to toJSON: ${typeof recursiveObject}`);
-        }
+    toJSON(path = new Set(), maxDepth = 5) {
+        const refId = `${this.endpoint}.${this.id}`;
         const json = Object.assign({}, this.attributes);
+        if (path.has(refId)) {
+            return json;
+        }
+        if (path.size >= maxDepth) {
+            return json;
+        }
+        const currentPath = new Set(path);
+        currentPath.add(refId);
         const possibleGetters = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
-        const className = this.constructor.name;
-        const refKey = `${className}${this.id}`;
         for (const key of possibleGetters) {
-            if ((_a = this[key]) === null || _a === void 0 ? void 0 : _a.toJSON) {
-                if (!recursiveObject || recursiveObject[refKey] != key) {
-                    recursiveObject = recursiveObject || {};
-                    recursiveObject[refKey] = key;
-                    json[key] = this[key].toJSON(recursiveObject);
-                }
-                else {
-                    json[key] = { _circular: true };
+            const descriptor = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(this), key);
+            if (descriptor === null || descriptor === void 0 ? void 0 : descriptor.get) {
+                const value = this[key];
+                if (value === null || value === void 0 ? void 0 : value.toJSON) {
+                    if (this.isEmptyRelationship(value)) {
+                        continue;
+                    }
+                    json[key] = value.toJSON(currentPath, maxDepth);
                 }
             }
         }
         return json;
+    }
+    isEmptyRelationship(value) {
+        if (value.models !== undefined) {
+            return value.models.length === 0;
+        }
+        if (value.id !== undefined) {
+            return !value.id && Object.keys(value.attributes || {}).length === 0;
+        }
+        return false;
     }
     disableUniqueKeys() {
         this.updatesUniqueKey = false;
@@ -747,13 +759,8 @@ class Collection extends ActiveRecord_js_1.default {
     get pagination() {
         return Collection.paginator(this);
     }
-    toJSON() {
-        return this.models.map((model) => {
-            if (typeof model.toJSON === 'function') {
-                return model.toJSON();
-            }
-            return model;
-        });
+    toJSON(path = new Set(), maxDepth = 5) {
+        return this.models.map((model) => model.toJSON(path, maxDepth));
     }
     nextPage(append = false) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -804,6 +811,7 @@ class Collection extends ActiveRecord_js_1.default {
         if (data == null) {
             return this;
         }
+        let paramGroup = [];
         data = this.cleanData(data);
         const incomingItems = Array.isArray(data) ? data : [data];
         const newModels = [];
@@ -837,9 +845,15 @@ class Collection extends ActiveRecord_js_1.default {
                 setTimeout(() => {
                     this.dispatch('add:delayed', params);
                 }, 1);
+            paramGroup.push(params);
         }
-        trigger && this.dispatch('change', { from: 'add' });
-        trigger && this.dispatch('add');
+        if (trigger) {
+            this.dispatch('change', {
+                from: 'add',
+                params: paramGroup,
+            });
+            this.dispatch('add', paramGroup);
+        }
         return this;
     }
     remove(model, trigger = true) {
@@ -6964,18 +6978,44 @@ async function fetchVenues() {
     });
     const remoteCollection = new Venue_1.default();
     remoteCollection.setOptions({
-        baseUrl: 'https://api.chalkysticks.com/v3',
         cacheable: true,
+    });
+    console.log('fucker');
+    remoteCollection.on('request', (e) => {
+        console.log('Request Event', e);
+    });
+    remoteCollection.on('response', (e) => {
+        console.log('Response Event', e);
+    });
+    remoteCollection.on('error', (e) => {
+        console.error('Error Event', e);
+    });
+    remoteCollection.on('add', (e) => {
+        console.log('Add Event', e);
+    });
+    remoteCollection.on('remove', (e) => {
+        console.log('Remove Event', e);
+    });
+    remoteCollection.on('change', (e) => {
+        console.log('Change Event', e);
+    });
+    remoteCollection.on('fetch:before', (e) => {
+        console.log('Fetch Before Event', e);
+    });
+    remoteCollection.on('fetch:after', (e) => {
+        console.log('Fetch After Event', e);
+    });
+    remoteCollection.on('success', (e) => {
+        console.log('Success', e);
     });
     await remoteCollection.fetch();
     const model = remoteCollection.at(0);
     const media = model?.media.at(0);
-    console.log('fork', model, media);
+    console.log('fork', model.toJSON(), media);
     media.setDryRun(true);
     media.on('dryrun', (e) => {
         console.log('Dry Run Event', e.detail);
     });
-    await media.delete();
 }
 fetchVenues();
 

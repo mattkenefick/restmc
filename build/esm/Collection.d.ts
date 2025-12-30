@@ -17,7 +17,7 @@ export default class Collection<GenericModel extends Model> extends ActiveRecord
     protected sortKey: string;
     private iterator;
     constructor(options?: IAttributes);
-    toJSON(): object;
+    toJSON(path?: Set<string>, maxDepth?: number): object[];
     nextPage(append?: boolean): Promise<HttpRequest | null>;
     previousPage(append?: boolean): Promise<HttpRequest | null>;
     fetchNext(append?: boolean): Promise<HttpRequest>;

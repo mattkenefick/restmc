@@ -59,13 +59,8 @@ class Collection extends ActiveRecord_js_1.default {
     get pagination() {
         return Collection.paginator(this);
     }
-    toJSON() {
-        return this.models.map((model) => {
-            if (typeof model.toJSON === 'function') {
-                return model.toJSON();
-            }
-            return model;
-        });
+    toJSON(path = new Set(), maxDepth = 5) {
+        return this.models.map((model) => model.toJSON(path, maxDepth));
     }
     nextPage(append = false) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -116,6 +111,7 @@ class Collection extends ActiveRecord_js_1.default {
         if (data == null) {
             return this;
         }
+        let paramGroup = [];
         data = this.cleanData(data);
         const incomingItems = Array.isArray(data) ? data : [data];
         const newModels = [];
@@ -149,9 +145,15 @@ class Collection extends ActiveRecord_js_1.default {
                 setTimeout(() => {
                     this.dispatch('add:delayed', params);
                 }, 1);
+            paramGroup.push(params);
         }
-        trigger && this.dispatch('change', { from: 'add' });
-        trigger && this.dispatch('add');
+        if (trigger) {
+            this.dispatch('change', {
+                from: 'add',
+                params: paramGroup,
+            });
+            this.dispatch('add', paramGroup);
+        }
         return this;
     }
     remove(model, trigger = true) {

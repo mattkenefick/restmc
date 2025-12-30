@@ -144,7 +144,6 @@ async function fetchVenues(): Promise<void> {
 	const remoteCollection = new CollectionVenue();
 
 	remoteCollection.setOptions({
-		baseUrl: 'https://api.chalkysticks.com/v3',
 		cacheable: true,
 	});
 
@@ -167,12 +166,48 @@ async function fetchVenues(): Promise<void> {
 	// 	// remoteCollection.shift();
 	// }, 1000 * 1);
 
+	remoteCollection.on('request', (e) => {
+		console.log('Request Event', e);
+	});
+
+	remoteCollection.on('response', (e) => {
+		console.log('Response Event', e);
+	});
+
+	remoteCollection.on('error', (e) => {
+		console.error('Error Event', e);
+	});
+
+	remoteCollection.on('add', (e) => {
+		console.log('Add Event', e);
+	});
+
+	remoteCollection.on('remove', (e) => {
+		console.log('Remove Event', e);
+	});
+
+	remoteCollection.on('change', (e) => {
+		console.log('Change Event', e);
+	});
+
+	remoteCollection.on('fetch:before', (e) => {
+		console.log('Fetch Before Event', e);
+	});
+
+	remoteCollection.on('fetch:after', (e) => {
+		console.log('Fetch After Event', e);
+	});
+
+	remoteCollection.on('success', (e) => {
+		console.log('Success', e);
+	});
+
 	await remoteCollection.fetch();
 
 	const model = remoteCollection.at(0);
 	const media = model?.media.at(0);
 
-	console.log('fork', model, media);
+	console.log('fork', model.toJSON(), media);
 
 	media.setDryRun(true);
 
@@ -180,7 +215,7 @@ async function fetchVenues(): Promise<void> {
 		console.log('Dry Run Event', e.detail);
 	});
 
-	await media.delete();
+	// await media.delete();
 }
 
 // Run

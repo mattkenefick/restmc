@@ -160,28 +160,40 @@ class ActiveRecord extends Core_js_1.default {
         }
         return this;
     }
-    toJSON(recursiveObject = null) {
-        var _a;
-        if (recursiveObject !== null && typeof recursiveObject !== 'object') {
-            throw new Error(`Invalid recursiveObject passed to toJSON: ${typeof recursiveObject}`);
-        }
+    toJSON(path = new Set(), maxDepth = 5) {
+        const refId = `${this.endpoint}.${this.id}`;
         const json = Object.assign({}, this.attributes);
+        if (path.has(refId)) {
+            return json;
+        }
+        if (path.size >= maxDepth) {
+            return json;
+        }
+        const currentPath = new Set(path);
+        currentPath.add(refId);
         const possibleGetters = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
-        const className = this.constructor.name;
-        const refKey = `${className}${this.id}`;
         for (const key of possibleGetters) {
-            if ((_a = this[key]) === null || _a === void 0 ? void 0 : _a.toJSON) {
-                if (!recursiveObject || recursiveObject[refKey] != key) {
-                    recursiveObject = recursiveObject || {};
-                    recursiveObject[refKey] = key;
-                    json[key] = this[key].toJSON(recursiveObject);
-                }
-                else {
-                    json[key] = { _circular: true };
+            const descriptor = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(this), key);
+            if (descriptor === null || descriptor === void 0 ? void 0 : descriptor.get) {
+                const value = this[key];
+                if (value === null || value === void 0 ? void 0 : value.toJSON) {
+                    if (this.isEmptyRelationship(value)) {
+                        continue;
+                    }
+                    json[key] = value.toJSON(currentPath, maxDepth);
                 }
             }
         }
         return json;
+    }
+    isEmptyRelationship(value) {
+        if (value.models !== undefined) {
+            return value.models.length === 0;
+        }
+        if (value.id !== undefined) {
+            return !value.id && Object.keys(value.attributes || {}).length === 0;
+        }
+        return false;
     }
     disableUniqueKeys() {
         this.updatesUniqueKey = false;

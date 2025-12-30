@@ -566,30 +566,95 @@ export default class ActiveRecord<T> extends Core {
 	 * @param object recursiveObject
 	 * @return object
 	 */
-	public toJSON(recursiveObject: any = null): object {
-		if (recursiveObject !== null && typeof recursiveObject !== 'object') {
-			throw new Error(`Invalid recursiveObject passed to toJSON: ${typeof recursiveObject}`);
+	// public toJSON(recursiveObject: any = null): object {
+	// 	if (recursiveObject !== null && typeof recursiveObject !== 'object') {
+	// 		throw new Error(`Invalid recursiveObject passed to toJSON: ${typeof recursiveObject}`);
+	// 	}
+
+	// 	const json = { ...this.attributes };
+	// 	const possibleGetters = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
+	// 	const className = this.constructor.name;
+	// 	const refKey = `${className}${this.id}`;
+
+	// 	// Convert toJSON on subobjects so they stay in sync
+	// 	for (const key of possibleGetters) {
+	// 		if ((this as any)[key]?.toJSON) {
+	// 			if (!recursiveObject || recursiveObject[refKey] != key) {
+	// 				recursiveObject = recursiveObject || {};
+	// 				recursiveObject[refKey] = key;
+	// 				json[key] = (this as any)[key].toJSON(recursiveObject);
+	// 			} else {
+	// 				json[key] = { _circular: true };
+	// 			}
+	// 		}
+	// 	}
+
+	// 	return json;
+	// }
+
+	/**
+	 * Attempts to track stacks and prevent circular references in toJSON
+	 *
+	 * @param Set<string> path
+	 * @param number maxDepth
+	 * @return object
+	 */
+	public toJSON(path: Set<string> = new Set(), maxDepth: number = 5): object {
+		const refId = `${this.endpoint}.${this.id}`;
+		const json: Record<string, any> = { ...this.attributes };
+
+		// This exact object is already in our current path (ancestor)
+		if (path.has(refId)) {
+			return json;
 		}
 
-		const json = { ...this.attributes };
-		const possibleGetters = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
-		const className = this.constructor.name;
-		const refKey = `${className}${this.id}`;
+		// Hit depth limit
+		if (path.size >= maxDepth) {
+			return json;
+		}
 
-		// Convert toJSON on subobjects so they stay in sync
+		// Add self to current path
+		const currentPath = new Set(path);
+		currentPath.add(refId);
+
+		const possibleGetters = Object.getOwnPropertyNames(Object.getPrototypeOf(this));
+
 		for (const key of possibleGetters) {
-			if ((this as any)[key]?.toJSON) {
-				if (!recursiveObject || recursiveObject[refKey] != key) {
-					recursiveObject = recursiveObject || {};
-					recursiveObject[refKey] = key;
-					json[key] = (this as any)[key].toJSON(recursiveObject);
-				} else {
-					json[key] = { _circular: true };
+			const descriptor = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(this), key);
+
+			if (descriptor?.get) {
+				const value = (this as any)[key];
+
+				if (value?.toJSON) {
+					if (this.isEmptyRelationship(value)) {
+						continue;
+					}
+
+					// Each child gets a COPY of the path, not a reference
+					json[key] = value.toJSON(currentPath, maxDepth);
 				}
 			}
 		}
 
 		return json;
+	}
+
+	/**
+	 * Check if a relationship is empty and shouldn't be serialized
+	 *
+	 * @param any value
+	 * @return boolean
+	 */
+	protected isEmptyRelationship(value: any): boolean {
+		if (value.models !== undefined) {
+			return value.models.length === 0;
+		}
+
+		if (value.id !== undefined) {
+			return !value.id && Object.keys(value.attributes || {}).length === 0;
+		}
+
+		return false;
 	}
 
 	/**

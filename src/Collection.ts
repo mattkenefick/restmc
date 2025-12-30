@@ -202,14 +202,23 @@ export default class Collection<GenericModel extends Model>
 	/**
 	 * @return object
 	 */
-	public toJSON(): object {
-		return this.models.map((model) => {
-			if (typeof model.toJSON === 'function') {
-				return model.toJSON();
-			}
+	// public toJSON(): object {
+	// 	return this.models.map((model) => {
+	// 		if (typeof model.toJSON === 'function') {
+	// 			return model.toJSON();
+	// 		}
 
-			return model;
-		});
+	// 		return model;
+	// 	});
+	// }
+
+	/**
+	 * @param Set<string> path
+	 * @param number maxDepth
+	 * @return object[]
+	 */
+	public toJSON(path: Set<string> = new Set(), maxDepth: number = 5): object[] {
+		return this.models.map((model) => model.toJSON(path, maxDepth));
 	}
 
 	/**
@@ -321,6 +330,8 @@ export default class Collection<GenericModel extends Model>
 			return this;
 		}
 
+		let paramGroup: any = [];
+
 		// Ensure data is on correct key
 		data = this.cleanData(data);
 
@@ -372,11 +383,19 @@ export default class Collection<GenericModel extends Model>
 				setTimeout(() => {
 					this.dispatch('add:delayed', params);
 				}, 1);
+
+			paramGroup.push(params);
 		}
 
 		// Event for add
-		trigger && this.dispatch('change', { from: 'add' });
-		trigger && this.dispatch('add');
+		if (trigger) {
+			this.dispatch('change', {
+				from: 'add',
+				params: paramGroup,
+			});
+
+			this.dispatch('add', paramGroup);
+		}
 
 		return this;
 	}
