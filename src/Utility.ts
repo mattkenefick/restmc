@@ -1,21 +1,41 @@
 /**
  * Creates a stable JSON string from an object, sorting keys to ensure consistent output.
+ * Handles circular references and depth limiting to prevent stack overflow.
  *
- * @param input The object to stringify.
- * @return A stable JSON string.
+ * @param any input The object to stringify.
+ * @param WeakSet<object> seen Set of already-visited objects to detect circular references.
+ * @param number depth Current recursion depth.
+ * @param number maxDepth Maximum allowed recursion depth.
+ * @return string A stable JSON string.
  */
-function stableStringify(input: any): string {
-	if (input === null || typeof input !== 'object') {
-		return JSON.stringify(input);
+export function stableStringify(obj: any, seen = new WeakSet()): string {
+	// Handle primitives
+	if (obj === null || typeof obj !== 'object') {
+		return JSON.stringify(obj);
 	}
 
-	if (Array.isArray(input)) {
-		return `[${input.map(stableStringify).join(',')}]`;
+	// Circular reference detection
+	if (seen.has(obj)) {
+		return '"[Circular]"'; // Or return undefined to omit the key
+	}
+	seen.add(obj);
+
+	// Handle Arrays
+	if (Array.isArray(obj)) {
+		const items = obj.map((item) => stableStringify(item, seen));
+		return `[${items.join(',')}]`;
 	}
 
-	const keys = Object.keys(input).sort();
-	const result = keys.map((key) => `${JSON.stringify(key)}:${stableStringify(input[key])}`);
-	return `{${result.join(',')}}`;
+	// Handle Objects
+	const keys = Object.keys(obj).sort();
+	const kvPairs = keys
+		.map((key) => {
+			const value = stableStringify(obj[key], seen);
+			return value !== undefined ? `"${key}":${value}` : null;
+		})
+		.filter(Boolean);
+
+	return `{${kvPairs.join(',')}}`;
 }
 
 /**

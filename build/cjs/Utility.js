@@ -1,17 +1,28 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.compactObjectHash = void 0;
-function stableStringify(input) {
-    if (input === null || typeof input !== 'object') {
-        return JSON.stringify(input);
+exports.compactObjectHash = exports.stableStringify = void 0;
+function stableStringify(obj, seen = new WeakSet()) {
+    if (obj === null || typeof obj !== 'object') {
+        return JSON.stringify(obj);
     }
-    if (Array.isArray(input)) {
-        return `[${input.map(stableStringify).join(',')}]`;
+    if (seen.has(obj)) {
+        return '"[Circular]"';
     }
-    const keys = Object.keys(input).sort();
-    const result = keys.map((key) => `${JSON.stringify(key)}:${stableStringify(input[key])}`);
-    return `{${result.join(',')}}`;
+    seen.add(obj);
+    if (Array.isArray(obj)) {
+        const items = obj.map((item) => stableStringify(item, seen));
+        return `[${items.join(',')}]`;
+    }
+    const keys = Object.keys(obj).sort();
+    const kvPairs = keys
+        .map((key) => {
+        const value = stableStringify(obj[key], seen);
+        return value !== undefined ? `"${key}":${value}` : null;
+    })
+        .filter(Boolean);
+    return `{${kvPairs.join(',')}}`;
 }
+exports.stableStringify = stableStringify;
 function hashString(input) {
     let hash = 2166136261;
     for (let i = 0; i < input.length; i++) {
