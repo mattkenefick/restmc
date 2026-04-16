@@ -51,7 +51,7 @@ export default class CollectionIterator<GenericModel extends Model> {
 	constructor(
 		collection: Collection<GenericModel>,
 		kind: number = 0,
-		filter: (model: GenericModel, index: number) => boolean = (model: GenericModel) => true
+		filter: (model: GenericModel, index: number) => boolean = (_model: GenericModel) => true
 	) {
 		this.collection = collection;
 		this.index = 0;

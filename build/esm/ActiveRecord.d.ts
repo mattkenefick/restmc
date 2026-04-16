@@ -54,9 +54,9 @@ export default class ActiveRecord<T> extends Core {
     attachChangeListeners(): void;
     detachChangeListeners(): void;
     attr(key: string): string | number | null;
-    clone(): any;
+    clone(): this;
     hasAttributes(): boolean;
-    set(attributes?: IAttributes, options?: IAttributes, trigger?: boolean): this;
+    set(attributes?: IAttributes, _options?: IAttributes, trigger?: boolean): this;
     unset(key: string): this;
     setOptions(options?: IAttributes): this;
     toJSON(pathOrKey?: Set<string> | string, maxDepth?: number): object;
@@ -73,6 +73,7 @@ export default class ActiveRecord<T> extends Core {
     removeLoadingHooks(): ActiveRecord<T>;
     cache(ttl: number): ActiveRecord<T>;
     mock(data: any): ActiveRecord<T>;
+    fetchById(id: string | number, queryParams?: IModelRequestQueryParams): Promise<ActiveRecord<T>>;
     find(id: string | number, queryParams?: IModelRequestQueryParams): Promise<ActiveRecord<T>>;
     file(name: string, file: any, additionalFields?: Record<string, any>): Promise<HttpRequest>;
     upload(name: string, file: any, additionalFields?: Record<string, any>): Promise<HttpRequest>;
@@ -94,8 +95,8 @@ export default class ActiveRecord<T> extends Core {
     setBody(value: IAttributes): ActiveRecord<T>;
     getEndpoint(): string;
     setEndpoint(endpoint: string): ActiveRecord<T>;
-    setHeader(header: string, value: string | null): ActiveRecord<T>;
-    setHeaders(headers: Record<string, string>): ActiveRecord<T>;
+    setHeader(header: string, value: null | number | string): ActiveRecord<T>;
+    setHeaders(headers: Record<string, null | number | string>): ActiveRecord<T>;
     setId(id: number | string): ActiveRecord<T>;
     unsetId(): ActiveRecord<T>;
     unsetHeader(header: string): ActiveRecord<T>;
@@ -112,5 +113,5 @@ export default class ActiveRecord<T> extends Core {
     protected FetchComplete(e: IDispatcherEvent): void;
     protected FetchProgress(e: IDispatcherEvent): void;
     protected FetchParseAfter(e: IDispatcherEvent, options?: IAttributes): void;
-    protected Handle_OnChange(e: IDispatcherEvent): void;
+    protected Handle_OnChange(_e: IDispatcherEvent): void;
 }

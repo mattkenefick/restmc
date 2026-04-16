@@ -6,4 +6,6 @@ export { default as Dispatcher } from './Dispatcher/Dispatcher.js';
 export { default as DispatcherEvent } from './Dispatcher/DispatcherEvent.js';
 export { default as Model } from './Model.js';
 export { default as Request } from './Http/Request.js';
-export { IAttributes, IAxiosConfig, IAxiosError, IAxiosResponse, IAxiosSuccess, ICachedResponse, ICachedResponses, ICollectionChange, ICollectionMeta, IDispatcher, IDispatcherCallbackFunction, IDispatcherEvent, IDispatchData, IModelRequestOptions, IModelRequestQueryParams, IPagination, IProgressEvent, IRequestEvent, IResponse, ISortOptions, } from './Interfaces.js';
+export { default as RequestError } from './Http/RequestError.js';
+export * as Events from './Enum/index.js';
+export { IAttributes, IAxiosConfig, IAxiosError, IAxiosResponse, IAxiosSuccess, ICachedResponse, ICachedResponses, ICollectionChange, ICollectionMeta, IDispatcher, IDispatcherCallbackFunction, IDispatcherEvent, IDispatchData, IModelRequestOptions, IModelRequestQueryParams, IPagination, IProgressEvent, IRequestEvent, IResponse, ISortOptions, IWhereOptions, } from './Interfaces.js';

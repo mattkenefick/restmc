@@ -6,6 +6,12 @@ export { default as Dispatcher } from './Dispatcher/Dispatcher.js';
 export { default as DispatcherEvent } from './Dispatcher/DispatcherEvent.js';
 export { default as Model } from './Model.js';
 export { default as Request } from './Http/Request.js';
+export { default as RequestError } from './Http/RequestError.js';
+
+// Event name enums, grouped under Events to avoid collision with the
+// Collection/Model/Request class exports above. Consumers use them like
+// Events.Collection.Add, Events.Request.Complete, etc.
+export * as Events from './Enum/index.js';
 
 export {
 	IAttributes,
@@ -28,4 +34,5 @@ export {
 	IRequestEvent,
 	IResponse,
 	ISortOptions,
+	IWhereOptions,
 } from './Interfaces.js';

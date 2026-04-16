@@ -15,8 +15,7 @@ class Builder {
         const endpoint = this.getEndpoint();
         const queryParamStr = this.getQueryParamsAsString();
         const isModified = this.activeRecord.isUsingModifiedEndpoint();
-        const modifiedBefore = isModified && this.activeRecord.modifiedEndpointPosition == 'before';
-        const modifiedAfter = isModified && this.activeRecord.modifiedEndpointPosition == 'after';
+        const modifiedAfter = isModified && this.activeRecord.modifiedEndpointPosition === 'after';
         let urlBuilder = '';
         urlBuilder += baseUrl;
         urlBuilder += endpoint[0] === '/' ? endpoint : '/' + endpoint;
@@ -53,10 +52,10 @@ class Builder {
         let str = '';
         Object.entries(this.queryParams)
             .sort((entryA, entryB) => entryA[0].localeCompare(entryB[0]))
-            .forEach((entry, index) => {
+            .forEach((entry, _index) => {
             const key = entry[0];
             const value = (entry[1] || '') + '';
-            if (value != null && value != '') {
+            if (value != null && value !== '') {
                 str += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(value);
             }
         });

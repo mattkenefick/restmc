@@ -84,7 +84,7 @@ class ActiveRecord extends Core_js_1.default {
         return this.builder;
     }
     get isModel() {
-        return this.builder.id != '';
+        return this.builder.id !== '';
     }
     attachChangeListeners() {
         this.on('change', this.Handle_OnChange);
@@ -108,8 +108,8 @@ class ActiveRecord extends Core_js_1.default {
     hasAttributes() {
         return Object.keys(this.attributes).length > 0;
     }
-    set(attributes = {}, options = {}, trigger = true) {
-        const possibleSetters = Object.getOwnPropertyDescriptors(this.__proto__);
+    set(attributes = {}, _options = {}, trigger = true) {
+        const possibleSetters = Object.getOwnPropertyDescriptors(Object.getPrototypeOf(this));
         attributes = this.cleanData(attributes);
         for (const key in attributes) {
             this.attributes[key] = attributes[key];
@@ -288,20 +288,25 @@ class ActiveRecord extends Core_js_1.default {
         const self = this;
         function callback() {
             self.unsetMockData('any');
-            self.off('finish', this);
+            self.off('finish', callback);
         }
         this.on('finish', callback);
         this.setMockData('any', data);
         return this;
     }
+    fetchById(id, queryParams = {}) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this.fetch({ id }, queryParams).then((_request) => this);
+        });
+    }
     find(id, queryParams = {}) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield this.fetch({ id }, queryParams).then((request) => this);
+            return yield this.fetchById(id, queryParams);
         });
     }
     file(name, file, additionalFields = {}) {
         return __awaiter(this, void 0, void 0, function* () {
-            const url = this.builder.identifier(this.id).getUrl();
+            this.builder.identifier(this.id);
             const formData = createFormData();
             if (file.hasOwnProperty('files') && file.files) {
                 file = file.files[0];
@@ -340,6 +345,10 @@ class ActiveRecord extends Core_js_1.default {
         });
     }
     runLast() {
+        if (!this.lastRequest) {
+            console.warn('runLast() called but no previous request to replay');
+            return;
+        }
         if (++this.runLastAttempts >= this.runLastAttemptsMax) {
             console.warn('Run last attempts expired');
             setTimeout(() => {
@@ -394,7 +403,7 @@ class ActiveRecord extends Core_js_1.default {
     }
     getModifiedEndpoint() {
         const activeRecord = this.referenceForModifiedEndpoint;
-        if (!activeRecord || (!activeRecord.id && this.modifiedEndpointPosition == 'before')) {
+        if (!activeRecord || (!activeRecord.id && this.modifiedEndpointPosition === 'before')) {
             console.warn('Modified ActiveRecord [`' +
                 activeRecord.getEndpoint() +
                 '.' +
@@ -402,7 +411,7 @@ class ActiveRecord extends Core_js_1.default {
                 '] usually has an ID signature. [ar/this]', this);
             return this.getEndpoint();
         }
-        return this.modifiedEndpointPosition == 'before'
+        return this.modifiedEndpointPosition === 'before'
             ? [activeRecord.getEndpoint(), activeRecord.id, this.getEndpoint()].join('/')
             : [this.getEndpoint(), this.id, activeRecord.getEndpoint()].join('/');
     }
@@ -563,7 +572,7 @@ class ActiveRecord extends Core_js_1.default {
                 this.loading = false;
                 return this.dispatch('error', e.detail);
             });
-            request.on('finish', (e) => this.dispatch('finish'));
+            request.on('finish', (_e) => this.dispatch('finish'));
             request.on('parse:after', (e) => this.FetchParseAfter(e, options || {}));
             request.on('progress', (e) => this.FetchProgress(e));
             request.on('dryrun', (e) => this.dispatch('dryrun', e.detail));
@@ -599,7 +608,7 @@ class ActiveRecord extends Core_js_1.default {
         this.timeParsed = Date.now();
         this.dispatch('fetched', e.detail);
     }
-    Handle_OnChange(e) {
+    Handle_OnChange(_e) {
         let parent = this.parent;
         this.updatesUniqueKey && this.updateUniqueKey();
         if (this.updatesUniqueKeyDeep) {

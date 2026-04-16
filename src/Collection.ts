@@ -3,18 +3,7 @@ import CollectionIterator from './CollectionIterator.js';
 import HttpRequest from './Http/Request.js';
 import Model from './Model.js';
 import { compactObjectHash } from './Utility.js';
-import {
-	IAttributes,
-	IAxiosResponse,
-	IAxiosSuccess,
-	ICollectionMeta,
-	IDispatcherEvent,
-	IRequest,
-	IModelRequestOptions,
-	IModelRequestQueryParams,
-	IPagination,
-	ISortOptions,
-} from './Interfaces.js';
+import { IAttributes, ICollectionMeta, IPagination, ISortOptions, IWhereOptions } from './Interfaces.js';
 
 /**
  * 'meta': {
@@ -59,6 +48,7 @@ export default class Collection<GenericModel extends Model>
 	 * @param boolean trigger
 	 * @type Collection
 	 */
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	public static hydrate<T>(models: Model[] | any = [], options: object = {}, trigger: boolean = true): any {
 		// Instantiate collection
 		const collection = new this(options);
@@ -82,7 +72,6 @@ export default class Collection<GenericModel extends Model>
 	}
 
 	/**
-	 * @todo In tests, make sure this doesn't cache
 	 * @return number
 	 */
 	public get length(): number {
@@ -251,8 +240,8 @@ export default class Collection<GenericModel extends Model>
 	 * @return Promise<HttpRequest>
 	 */
 	public async fetchNext(append: boolean = false): Promise<HttpRequest> {
-		let options = Object.assign({}, this.lastRequest.options);
-		let qp = Object.assign({}, this.builder.queryParams, this.lastRequest.queryParams);
+		const options = Object.assign({}, this.lastRequest.options);
+		const qp = Object.assign({}, this.builder.queryParams, this.lastRequest.queryParams);
 
 		// Increase page number
 		qp.page = parseFloat(qp.page) + 1;
@@ -271,8 +260,8 @@ export default class Collection<GenericModel extends Model>
 	 * @return Promise<HttpRequest>
 	 */
 	public async fetchPrevious(append: boolean = false): Promise<HttpRequest> {
-		let options = Object.assign({}, this.lastRequest.options);
-		let qp = Object.assign({}, this.builder.queryParams, this.lastRequest.queryParams);
+		const options = Object.assign({}, this.lastRequest.options);
+		const qp = Object.assign({}, this.builder.queryParams, this.lastRequest.queryParams);
 
 		// Decrease page number
 		qp.page = Math.max(1, parseFloat(qp.page) - 1);
@@ -323,14 +312,13 @@ export default class Collection<GenericModel extends Model>
 			return this;
 		}
 
-		let paramGroup: any = [];
+		const paramGroup: any = [];
 
 		// Ensure data is on correct key
 		data = this.cleanData(data);
 
 		// Always work with an array for uniformity
 		const incomingItems: Array<GenericModel | object> = Array.isArray(data) ? data : [data];
-		const newModels: GenericModel[] = [];
 
 		for (const item of incomingItems) {
 			let model: GenericModel;
@@ -338,8 +326,7 @@ export default class Collection<GenericModel extends Model>
 			if ((item as any).isModel) {
 				model = item as GenericModel;
 			} else {
-				// @ts-ignore
-				model = new this.model.constructor(item);
+				model = new (this.model.constructor as new (item: any) => GenericModel)(item);
 			}
 
 			// Event params
@@ -413,7 +400,7 @@ export default class Collection<GenericModel extends Model>
 			while (i < this.models.length) {
 				trigger && this.dispatch('remove:before', { model: this.models[i] });
 
-				if (this.models[i] == items[ii]) {
+				if (this.models[i] === items[ii]) {
 					this.models.splice(i, 1);
 				} else {
 					++i;
@@ -429,9 +416,8 @@ export default class Collection<GenericModel extends Model>
 	}
 
 	/**
-	 * Reset and add new models
-	 *
-	 * @todo Review this
+	 * Reset and add new models. Pass `options.merge = true` to append to the
+	 * existing list instead of replacing it.
 	 *
 	 * @param  Model[] | Model | object model
 	 * @param  IAttributes options
@@ -439,7 +425,7 @@ export default class Collection<GenericModel extends Model>
 	 * @return Collection
 	 */
 	public set(model: Model[] | Model | object, options: IAttributes = {}, trigger: boolean = true): this {
-		if (!options || (options && options.merge != true)) {
+		if (!options || (options && options.merge !== true)) {
 			this.reset();
 		}
 
@@ -498,15 +484,38 @@ export default class Collection<GenericModel extends Model>
 	}
 
 	/**
-	 * Filter through a models list
-	 * @return void
+	 * Filter through a models list. Returns a plain array — to keep chaining
+	 * collection methods, use `filterAsCollection()` instead.
+	 *
+	 * @param predicate
+	 * @return GenericModel[]
 	 */
 	public filter(predicate: any): GenericModel[] {
 		return this.models.filter(predicate);
 	}
 
 	/**
-	 * @return Model[]
+	 * Filter through models and wrap the matches in a new Collection of the
+	 * same constructor as this one. Useful for chaining further collection
+	 * operations (e.g. `.filterAsCollection(p).sort(...)`).
+	 *
+	 * @param predicate
+	 * @return Collection<GenericModel>
+	 */
+	public filterAsCollection(
+		predicate: (model: GenericModel, index: number, array: GenericModel[]) => boolean
+	): Collection<GenericModel> {
+		const matches: GenericModel[] = this.models.filter(predicate);
+		const constructor: any = this.constructor;
+
+		return constructor.hydrate(matches, { parent: this.parent, ...(this as any).options }, false);
+	}
+
+	/**
+	 * Map over models. Returns a plain array (mapped values may not be models).
+	 *
+	 * @param params
+	 * @return any[]
 	 */
 	public map(...params: any): any[] {
 		return <Model[]>Array.prototype.map.apply(this.models, params);
@@ -533,7 +542,10 @@ export default class Collection<GenericModel extends Model>
 	}
 
 	/**
-	 * @todo Might want to do more with this
+	 * Empty the model list and reset inherited state (attributes, options,
+	 * headers, and pagination meta) via super.reset(). The collection
+	 * instance itself is preserved — references stay valid.
+	 *
 	 * @return Collection
 	 */
 	public reset(): this {
@@ -585,12 +597,29 @@ export default class Collection<GenericModel extends Model>
 	}
 
 	/**
-	 * Cut up collection models
+	 * Cut up collection models. Returns a plain array — to keep chaining
+	 * collection methods, use `sliceAsCollection()` instead.
 	 *
-	 * @return Model[]
+	 * @param params
+	 * @return GenericModel[]
 	 */
 	public slice(...params: any): GenericModel[] {
 		return <GenericModel[]>Array.prototype.slice.apply(this.models, params);
+	}
+
+	/**
+	 * Slice the model list and wrap the result in a new Collection of the
+	 * same constructor as this one. Source collection is unchanged.
+	 *
+	 * @param start
+	 * @param end
+	 * @return Collection<GenericModel>
+	 */
+	public sliceAsCollection(start?: number, end?: number): Collection<GenericModel> {
+		const slice: GenericModel[] = this.models.slice(start, end);
+		const constructor: any = this.constructor;
+
+		return constructor.hydrate(slice, { parent: this.parent, ...(this as any).options }, false);
 	}
 
 	/**
@@ -623,6 +652,10 @@ export default class Collection<GenericModel extends Model>
 	 * @return boolean
 	 */
 	public has(obj: GenericModel | number | string): boolean {
+		// Loose `!=` is intentional — `where(..., true)` resolves missing
+		// hits to `null`, and we want both `null` and `undefined` to count
+		// as "not present" without forcing callers to handle two shapes.
+		// eslint-disable-next-line eqeqeq
 		return this.get(obj) != undefined;
 	}
 
@@ -665,22 +698,49 @@ export default class Collection<GenericModel extends Model>
 	}
 
 	/**
-	 * Filters models in the collection by matching attributes.
-	 * Can filter in-place or return a new filtered collection.
+	 * Filter models in the collection by matching attributes. Two call forms:
 	 *
-	 * @param {IAttributes} json      The attributes to match against.
-	 * @param {boolean} [first=false] If true, return only the first match.
-	 * @param {boolean} [fullMatch=false] If true, require all keys to match.
-	 * @param {boolean} [inPlace]     If true, filter in place. Defaults to this.inPlaceWhere or false.
-	 * @returns {this | Collection<GenericModel> | GenericModel}
+	 *   Positional (legacy):
+	 *     collection.where({ id: 3 }, true, false, false)
+	 *
+	 *   Options object (preferred):
+	 *     collection.where({ id: 3 }, { first: true })
+	 *     collection.where({ status: 'active' }, { fullMatch: true, inPlace: true })
+	 *
+	 * @param json      The attributes to match against.
+	 * @param first     Boolean (legacy) OR an IWhereOptions object carrying
+	 *                  { first?, fullMatch?, inPlace? }. When an object is
+	 *                  passed, the remaining positional flags are ignored.
+	 * @param fullMatch If true, require all keys to match (positional form only).
+	 * @param inPlace   If true, mutate this.models (positional form only).
+	 *                  Defaults to this.inPlaceWhere or false.
+	 * @return this | Collection<GenericModel> | GenericModel | null
 	 */
 	public where(
 		json: IAttributes = {},
-		first?: boolean,
+		first?: boolean | IWhereOptions,
 		fullMatch?: boolean,
 		inPlace?: boolean
 	): this | Collection<GenericModel> | GenericModel | null {
-		const filterInPlace: boolean = typeof inPlace === 'boolean' ? inPlace : !!(this as any).inPlaceWhere;
+		// Accept an options object as the second argument as a clearer
+		// alternative to the four positional booleans. The legacy
+		// positional form continues to work unchanged.
+		let firstFlag: boolean | undefined;
+		let fullMatchFlag: boolean | undefined;
+		let inPlaceFlag: boolean | undefined;
+
+		if (typeof first === 'object' && first !== null) {
+			firstFlag = first.first;
+			fullMatchFlag = first.fullMatch;
+			inPlaceFlag = first.inPlace;
+		} else {
+			firstFlag = first as boolean | undefined;
+			fullMatchFlag = fullMatch;
+			inPlaceFlag = inPlace;
+		}
+
+		const filterInPlace: boolean =
+			typeof inPlaceFlag === 'boolean' ? inPlaceFlag : !!(this as any).inPlaceWhere;
 
 		const searchKeys: string[] = Object.keys(json);
 		const searchKeyCount: number = searchKeys.length;
@@ -692,12 +752,16 @@ export default class Collection<GenericModel extends Model>
 			for (let i = 0; i < searchKeyCount; i++) {
 				const key: string = searchKeys[i];
 
+				// Loose equality is intentional — call sites pass either the
+				// numeric or string form of an id (e.g. has(3) vs has('3'))
+				// and rely on type coercion to match the stored attribute.
+				// eslint-disable-next-line eqeqeq
 				if (model.attr(key) == json[key]) {
 					matchCount++;
 				}
 			}
 
-			const shouldInclude: boolean = fullMatch ? matchCount === searchKeyCount : matchCount > 0;
+			const shouldInclude: boolean = fullMatchFlag ? matchCount === searchKeyCount : matchCount > 0;
 
 			if (shouldInclude) {
 				filteredModels.push(model);
@@ -705,7 +769,7 @@ export default class Collection<GenericModel extends Model>
 		}
 
 		// If 'first', return the first match or null if none found
-		if (first) {
+		if (firstFlag) {
 			return filteredModels.length > 0 ? filteredModels[0] : null;
 		}
 
@@ -751,25 +815,25 @@ export default class Collection<GenericModel extends Model>
 	}
 
 	/**
-	 * Sorting models by key or in reverse
+	 * Sort models in place by an attribute key. Defaults to the collection's
+	 * `sortKey` (typically 'id'). Pass `{ key, reverse }` to override.
 	 *
-	 * We have a basic `sortKey` defined on the collection, but
-	 * can also pass in an object with `key` and `reverse` on it
+	 *     collection.sort();                          // by sortKey, ascending
+	 *     collection.sort({ key: 'score' });          // by score, ascending
+	 *     collection.sort({ key: 'score', reverse: true });  // descending
 	 *
-	 * @param  IAttributes options
+	 * Note: comparison uses numeric subtraction so this works cleanly for
+	 * numeric attributes. String/date attributes will not sort correctly.
+	 *
+	 * @param ISortOptions options
 	 * @return Collection
 	 */
-	public sort(options: IAttributes = {}): Collection<GenericModel> {
-		let key: string = this.sortKey;
+	public sort(options: ISortOptions = {}): Collection<GenericModel> {
+		const key: string = (options.key as string) || this.sortKey;
+		const direction: number = options.reverse ? -1 : 1;
 
-		// Sort options
-		if (options !== null) {
-			key = options.key || key;
-		}
-
-		// Sort
 		this.models = this.models.sort((a: any, b: any) => {
-			return options && options.reverse ? (a.attr(key) - b.attr(key)) * -1 : (a.attr(key) - b.attr(key)) * 1;
+			return (a.attr(key) - b.attr(key)) * direction;
 		});
 
 		return this;

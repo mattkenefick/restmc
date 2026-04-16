@@ -1,4 +1,3 @@
-import { IDispatcherCallbackFunction, IDispatchData } from '../Interfaces.js';
 import ActiveRecord from '../ActiveRecord.js';
 
 /**
@@ -63,8 +62,7 @@ export default class Builder<T> {
 		const endpoint: string = this.getEndpoint();
 		const queryParamStr: string = this.getQueryParamsAsString();
 		const isModified: boolean = this.activeRecord.isUsingModifiedEndpoint();
-		const modifiedBefore: boolean = isModified && this.activeRecord.modifiedEndpointPosition == 'before';
-		const modifiedAfter: boolean = isModified && this.activeRecord.modifiedEndpointPosition == 'after';
+		const modifiedAfter: boolean = isModified && this.activeRecord.modifiedEndpointPosition === 'after';
 
 		let urlBuilder = '';
 
@@ -159,11 +157,11 @@ export default class Builder<T> {
 
 		Object.entries(this.queryParams)
 			.sort((entryA, entryB) => entryA[0].localeCompare(entryB[0]))
-			.forEach((entry, index) => {
+			.forEach((entry, _index) => {
 				const key: string = entry[0];
 				const value: string = (entry[1] || '') + '';
 
-				if (value != null && value != '') {
+				if (value != null && value !== '') {
 					str += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(value);
 				}
 			});

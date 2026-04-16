@@ -1,17 +1,11 @@
 import {
 	IAttributes,
-	IAxiosResponse,
-	IAxiosSuccess,
 	IDispatcherCallbackFunction,
 	IDispatcherEvent,
 	IModelRequestOptions,
 	IModelRequestQueryParams,
-	IProgressEvent,
-	IRequest,
-	IRequestEvent,
 	IResponse,
 } from './Interfaces.js';
-import { AxiosResponse } from 'axios';
 import { compactObjectHash } from './Utility.js';
 import Builder from './Http/Builder.js';
 import Collection from './Collection.js';
@@ -47,7 +41,7 @@ export default class ActiveRecord<T> extends Core {
 	 *
 	 * @type Map
 	 */
-	private static hooks = new Map<string, string[]>();
+	private static hooks = new Map<string, (...args: any[]) => any>();
 
 	/**
 	 * @param string event
@@ -76,7 +70,6 @@ export default class ActiveRecord<T> extends Core {
 	public static hook(key: string = 'init', params: any = []): void {
 		const func = this.hooks.get(key);
 
-		// @ts-ignore
 		func && func(...params);
 	}
 
@@ -93,7 +86,7 @@ export default class ActiveRecord<T> extends Core {
 	 * @return boolean
 	 */
 	protected get isModel(): boolean {
-		return this.builder.id != '';
+		return this.builder.id !== '';
 	}
 
 	/**
@@ -423,11 +416,20 @@ export default class ActiveRecord<T> extends Core {
 	}
 
 	/**
+	 * Create a shallow clone of this record carrying its parent reference,
+	 * options, headers, and serialized attributes.
+	 *
+	 * Note: lazy relationship caches (populated by `hasOne`/`hasMany` after
+	 * fetch) are NOT copied to the clone. Relationships will be re-built
+	 * lazily on the clone from the attributes available via `toJSON()`.
+	 * If a relationship was fetched independently and was never persisted
+	 * to attributes, the clone will not have that data — call
+	 * `clone.hasOne(name)` / `clone.hasMany(name)` to rebuild as needed.
+	 *
 	 * @return ActiveRecord
 	 */
 	public clone() {
-		// @ts-ignore
-		const instance = new this.constructor();
+		const instance = new (this.constructor as new () => this)();
 
 		instance.parent = this.parent;
 		instance.setOptions(this.options);
@@ -453,23 +455,26 @@ export default class ActiveRecord<T> extends Core {
 	 * @param boolean trigger
 	 * @return ActiveRecord
 	 */
-	public set(attributes: IAttributes = {}, options: IAttributes = {}, trigger: boolean = true): this {
-		// @ts-ignore
-		const possibleSetters = Object.getOwnPropertyDescriptors(this.__proto__);
+	public set(attributes: IAttributes = {}, _options: IAttributes = {}, trigger: boolean = true): this {
+		const possibleSetters = Object.getOwnPropertyDescriptors(Object.getPrototypeOf(this));
 
 		// Check if we have a data key
 		attributes = this.cleanData(attributes);
 
 		/*
-		 * Set key/value relationship on `attributes`, but also on class if it's an intended root property
-		 * @todo I forget why we added the setters bit
+		 * Mirror each attribute onto `this.attributes`, AND invoke the
+		 * matching class setter if one is defined on the prototype. The
+		 * setter pass lets subclasses run validation, normalization, or
+		 * derived-field logic when attributes are hydrated — e.g. a
+		 * `set name(v)` that trims whitespace before storing.
 		 */
 		for (const key in attributes) {
 			this.attributes[key] = attributes[key];
 
-			// Check for setters
+			// Check for setters — cast required because the property is
+			// dynamic and not part of the ActiveRecord type signature
 			if (possibleSetters && possibleSetters[key] && possibleSetters[key].set) {
-				this[key] = attributes[key];
+				(this as any)[key] = attributes[key];
 			}
 		}
 
@@ -833,11 +838,15 @@ export default class ActiveRecord<T> extends Core {
 		const self = this;
 
 		/**
+		 * Self-unsubscribing finish handler. References `callback` by name
+		 * rather than `this` so the function reference matches what was
+		 * passed to `on('finish', callback)` above.
+		 *
 		 * @return void
 		 */
-		function callback() {
+		function callback(): void {
 			self.unsetMockData('any');
-			self.off('finish', this);
+			self.off('finish', callback);
 		}
 
 		// On the next _fetch, this should be called regardless
@@ -850,13 +859,32 @@ export default class ActiveRecord<T> extends Core {
 	}
 
 	/**
-	 * Searches the remote server for an ID-based record
+	 * Fetch a single record by ID from the remote server. This is a network
+	 * operation — for in-memory lookup against a Collection's loaded models
+	 * use `Collection.get(id)` or `Collection.findWhere(...)` instead.
 	 *
-	 * @param number | string id
+	 * @param string | number id
+	 * @param IModelRequestQueryParams queryParams
+	 * @return Promise<ActiveRecord<T>>
+	 */
+	public async fetchById(
+		id: string | number,
+		queryParams: IModelRequestQueryParams = {}
+	): Promise<ActiveRecord<T>> {
+		return await this.fetch({ id }, queryParams).then((_request) => this);
+	}
+
+	/**
+	 * Alias for `fetchById()`. The name `find` is ambiguous — it sounds like
+	 * an in-memory lookup but actually performs a network request. New code
+	 * should prefer `fetchById()`. Kept for backwards compatibility.
+	 *
+	 * @param string | number id
+	 * @param IModelRequestQueryParams queryParams
 	 * @return Promise<ActiveRecord<T>>
 	 */
 	public async find(id: string | number, queryParams: IModelRequestQueryParams = {}): Promise<ActiveRecord<T>> {
-		return await this.fetch({ id }, queryParams).then((request) => this);
+		return await this.fetchById(id, queryParams);
 	}
 
 	/**
@@ -868,7 +896,8 @@ export default class ActiveRecord<T> extends Core {
 	 * @return Promise<HttpRequest>
 	 */
 	public async file(name: string, file: any, additionalFields: Record<string, any> = {}): Promise<HttpRequest> {
-		const url: string = this.builder.identifier(this.id).getUrl();
+		// Side effect: ensure the builder targets this record's id
+		this.builder.identifier(this.id);
 
 		// Use our helper function instead of direct FormData instantiation
 		const formData = createFormData();
@@ -951,9 +980,18 @@ export default class ActiveRecord<T> extends Core {
 	}
 
 	/**
+	 * Re-run the most recent fetch. No-op if no request has been made yet,
+	 * or if the retry attempt limit has been reached (resets after 1s).
+	 *
 	 * @return Promise<HttpRequest> | void
 	 */
 	public runLast(): Promise<HttpRequest> | void {
+		// Guard against being called before any fetch has happened
+		if (!this.lastRequest) {
+			console.warn('runLast() called but no previous request to replay');
+			return;
+		}
+
 		// Check if we can do this
 		if (++this.runLastAttempts >= this.runLastAttemptsMax) {
 			console.warn('Run last attempts expired');
@@ -1085,7 +1123,7 @@ export default class ActiveRecord<T> extends Core {
 		const activeRecord: any = this.referenceForModifiedEndpoint;
 
 		// Warnings
-		if (!activeRecord || (!activeRecord.id && this.modifiedEndpointPosition == 'before')) {
+		if (!activeRecord || (!activeRecord.id && this.modifiedEndpointPosition === 'before')) {
 			console.warn(
 				'Modified ActiveRecord [`' +
 					activeRecord.getEndpoint() +
@@ -1103,7 +1141,7 @@ export default class ActiveRecord<T> extends Core {
 		 * e.g. content / 1 / test
 		 * e.g. test / x / contentf
 		 */
-		return this.modifiedEndpointPosition == 'before'
+		return this.modifiedEndpointPosition === 'before'
 			? [activeRecord.getEndpoint(), activeRecord.id, this.getEndpoint()].join('/')
 			: [this.getEndpoint(), this.id, activeRecord.getEndpoint()].join('/');
 	}
@@ -1181,21 +1219,28 @@ export default class ActiveRecord<T> extends Core {
 	}
 
 	/**
+	 * Set a single request header. Accepts string, number, or null —
+	 * matching the loose internal storage shape used by setHeaders().
+	 *
 	 * @param string header
-	 * @param string value
+	 * @param string | number | null value
 	 * @return ActiveRecord
 	 */
-	public setHeader(header: string, value: string | null): ActiveRecord<T> {
+	public setHeader(header: string, value: null | number | string): ActiveRecord<T> {
 		this.headers[header] = value;
 
 		return this;
 	}
 
 	/**
-	 * @param Record<string, string> headers
+	 * Replace all headers in one call. Accepts the same loose value shape
+	 * as `setHeader` (string | number | null) — the underlying HTTP layer
+	 * coerces non-string values when serializing the request.
+	 *
+	 * @param Record<string, null | number | string> headers
 	 * @return ActiveRecord
 	 */
-	public setHeaders(headers: Record<string, string>): ActiveRecord<T> {
+	public setHeaders(headers: Record<string, null | number | string>): ActiveRecord<T> {
 		for (const k in headers) {
 			this.setHeader(k, headers[k]);
 		}
@@ -1321,12 +1366,13 @@ export default class ActiveRecord<T> extends Core {
 	}
 
 	/**
-	 * Function to call after setting a fetch
-	 * This is useful if we're doing callbacks from cached promises
+	 * Apply a fetched response to this record. Routes the parsed payload
+	 * through `add()` for collection POST responses, no-ops for DELETE,
+	 * and otherwise calls `set()` with the payload (unwrapping `dataKey`
+	 * if defined). Useful when replaying cached promise resolutions.
 	 *
-	 * @todo Have another look at this
 	 * @param IDispatcherEvent e
-	 * @param IAttribute options
+	 * @param IAttributes options
 	 * @return void
 	 */
 	public setAfterResponse(e: IDispatcherEvent, options: any = {}) {
@@ -1360,7 +1406,6 @@ export default class ActiveRecord<T> extends Core {
 
 	// endregion: Set Params
 
-	// @todo Update return
 	protected async _fetch(
 		options: IModelRequestOptions | null = {},
 		queryParams: IModelRequestQueryParams = {},
@@ -1450,7 +1495,7 @@ export default class ActiveRecord<T> extends Core {
 			this.loading = false;
 			return this.dispatch('error', e.detail);
 		});
-		request.on('finish', (e: IDispatcherEvent) => this.dispatch('finish'));
+		request.on('finish', (_e: IDispatcherEvent) => this.dispatch('finish'));
 		request.on('parse:after', (e: IDispatcherEvent) => this.FetchParseAfter(e, options || {}));
 		request.on('progress', (e: IDispatcherEvent) => this.FetchProgress(e));
 
@@ -1460,10 +1505,7 @@ export default class ActiveRecord<T> extends Core {
 		// Has fetched
 		this.hasFetched = true;
 
-		/*
-		 * Request (method, body headers)
-		 * @ts-ignore
-		 */
+		// Pass through to the underlying HTTP request
 		return request.fetch(
 			method,
 			Object.assign(body || {}, this.body),
@@ -1524,7 +1566,6 @@ export default class ActiveRecord<T> extends Core {
 	 * @return void
 	 */
 	protected FetchParseAfter(e: IDispatcherEvent, options: IAttributes = {}): void {
-		// @ts-ignore
 		const code: number = e.detail?.response?.status || 0;
 
 		// Only set for acceptable responses
@@ -1549,7 +1590,7 @@ export default class ActiveRecord<T> extends Core {
 	 * @param IDispatcherEvent e
 	 * @return void
 	 */
-	protected Handle_OnChange(e: IDispatcherEvent): void {
+	protected Handle_OnChange(_e: IDispatcherEvent): void {
 		let parent: any = this.parent;
 
 		// Update this key

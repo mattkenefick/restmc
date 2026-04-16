@@ -2,7 +2,7 @@ import ActiveRecord from './ActiveRecord.js';
 import CollectionIterator from './CollectionIterator.js';
 import HttpRequest from './Http/Request.js';
 import Model from './Model.js';
-import { IAttributes, ICollectionMeta, IPagination } from './Interfaces.js';
+import { IAttributes, ICollectionMeta, IPagination, ISortOptions, IWhereOptions } from './Interfaces.js';
 export default class Collection<GenericModel extends Model> extends ActiveRecord<Collection<GenericModel>> implements Iterable<GenericModel> {
     static paginator(collection: any): IPagination;
     static hydrate<T>(models?: Model[] | any, options?: object, trigger?: boolean): any;
@@ -32,6 +32,7 @@ export default class Collection<GenericModel extends Model> extends ActiveRecord
     delete(attributes?: any): Promise<HttpRequest>;
     each(callback: any): void;
     filter(predicate: any): GenericModel[];
+    filterAsCollection(predicate: (model: GenericModel, index: number, array: GenericModel[]) => boolean): Collection<GenericModel>;
     map(...params: any): any[];
     push(model: Model[] | Model | object, options?: object): Collection<GenericModel>;
     pop(): this;
@@ -41,16 +42,17 @@ export default class Collection<GenericModel extends Model> extends ActiveRecord
     shuffle(): this;
     reverse(): Collection<GenericModel>;
     slice(...params: any): GenericModel[];
+    sliceAsCollection(start?: number, end?: number): Collection<GenericModel>;
     unique(): this;
     get(query: GenericModel | number | string): Model | undefined;
     has(obj: GenericModel | number | string): boolean;
     at(index?: number): GenericModel;
     first(): GenericModel;
     last(): GenericModel;
-    where(json?: IAttributes, first?: boolean, fullMatch?: boolean, inPlace?: boolean): this | Collection<GenericModel> | GenericModel | null;
+    where(json?: IAttributes, first?: boolean | IWhereOptions, fullMatch?: boolean, inPlace?: boolean): this | Collection<GenericModel> | GenericModel | null;
     findWhere(attributes?: IAttributes): GenericModel;
     findByCid(cid: string): GenericModel;
-    sort(options?: IAttributes): Collection<GenericModel>;
+    sort(options?: ISortOptions): Collection<GenericModel>;
     pluck(attribute: string): any;
     values(filter?: (model: GenericModel, index: number) => boolean): CollectionIterator<GenericModel>;
     keys(filter?: (model: GenericModel, index: number) => boolean): CollectionIterator<GenericModel>;

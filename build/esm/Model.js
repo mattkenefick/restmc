@@ -41,7 +41,13 @@ class Model extends ActiveRecord_js_1.default {
         }
         for (key in attributes) {
             if (this.relationshipCache[key]) {
-                this.relationshipCache[key].set(attributes[key]);
+                const value = attributes[key];
+                if (value === null || value === undefined) {
+                    delete this.relationshipCache[key];
+                }
+                else {
+                    this.relationshipCache[key].set(value);
+                }
             }
         }
         this.dispatch('set', { attributes });
@@ -72,8 +78,8 @@ class Model extends ActiveRecord_js_1.default {
         if (this.relationshipCache[relationshipName]) {
             return this.relationshipCache[relationshipName];
         }
-        let content = this.getRelationship(relationshipName) || {};
-        let model = new relationshipClass(content);
+        const content = this.getRelationship(relationshipName) || {};
+        const model = new relationshipClass(content);
         model.parent = this;
         if (!model.id) {
             const camelRelationship = `${relationshipName}_id`;

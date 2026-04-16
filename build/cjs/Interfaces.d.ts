@@ -117,3 +117,8 @@ export interface ISortOptions {
     [key: string]: unknown;
     reverse?: boolean;
 }
+export interface IWhereOptions {
+    first?: boolean;
+    fullMatch?: boolean;
+    inPlace?: boolean;
+}

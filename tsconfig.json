@@ -10,8 +10,8 @@
         "lib": ["es2017", "dom"],
         "module": "commonjs",
         "moduleResolution": "node",
-        "noImplicitAny": false,
-        "noImplicitThis": false,
+        "noImplicitAny": true,
+        "noImplicitThis": true,
         "outDir": "build/esm",
         "paths": {
             "*": [
@@ -28,7 +28,6 @@
         "sourceMap": true,
         "strict": true,
         "strictNullChecks": true,
-        "suppressImplicitAnyIndexErrors": true,
         "target": "es6"
     },
     "exclude": [

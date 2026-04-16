@@ -1,16 +1,9 @@
-import axios, { AxiosError, AxiosResponse } from 'axios';
-import {
-	IAttributes,
-	IAxiosConfig,
-	IAxiosError,
-	IDispatchData,
-	IProgressEvent,
-	IRequestEvent,
-	IResponse,
-} from '../Interfaces.js';
 import Cache from '../Cache.js';
 import Core from '../Core.js';
 import RequestError from './RequestError.js';
+import axios, { AxiosError, AxiosResponse } from 'axios';
+import { IAttributes, IDispatchData, IProgressEvent, IRequestEvent } from '../Interfaces.js';
+import { compactObjectHash } from '../Utility.js';
 
 /**
  * The node-fetch module creates failures in things like NativeScript which
@@ -148,10 +141,8 @@ export default class Request extends Core {
 		this.dataKey = options.dataKey || this.dataKey;
 		this.withCredentials = options.withCredentials ?? true;
 
-		// Pass-through for dry-run enablement
-		// @ts-ignore allow arbitrary options merged by Core
+		// Pass-through for dry-run enablement (option carried by Core)
 		if (typeof (options as any).dryRun === 'boolean') {
-			// @ts-ignore
 			this.dryRun = (options as any).dryRun;
 		}
 
@@ -159,7 +150,12 @@ export default class Request extends Core {
 	}
 
 	/**
-	 * Generate a unique cache key for a request
+	 * Generate a unique cache key for a request.
+	 *
+	 * The Authorization header is hashed (not embedded in plaintext) and included
+	 * so that two users hitting the same URL with different bearer tokens do not
+	 * share a cache entry. Without this, User A's response could be served to
+	 * User B from the in-memory cache.
 	 *
 	 * @param IAttributes params
 	 * @return string
@@ -167,8 +163,16 @@ export default class Request extends Core {
 	private generateCacheKey(params: IAttributes): string {
 		const { method = 'GET', url = '', data = '', headers = {} } = params;
 		const serializedData = ['POST', 'PUT', 'PATCH'].includes(method.toUpperCase()) ? JSON.stringify(data) : '';
+		const authHash = headers['Authorization'] ? compactObjectHash(headers['Authorization']) : '';
 
-		return [method.toUpperCase(), url, serializedData, headers['Accept'] || '', headers['Content-Type'] || '']
+		return [
+			method.toUpperCase(),
+			url,
+			serializedData,
+			headers['Accept'] || '',
+			headers['Content-Type'] || '',
+			authHash,
+		]
 			.filter(Boolean)
 			.join('|');
 	}
@@ -310,6 +314,21 @@ export default class Request extends Core {
 		useCache: boolean,
 		ttl: number
 	): Promise<AxiosResponse<any>> {
+		// Mock fallback: ActiveRecord.mock() / setMockData('any', ...) parks
+		// a one-shot response under the literal key 'any'. Real cache keys
+		// are content hashes so they can never collide with this sentinel.
+		// Honor it before the normal cache lookup so callers don't have to
+		// know the generated key, and so it works regardless of useCache.
+		if (Request.cachedResponses.has('any')) {
+			const mockResponse = Request.cachedResponses.get('any');
+			this.dispatch('cache:hit', {
+				cacheKey: 'any',
+				response: mockResponse,
+			});
+
+			return mockResponse;
+		}
+
 		if (useCache && Request.cachedResponses.has(cacheKey)) {
 			const cachedResponse = Request.cachedResponses.get(cacheKey);
 			this.dispatch('cache:hit', {
@@ -394,11 +413,11 @@ export default class Request extends Core {
 	 * @return {any}
 	 */
 	public xhrFetch(url: string, params: any): any {
-		let xhr = new XMLHttpRequest();
+		const xhr = new XMLHttpRequest();
 		xhr.open(params.method, url);
 
 		// Set Headers
-		for (let key in params.headers) {
+		for (const key in params.headers) {
 			xhr.setRequestHeader(key, params.headers[key]);
 		}
 
@@ -478,12 +497,12 @@ export default class Request extends Core {
 	}
 
 	/**
-	 * Before parsing data
+	 * Before parsing data. Both JSON validity and HTTP error detection
+	 * are handled by axios upstream — error responses reject the promise
+	 * and never reach this hook, and JSON parsing happens in the axios
+	 * adapter before the response object is built.
 	 *
-	 * @todo Check if we have valid JSON
-	 * @todo Check if the request was an error
-	 *
-	 * @param e AxiosResponse<any>
+	 * @param response AxiosResponse<any>
 	 */
 	private beforeParse(response: AxiosResponse<any>): void {
 		// Trigger
@@ -507,7 +526,7 @@ export default class Request extends Core {
 		});
 
 		// Set data
-		if (response.status != 204) {
+		if (response.status !== 204) {
 			this.responseData = response.data;
 		}
 
@@ -566,7 +585,6 @@ export default class Request extends Core {
 			return;
 		}
 
-		const data: any = e.data;
 		const status: number = e.status;
 		const method: string = (e.config?.method || 'get').toLowerCase();
 

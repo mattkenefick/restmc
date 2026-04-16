@@ -1,5 +1,4 @@
 import ActiveRecord from './ActiveRecord.js';
-import Request from './Http/Request.js';
 import { IAttributes, IModelRequestOptions, IModelRequestQueryParams } from './Interfaces.js';
 export default class Model extends ActiveRecord<Model> {
     static hydrate<T>(attributes?: IAttributes, options?: IAttributes): Model;
@@ -10,7 +9,7 @@ export default class Model extends ActiveRecord<Model> {
     private relationshipCache;
     constructor(attributes?: IAttributes, options?: IAttributes);
     set(attributes?: IAttributes): this;
-    fetch(options?: IModelRequestOptions, queryParams?: IModelRequestQueryParams): Promise<Request>;
+    fetch(options?: IModelRequestOptions, queryParams?: IModelRequestQueryParams): Promise<import("./index.js").Request>;
     hasOne<T>(relationshipName: string, relationshipClass: any): T;
     hasMany<T>(relationshipName: string, relationshipClass: any): T;
     clearRelationship(relationshipName: string): this;

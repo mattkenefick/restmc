@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Request = exports.Model = exports.DispatcherEvent = exports.Dispatcher = exports.Core = exports.Collection = exports.Cache = exports.ActiveRecord = void 0;
+exports.Events = exports.RequestError = exports.Request = exports.Model = exports.DispatcherEvent = exports.Dispatcher = exports.Core = exports.Collection = exports.Cache = exports.ActiveRecord = void 0;
 var ActiveRecord_js_1 = require("./ActiveRecord.js");
 Object.defineProperty(exports, "ActiveRecord", { enumerable: true, get: function () { return ActiveRecord_js_1.default; } });
 var Cache_js_1 = require("./Cache.js");
@@ -17,4 +17,7 @@ var Model_js_1 = require("./Model.js");
 Object.defineProperty(exports, "Model", { enumerable: true, get: function () { return Model_js_1.default; } });
 var Request_js_1 = require("./Http/Request.js");
 Object.defineProperty(exports, "Request", { enumerable: true, get: function () { return Request_js_1.default; } });
+var RequestError_js_1 = require("./Http/RequestError.js");
+Object.defineProperty(exports, "RequestError", { enumerable: true, get: function () { return RequestError_js_1.default; } });
+exports.Events = require("./Enum/index.js");
 //# sourceMappingURL=index.js.map

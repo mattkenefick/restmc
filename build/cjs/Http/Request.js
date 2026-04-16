@@ -13,6 +13,7 @@ const axios_1 = require("axios");
 const Cache_js_1 = require("../Cache.js");
 const Core_js_1 = require("../Core.js");
 const RequestError_js_1 = require("./RequestError.js");
+const Utility_js_1 = require("../Utility.js");
 class Request extends Core_js_1.default {
     constructor(url = '', options = {}) {
         var _a;
@@ -42,7 +43,15 @@ class Request extends Core_js_1.default {
     generateCacheKey(params) {
         const { method = 'GET', url = '', data = '', headers = {} } = params;
         const serializedData = ['POST', 'PUT', 'PATCH'].includes(method.toUpperCase()) ? JSON.stringify(data) : '';
-        return [method.toUpperCase(), url, serializedData, headers['Accept'] || '', headers['Content-Type'] || '']
+        const authHash = headers['Authorization'] ? (0, Utility_js_1.compactObjectHash)(headers['Authorization']) : '';
+        return [
+            method.toUpperCase(),
+            url,
+            serializedData,
+            headers['Accept'] || '',
+            headers['Content-Type'] || '',
+            authHash,
+        ]
             .filter(Boolean)
             .join('|');
     }
@@ -128,6 +137,14 @@ class Request extends Core_js_1.default {
     }
     handleRequest(cacheKey, params, useCache, ttl) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (Request.cachedResponses.has('any')) {
+                const mockResponse = Request.cachedResponses.get('any');
+                this.dispatch('cache:hit', {
+                    cacheKey: 'any',
+                    response: mockResponse,
+                });
+                return mockResponse;
+            }
             if (useCache && Request.cachedResponses.has(cacheKey)) {
                 const cachedResponse = Request.cachedResponses.get(cacheKey);
                 this.dispatch('cache:hit', {
@@ -162,9 +179,9 @@ class Request extends Core_js_1.default {
         });
     }
     xhrFetch(url, params) {
-        let xhr = new XMLHttpRequest();
+        const xhr = new XMLHttpRequest();
         xhr.open(params.method, url);
-        for (let key in params.headers) {
+        for (const key in params.headers) {
             xhr.setRequestHeader(key, params.headers[key]);
         }
         xhr.withCredentials = this.withCredentials;
@@ -217,7 +234,7 @@ class Request extends Core_js_1.default {
             request: this,
             response: response,
         });
-        if (response.status != 204) {
+        if (response.status !== 204) {
             this.responseData = response.data;
         }
         this.dispatch('parse', {
@@ -252,7 +269,6 @@ class Request extends Core_js_1.default {
         if (e === undefined) {
             return;
         }
-        const data = e.data;
         const status = e.status;
         const method = (((_a = e.config) === null || _a === void 0 ? void 0 : _a.method) || 'get').toLowerCase();
         this.status = status;

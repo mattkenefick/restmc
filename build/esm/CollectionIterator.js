@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class CollectionIterator {
-    constructor(collection, kind = 0, filter = (model) => true) {
+    constructor(collection, kind = 0, filter = (_model) => true) {
         this.index = 0;
         this.kind = CollectionIterator.ITERATOR_VALUES;
         this.collection = collection;

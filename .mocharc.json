@@ -1,0 +1,5 @@
+{
+	"extension": ["ts"],
+	"require": ["test/register.js", "ts-node/register/transpile-only"],
+	"spec": ["test/unit/**/*.spec.ts"]
+}

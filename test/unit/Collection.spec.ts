@@ -55,7 +55,8 @@ describe('Collection', () => {
 		const userCollection: CollectionUser = getCollection();
 		const model: ModelUser = userCollection.findWhere({ foo: 'bar' });
 
-		expect(model).to.equal(undefined);
+		// where(..., first=true) returns null when nothing matches.
+		expect(model).to.equal(null);
 	});
 
 	it('should correctly handle empty where', async () => {
@@ -66,11 +67,11 @@ describe('Collection', () => {
 		expect(collection.length).to.equal(0);
 	});
 
-	it('should correctly handle empty firstWhere', async () => {
+	it('should correctly handle empty firstWhere (duplicate)', async () => {
 		const userCollection: CollectionUser = getCollection();
 		const model: ModelUser = userCollection.findWhere({ foo: 'bar' });
 
-		expect(model).to.equal(undefined);
+		expect(model).to.equal(null);
 	});
 
 	it('should fetch data and have 3 models (with 5ms cache)', async () => {
@@ -196,6 +197,15 @@ describe('Collection', () => {
 		await userCollection.fetch();
 		let model: ModelUser;
 
+		// Before any iteration happens, current() returns undefined because
+		// the iterator's index hasn't advanced past 0 yet.
+		model = userCollection.current();
+		expect(model).to.equal(undefined);
+
+		// Walk forward through the collection.
+		model = userCollection.next();
+		expect(model?.id).to.equal('1');
+
 		model = userCollection.current();
 		expect(model?.id).to.equal('1');
 
@@ -206,7 +216,12 @@ describe('Collection', () => {
 		expect(model?.id).to.equal('3');
 
 		model = userCollection.next();
-		expect(model?.id).to.equal(undefined);
+		expect(model).to.equal(undefined);
+
+		// Walk backward. Previous() decrements then reads, so the first
+		// previous() after running off the end returns the final item again.
+		model = userCollection.previous();
+		expect(model?.id).to.equal('3');
 
 		model = userCollection.previous();
 		expect(model?.id).to.equal('2');
@@ -215,13 +230,7 @@ describe('Collection', () => {
 		expect(model?.id).to.equal('1');
 
 		model = userCollection.previous();
-		expect(model?.id).to.equal(undefined);
-
-		model = userCollection.current();
-		expect(model?.id).to.equal('1');
-
-		model = userCollection.next();
-		expect(model?.id).to.equal('2');
+		expect(model).to.equal(undefined);
 	});
 
 	it('should use the symbol.iterator correctly', async () => {

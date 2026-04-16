@@ -81,8 +81,8 @@ class Collection extends ActiveRecord_js_1.default {
     }
     fetchNext(append = false) {
         return __awaiter(this, void 0, void 0, function* () {
-            let options = Object.assign({}, this.lastRequest.options);
-            let qp = Object.assign({}, this.builder.queryParams, this.lastRequest.queryParams);
+            const options = Object.assign({}, this.lastRequest.options);
+            const qp = Object.assign({}, this.builder.queryParams, this.lastRequest.queryParams);
             qp.page = parseFloat(qp.page) + 1;
             options.merge = append;
             return yield this._fetch(options, qp, this.lastRequest.method, this.lastRequest.body, this.lastRequest.headers);
@@ -90,8 +90,8 @@ class Collection extends ActiveRecord_js_1.default {
     }
     fetchPrevious(append = false) {
         return __awaiter(this, void 0, void 0, function* () {
-            let options = Object.assign({}, this.lastRequest.options);
-            let qp = Object.assign({}, this.builder.queryParams, this.lastRequest.queryParams);
+            const options = Object.assign({}, this.lastRequest.options);
+            const qp = Object.assign({}, this.builder.queryParams, this.lastRequest.queryParams);
             qp.page = Math.max(1, parseFloat(qp.page) - 1);
             options.merge = append;
             return yield this._fetch(options, qp, this.lastRequest.method, this.lastRequest.body, this.lastRequest.headers);
@@ -112,10 +112,9 @@ class Collection extends ActiveRecord_js_1.default {
         if (data == null) {
             return this;
         }
-        let paramGroup = [];
+        const paramGroup = [];
         data = this.cleanData(data);
         const incomingItems = Array.isArray(data) ? data : [data];
-        const newModels = [];
         for (const item of incomingItems) {
             let model;
             if (item.isModel) {
@@ -165,7 +164,7 @@ class Collection extends ActiveRecord_js_1.default {
             i = 0;
             while (i < this.models.length) {
                 trigger && this.dispatch('remove:before', { model: this.models[i] });
-                if (this.models[i] == items[ii]) {
+                if (this.models[i] === items[ii]) {
                     this.models.splice(i, 1);
                 }
                 else {
@@ -178,7 +177,7 @@ class Collection extends ActiveRecord_js_1.default {
         return this;
     }
     set(model, options = {}, trigger = true) {
-        if (!options || (options && options.merge != true)) {
+        if (!options || (options && options.merge !== true)) {
             this.reset();
         }
         this.add(model, options, trigger);
@@ -208,6 +207,11 @@ class Collection extends ActiveRecord_js_1.default {
     }
     filter(predicate) {
         return this.models.filter(predicate);
+    }
+    filterAsCollection(predicate) {
+        const matches = this.models.filter(predicate);
+        const constructor = this.constructor;
+        return constructor.hydrate(matches, Object.assign({ parent: this.parent }, this.options), false);
     }
     map(...params) {
         return Array.prototype.map.apply(this.models, params);
@@ -243,6 +247,11 @@ class Collection extends ActiveRecord_js_1.default {
     slice(...params) {
         return Array.prototype.slice.apply(this.models, params);
     }
+    sliceAsCollection(start, end) {
+        const slice = this.models.slice(start, end);
+        const constructor = this.constructor;
+        return constructor.hydrate(slice, Object.assign({ parent: this.parent }, this.options), false);
+    }
     unique() {
         this.models = this.models.filter((value, index, self) => self.indexOf(value) === index);
         return this;
@@ -273,7 +282,20 @@ class Collection extends ActiveRecord_js_1.default {
         return this.at(this.length - 1);
     }
     where(json = {}, first, fullMatch, inPlace) {
-        const filterInPlace = typeof inPlace === 'boolean' ? inPlace : !!this.inPlaceWhere;
+        let firstFlag;
+        let fullMatchFlag;
+        let inPlaceFlag;
+        if (typeof first === 'object' && first !== null) {
+            firstFlag = first.first;
+            fullMatchFlag = first.fullMatch;
+            inPlaceFlag = first.inPlace;
+        }
+        else {
+            firstFlag = first;
+            fullMatchFlag = fullMatch;
+            inPlaceFlag = inPlace;
+        }
+        const filterInPlace = typeof inPlaceFlag === 'boolean' ? inPlaceFlag : !!this.inPlaceWhere;
         const searchKeys = Object.keys(json);
         const searchKeyCount = searchKeys.length;
         const filteredModels = [];
@@ -285,12 +307,12 @@ class Collection extends ActiveRecord_js_1.default {
                     matchCount++;
                 }
             }
-            const shouldInclude = fullMatch ? matchCount === searchKeyCount : matchCount > 0;
+            const shouldInclude = fullMatchFlag ? matchCount === searchKeyCount : matchCount > 0;
             if (shouldInclude) {
                 filteredModels.push(model);
             }
         }
-        if (first) {
+        if (firstFlag) {
             return filteredModels.length > 0 ? filteredModels[0] : null;
         }
         if (filterInPlace) {
@@ -312,12 +334,10 @@ class Collection extends ActiveRecord_js_1.default {
         return this.findWhere({ cid });
     }
     sort(options = {}) {
-        let key = this.sortKey;
-        if (options !== null) {
-            key = options.key || key;
-        }
+        const key = options.key || this.sortKey;
+        const direction = options.reverse ? -1 : 1;
         this.models = this.models.sort((a, b) => {
-            return options && options.reverse ? (a.attr(key) - b.attr(key)) * -1 : (a.attr(key) - b.attr(key)) * 1;
+            return (a.attr(key) - b.attr(key)) * direction;
         });
         return this;
     }

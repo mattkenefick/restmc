@@ -1,6 +1,5 @@
 import ActiveRecord from './ActiveRecord.js';
 import Collection from './Collection.js';
-import Request from './Http/Request.js';
 import { IAttributes, IModelRequestOptions, IModelRequestQueryParams } from './Interfaces.js';
 
 /**
@@ -14,6 +13,7 @@ export default class Model extends ActiveRecord<Model> {
 	 * @param IAttributes options
 	 * @return Model
 	 */
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	public static hydrate<T>(attributes: IAttributes = {}, options: IAttributes = {}): Model {
 		// Instantiate model
 		const model = new this(options);
@@ -103,8 +103,18 @@ export default class Model extends ActiveRecord<Model> {
 	}
 
 	/**
-	 * @note Unsure if we should delete existing relationships
-	 * or `set` on them. I think we have failures with the `set`
+	 * Set attributes on the model and propagate updates to any cached
+	 * relationships whose keys appear in the incoming attributes.
+	 *
+	 * Relationship cache trade-off: we deliberately do NOT clear the entire
+	 * relationship cache on every set() — doing so breaks object identity
+	 * for callers holding references to `model.hasOne('foo')` or
+	 * `model.hasMany('bars')`. Instead, we update in-place when the new
+	 * attributes carry data for a cached relationship, and we drop the
+	 * cache entry only when the new value is explicitly null/undefined
+	 * (an unambiguous "this relationship is gone" signal). Callers who
+	 * need to force invalidation for other reasons should use
+	 * `clearRelationship(name)` directly.
 	 *
 	 * @param IAttributes attributes
 	 * @return Model
@@ -145,12 +155,19 @@ export default class Model extends ActiveRecord<Model> {
 			);
 		}
 
-		// Update any relationship caches that exist
-		// Don't delete them, as to save object references
-		// How does this work if it's a { data: { ... } }?
+		// Update any relationship caches that exist. If the new value is
+		// explicitly null/undefined, drop the cached entry so the next
+		// hasOne/hasMany rebuilds from the now-empty data — otherwise the
+		// stale cached relationship would keep serving old data.
 		for (key in attributes) {
 			if (this.relationshipCache[key]) {
-				this.relationshipCache[key].set(attributes[key]);
+				const value: any = attributes[key];
+
+				if (value === null || value === undefined) {
+					delete this.relationshipCache[key];
+				} else {
+					this.relationshipCache[key].set(value);
+				}
 			}
 		}
 
@@ -209,8 +226,8 @@ export default class Model extends ActiveRecord<Model> {
 
 		// Create new model using data from this object
 		// e.g. new ModelContent(this.attr('review'))
-		let content = this.getRelationship(relationshipName) || {};
-		let model = new relationshipClass(content);
+		const content = this.getRelationship(relationshipName) || {};
+		const model = new relationshipClass(content);
 
 		// Reference this model as parent
 		model.parent = this;
@@ -253,7 +270,7 @@ export default class Model extends ActiveRecord<Model> {
 
 		const dataKey: string | undefined = new relationshipClass().dataKey;
 		const content: Collection<any> | Model | undefined = this.getRelationship(relationshipName);
-		const models: any = (dataKey && content ? content[dataKey] : null) || content;
+		const models: any = (dataKey && content ? (content as any)[dataKey] : null) || content;
 
 		// mk: Hydrating the models here then setting the modified endpoint
 		// wont pass the modified endpoint down to the children.
@@ -299,7 +316,7 @@ export default class Model extends ActiveRecord<Model> {
 
 		// Relationship is buried
 		else {
-			return (this.attr(Model.relationshipKey) || {})[relationshipName];
+			return ((this.attr(Model.relationshipKey) as any) || {})[relationshipName];
 		}
 	}
 
