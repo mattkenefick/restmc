@@ -818,12 +818,20 @@ export default class Collection<GenericModel extends Model>
 	 * Sort models in place by an attribute key. Defaults to the collection's
 	 * `sortKey` (typically 'id'). Pass `{ key, reverse }` to override.
 	 *
-	 *     collection.sort();                          // by sortKey, ascending
-	 *     collection.sort({ key: 'score' });          // by score, ascending
+	 *     collection.sort();                                 // by sortKey, ascending
+	 *     collection.sort({ key: 'score' });                 // by score, ascending
 	 *     collection.sort({ key: 'score', reverse: true });  // descending
+	 *     collection.sort({ key: 'name' });                  // strings: localeCompare
+	 *     collection.sort({ key: 'created_at' });            // ISO dates / Date objects
 	 *
-	 * Note: comparison uses numeric subtraction so this works cleanly for
-	 * numeric attributes. String/date attributes will not sort correctly.
+	 * Comparison auto-detects the value type:
+	 *   - numbers  -> numeric subtraction
+	 *   - Dates or ISO-ish date strings -> compared by timestamp
+	 *   - strings  -> localeCompare (case-insensitive, locale-aware)
+	 *   - booleans -> false < true
+	 *
+	 * Nullish values (null/undefined/'') always sort to the end regardless
+	 * of `reverse`, since "missing" isn't meaningfully "bigger" or "smaller".
 	 *
 	 * @param ISortOptions options
 	 * @return Collection
@@ -833,10 +841,79 @@ export default class Collection<GenericModel extends Model>
 		const direction: number = options.reverse ? -1 : 1;
 
 		this.models = this.models.sort((a: any, b: any) => {
-			return (a.attr(key) - b.attr(key)) * direction;
+			const aVal: any = a.attr(key);
+			const bVal: any = b.attr(key);
+
+			// Pin nullish values to the end regardless of direction. Doing
+			// this before applying direction is intentional — "missing"
+			// shouldn't flip to "first" just because the caller reversed.
+			const aNullish: boolean = aVal === null || aVal === undefined || aVal === '';
+			const bNullish: boolean = bVal === null || bVal === undefined || bVal === '';
+
+			if (aNullish && bNullish) {
+				return 0;
+			}
+			if (aNullish) {
+				return 1;
+			}
+			if (bNullish) {
+				return -1;
+			}
+
+			return this.compareAttributes(aVal, bVal) * direction;
 		});
 
 		return this;
+	}
+
+	/**
+	 * Type-aware comparator for sort(). Nullish handling is done by the
+	 * caller (sort()) so that reverse doesn't flip "missing" to "first".
+	 *
+	 * @param any a
+	 * @param any b
+	 * @return number
+	 */
+	protected compareAttributes(a: any, b: any): number {
+		// Date objects -> timestamps
+		if (a instanceof Date || b instanceof Date) {
+			return (a instanceof Date ? a.getTime() : +new Date(a)) - (b instanceof Date ? b.getTime() : +new Date(b));
+		}
+
+		// Numeric (including numeric strings like "42")
+		if (typeof a === 'number' && typeof b === 'number') {
+			return a - b;
+		}
+
+		// Booleans: false (0) < true (1)
+		if (typeof a === 'boolean' && typeof b === 'boolean') {
+			return (a ? 1 : 0) - (b ? 1 : 0);
+		}
+
+		// Strings: detect ISO-ish date strings and compare as timestamps so
+		// "2026-01-02" sorts after "2026-01-01" even across month boundaries.
+		if (typeof a === 'string' && typeof b === 'string') {
+			if (this.isDateLikeString(a) && this.isDateLikeString(b)) {
+				return +new Date(a) - +new Date(b);
+			}
+
+			return a.localeCompare(b, undefined, { sensitivity: 'base' });
+		}
+
+		// Mixed types fall back to coerced numeric comparison, which is the
+		// legacy behavior — better than throwing on unexpected input.
+		return Number(a) - Number(b);
+	}
+
+	/**
+	 * Cheap check for "looks like an ISO-ish date string" without pulling
+	 * in a parser. Matches YYYY-MM-DD and YYYY-MM-DDTHH:MM:SS(...) forms.
+	 *
+	 * @param string value
+	 * @return boolean
+	 */
+	protected isDateLikeString(value: string): boolean {
+		return /^\d{4}-\d{2}-\d{2}(T|\s|$)/.test(value);
 	}
 
 	/**

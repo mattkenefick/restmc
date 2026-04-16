@@ -182,6 +182,154 @@ describe('Collection.Features', () => {
 			expect(collection.at(0).attr('score')).to.equal(50);
 			expect(collection.last().attr('score')).to.equal(20);
 		});
+
+		it('should sort strings alphabetically via localeCompare', () => {
+			const collection: CollectionUser = hydrate();
+
+			collection.sort({ key: 'first_name' });
+
+			expect(collection.pluck('first_name')).to.eql([
+				'ashley',
+				'briana',
+				'charlotte',
+				'danielle',
+			]);
+		});
+
+		it('should sort strings case-insensitively', () => {
+			const collection: CollectionUser = CollectionUser.hydrate([
+				{ first_name: 'banana', id: 1 },
+				{ first_name: 'Apple', id: 2 },
+				{ first_name: 'cherry', id: 3 },
+			]) as CollectionUser;
+
+			collection.sort({ key: 'first_name' });
+
+			expect(collection.pluck('first_name')).to.eql(['Apple', 'banana', 'cherry']);
+		});
+
+		it('should sort strings in reverse', () => {
+			const collection: CollectionUser = hydrate();
+
+			collection.sort({ key: 'first_name', reverse: true });
+
+			expect(collection.at(0).attr('first_name')).to.equal('danielle');
+			expect(collection.last().attr('first_name')).to.equal('ashley');
+		});
+
+		it('should sort ISO date strings chronologically', () => {
+			const collection: CollectionUser = CollectionUser.hydrate([
+				{ created_at: '2026-03-10', id: 1 },
+				{ created_at: '2026-01-02', id: 2 },
+				{ created_at: '2026-02-28', id: 3 },
+			]) as CollectionUser;
+
+			collection.sort({ key: 'created_at' });
+
+			expect(collection.pluck('created_at')).to.eql([
+				'2026-01-02',
+				'2026-02-28',
+				'2026-03-10',
+			]);
+		});
+
+		it('should sort ISO datetime strings chronologically', () => {
+			const collection: CollectionUser = CollectionUser.hydrate([
+				{ created_at: '2026-04-16 02:10:13', id: 1 },
+				{ created_at: '2026-04-15 23:48:24', id: 2 },
+				{ created_at: '2026-04-16 01:00:00', id: 3 },
+			]) as CollectionUser;
+
+			collection.sort({ key: 'created_at' });
+
+			const firstIds: any[] = collection.pluck('id');
+			expect(firstIds).to.eql([2, 3, 1]);
+		});
+
+		it('should sort Date instances chronologically', () => {
+			const collection: CollectionUser = CollectionUser.hydrate([
+				{ at: new Date('2026-03-10T00:00:00Z'), id: 1 },
+				{ at: new Date('2026-01-02T00:00:00Z'), id: 2 },
+				{ at: new Date('2026-02-28T00:00:00Z'), id: 3 },
+			]) as CollectionUser;
+
+			collection.sort({ key: 'at' });
+
+			expect(collection.pluck('id')).to.eql([2, 3, 1]);
+		});
+
+		it('should sort booleans with false before true', () => {
+			const collection: CollectionUser = CollectionUser.hydrate([
+				{ active: true, id: 1 },
+				{ active: false, id: 2 },
+				{ active: true, id: 3 },
+				{ active: false, id: 4 },
+			]) as CollectionUser;
+
+			collection.sort({ key: 'active' });
+
+			expect(collection.at(0).attr('active')).to.equal(false);
+			expect(collection.last().attr('active')).to.equal(true);
+		});
+
+		it('should pin nullish values to the end in ascending sort', () => {
+			const collection: CollectionUser = CollectionUser.hydrate([
+				{ id: 1, score: 50 },
+				{ id: 2, score: null },
+				{ id: 3, score: 20 },
+				{ id: 4, score: undefined },
+				{ id: 5, score: 30 },
+			]) as CollectionUser;
+
+			collection.sort({ key: 'score' });
+
+			// First three should be sorted scores ascending; last two nullish
+			expect(collection.at(0).attr('score')).to.equal(20);
+			expect(collection.at(1).attr('score')).to.equal(30);
+			expect(collection.at(2).attr('score')).to.equal(50);
+			expect(collection.at(3).attr('score') == null).to.equal(true);
+			expect(collection.at(4).attr('score') == null).to.equal(true);
+		});
+
+		it('should keep nullish values pinned to the end even under reverse', () => {
+			const collection: CollectionUser = CollectionUser.hydrate([
+				{ id: 1, score: 50 },
+				{ id: 2, score: null },
+				{ id: 3, score: 20 },
+			]) as CollectionUser;
+
+			collection.sort({ key: 'score', reverse: true });
+
+			expect(collection.at(0).attr('score')).to.equal(50);
+			expect(collection.at(1).attr('score')).to.equal(20);
+			expect(collection.at(2).attr('score')).to.equal(null);
+		});
+
+		it('should treat empty strings as nullish and pin them to the end', () => {
+			const collection: CollectionUser = CollectionUser.hydrate([
+				{ first_name: 'banana', id: 1 },
+				{ first_name: '', id: 2 },
+				{ first_name: 'apple', id: 3 },
+			]) as CollectionUser;
+
+			collection.sort({ key: 'first_name' });
+
+			expect(collection.at(0).attr('first_name')).to.equal('apple');
+			expect(collection.at(1).attr('first_name')).to.equal('banana');
+			expect(collection.at(2).attr('first_name')).to.equal('');
+		});
+
+		it('should fall back to sortKey when no options are passed', () => {
+			const collection: CollectionUser = CollectionUser.hydrate([
+				{ id: 3 },
+				{ id: 1 },
+				{ id: 2 },
+			]) as CollectionUser;
+
+			collection.sort();
+
+			expect(collection.pluck('id')).to.eql([1, 2, 3]);
+		});
 	});
 
 	describe('lookup & query', () => {

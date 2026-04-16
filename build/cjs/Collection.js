@@ -337,9 +337,43 @@ class Collection extends ActiveRecord_js_1.default {
         const key = options.key || this.sortKey;
         const direction = options.reverse ? -1 : 1;
         this.models = this.models.sort((a, b) => {
-            return (a.attr(key) - b.attr(key)) * direction;
+            const aVal = a.attr(key);
+            const bVal = b.attr(key);
+            const aNullish = aVal === null || aVal === undefined || aVal === '';
+            const bNullish = bVal === null || bVal === undefined || bVal === '';
+            if (aNullish && bNullish) {
+                return 0;
+            }
+            if (aNullish) {
+                return 1;
+            }
+            if (bNullish) {
+                return -1;
+            }
+            return this.compareAttributes(aVal, bVal) * direction;
         });
         return this;
+    }
+    compareAttributes(a, b) {
+        if (a instanceof Date || b instanceof Date) {
+            return (a instanceof Date ? a.getTime() : +new Date(a)) - (b instanceof Date ? b.getTime() : +new Date(b));
+        }
+        if (typeof a === 'number' && typeof b === 'number') {
+            return a - b;
+        }
+        if (typeof a === 'boolean' && typeof b === 'boolean') {
+            return (a ? 1 : 0) - (b ? 1 : 0);
+        }
+        if (typeof a === 'string' && typeof b === 'string') {
+            if (this.isDateLikeString(a) && this.isDateLikeString(b)) {
+                return +new Date(a) - +new Date(b);
+            }
+            return a.localeCompare(b, undefined, { sensitivity: 'base' });
+        }
+        return Number(a) - Number(b);
+    }
+    isDateLikeString(value) {
+        return /^\d{4}-\d{2}-\d{2}(T|\s|$)/.test(value);
     }
     pluck(attribute) {
         return this.models.map((model) => model.attr(attribute));

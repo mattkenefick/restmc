@@ -53,6 +53,8 @@ export default class Collection<GenericModel extends Model> extends ActiveRecord
     findWhere(attributes?: IAttributes): GenericModel;
     findByCid(cid: string): GenericModel;
     sort(options?: ISortOptions): Collection<GenericModel>;
+    protected compareAttributes(a: any, b: any): number;
+    protected isDateLikeString(value: string): boolean;
     pluck(attribute: string): any;
     values(filter?: (model: GenericModel, index: number) => boolean): CollectionIterator<GenericModel>;
     keys(filter?: (model: GenericModel, index: number) => boolean): CollectionIterator<GenericModel>;

@@ -9,10 +9,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const axios_1 = require("axios");
 const Cache_js_1 = require("../Cache.js");
 const Core_js_1 = require("../Core.js");
 const RequestError_js_1 = require("./RequestError.js");
+const axios_1 = require("axios");
 const Utility_js_1 = require("../Utility.js");
 class Request extends Core_js_1.default {
     constructor(url = '', options = {}) {
