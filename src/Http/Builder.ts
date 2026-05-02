@@ -1,6 +1,20 @@
 import ActiveRecord from '../ActiveRecord.js';
 
 /**
+ * Off-instance storage for the back-reference to the owning ActiveRecord.
+ *
+ * `model.builder.activeRecord === model` forms a reference cycle. Vue 2's
+ * mergeData walks object graphs via Reflect.ownKeys (which sees every own
+ * property regardless of enumerability) and has no cycle detection — so a
+ * model reachable from a Vue component's data will blow the call stack
+ * during option merging. Holding the back-reference in a module-level
+ * WeakMap removes it from the instance entirely so Vue never traverses it.
+ *
+ * @type WeakMap<Builder<any>, ActiveRecord<any>>
+ */
+const _activeRecords: WeakMap<Builder<any>, ActiveRecord<any>> = new WeakMap();
+
+/**
  * @author Matt Kenefick <matt@polymermallard.com>
  * @package Http
  * @project RestMC
@@ -39,11 +53,23 @@ export default class Builder<T> {
 	public queryParams: any = {};
 
 	/**
-	 * Reference to ActiveRecord (Model/Collection) we're building for
+	 * Reference to ActiveRecord (Model/Collection) we're building for.
+	 * Backed by a module-level WeakMap rather than an own property so the
+	 * model ↔ builder cycle is invisible to Vue 2's mergeData/observe.
 	 *
-	 * @type ActiveRecord
+	 * @return ActiveRecord<T>
 	 */
-	protected activeRecord: ActiveRecord<T>;
+	protected get activeRecord(): ActiveRecord<T> {
+		return _activeRecords.get(this) as ActiveRecord<T>;
+	}
+
+	/**
+	 * @param ActiveRecord<T> value
+	 * @return void
+	 */
+	protected set activeRecord(value: ActiveRecord<T>) {
+		_activeRecords.set(this, value);
+	}
 
 	/**
 	 * @param ActiveRecord activeRecord

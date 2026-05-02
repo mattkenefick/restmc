@@ -5,7 +5,8 @@ export default class Builder<T> {
     includeJoinBy: string;
     includeKey: string;
     queryParams: any;
-    protected activeRecord: ActiveRecord<T>;
+    protected get activeRecord(): ActiveRecord<T>;
+    protected set activeRecord(value: ActiveRecord<T>);
     constructor(activeRecord: ActiveRecord<T>);
     getUrl(): string;
     getBaseUrl(): string;

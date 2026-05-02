@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const _activeRecords = new WeakMap();
 class Builder {
     constructor(activeRecord) {
         this.id = '';
@@ -8,6 +9,12 @@ class Builder {
         this.includeKey = 'include';
         this.queryParams = {};
         this.activeRecord = activeRecord;
+    }
+    get activeRecord() {
+        return _activeRecords.get(this);
+    }
+    set activeRecord(value) {
+        _activeRecords.set(this, value);
     }
     getUrl() {
         var _a, _b, _c;
