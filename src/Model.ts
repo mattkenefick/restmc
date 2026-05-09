@@ -9,6 +9,18 @@ import { IAttributes, IModelRequestOptions, IModelRequestQueryParams } from './I
  */
 export default class Model extends ActiveRecord<Model> {
 	/**
+	 * Tag the instance so consumers (notably Vue 2's `isPlainObject`, which
+	 * is just a `Object.prototype.toString` check) don't mistake a Model for
+	 * a plain object and try to deep-merge or deep-observe it. Without this,
+	 * the parent/collection back-references form cycles that crash mergeData.
+	 *
+	 * @return string
+	 */
+	public get [Symbol.toStringTag](): string {
+		return 'Model';
+	}
+
+	/**
 	 * @param IAttributes attributes
 	 * @param IAttributes options
 	 * @return Model

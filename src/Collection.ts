@@ -28,6 +28,18 @@ export default class Collection<GenericModel extends Model>
 	implements Iterable<GenericModel>
 {
 	/**
+	 * Tag the instance so consumers (notably Vue 2's `isPlainObject`, which
+	 * is just a `Object.prototype.toString` check) don't mistake a Collection
+	 * for a plain object and try to deep-merge or deep-observe it. Without
+	 * this, the parent/model back-references form cycles that crash mergeData.
+	 *
+	 * @return string
+	 */
+	public get [Symbol.toStringTag](): string {
+		return 'Collection';
+	}
+
+	/**
 	 * This static function could be overridden globally depending on the
 	 * structure of your API. By default, we assume it's within ._meta
 	 *
@@ -739,8 +751,7 @@ export default class Collection<GenericModel extends Model>
 			inPlaceFlag = inPlace;
 		}
 
-		const filterInPlace: boolean =
-			typeof inPlaceFlag === 'boolean' ? inPlaceFlag : !!(this as any).inPlaceWhere;
+		const filterInPlace: boolean = typeof inPlaceFlag === 'boolean' ? inPlaceFlag : !!(this as any).inPlaceWhere;
 
 		const searchKeys: string[] = Object.keys(json);
 		const searchKeyCount: number = searchKeys.length;

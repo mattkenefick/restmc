@@ -19,6 +19,9 @@ class Model extends ActiveRecord_js_1.default {
         this.set(attributes);
         this.setOptions(options);
     }
+    get [Symbol.toStringTag]() {
+        return 'Model';
+    }
     static hydrate(attributes = {}, options = {}) {
         const model = new this(options);
         model.set(attributes);
