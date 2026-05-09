@@ -4,7 +4,6 @@ import HttpRequest from './Http/Request.js';
 import Model from './Model.js';
 import { IAttributes, ICollectionMeta, IPagination, ISortOptions, IWhereOptions } from './Interfaces.js';
 export default class Collection<GenericModel extends Model> extends ActiveRecord<Collection<GenericModel>> implements Iterable<GenericModel> {
-    get [Symbol.toStringTag](): string;
     static paginator(collection: any): IPagination;
     static hydrate<T>(models?: Model[] | any, options?: object, trigger?: boolean): any;
     protected get isCollection(): boolean;

@@ -33,11 +33,13 @@ export default class Collection<GenericModel extends Model>
 	 * for a plain object and try to deep-merge or deep-observe it. Without
 	 * this, the parent/model back-references form cycles that crash mergeData.
 	 *
+	 * mk: REMOVING BECAUSE THIS BROKE ALL VUE REACTIVITY
+	 *
 	 * @return string
 	 */
-	public get [Symbol.toStringTag](): string {
-		return 'Collection';
-	}
+	// public get [Symbol.toStringTag](): string {
+	// 	return 'Collection';
+	// }
 
 	/**
 	 * This static function could be overridden globally depending on the

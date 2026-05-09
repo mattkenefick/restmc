@@ -14,11 +14,13 @@ export default class Model extends ActiveRecord<Model> {
 	 * a plain object and try to deep-merge or deep-observe it. Without this,
 	 * the parent/collection back-references form cycles that crash mergeData.
 	 *
+	 * mk: REMOVING BECAUSE THIS BROKE ALL VUE REACTIVITY
+	 *
 	 * @return string
 	 */
-	public get [Symbol.toStringTag](): string {
-		return 'Model';
-	}
+	// public get [Symbol.toStringTag](): string {
+	// 	return 'Model';
+	// }
 
 	/**
 	 * @param IAttributes attributes

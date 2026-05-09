@@ -1,7 +1,6 @@
 import ActiveRecord from './ActiveRecord.js';
 import { IAttributes, IModelRequestOptions, IModelRequestQueryParams } from './Interfaces.js';
 export default class Model extends ActiveRecord<Model> {
-    get [Symbol.toStringTag](): string;
     static hydrate<T>(attributes?: IAttributes, options?: IAttributes): Model;
     static relationshipKey: string | null;
     static useDescendingRelationships: boolean;

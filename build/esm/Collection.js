@@ -36,9 +36,6 @@ class Collection extends ActiveRecord_js_1.default {
             this.atRelationship = options.atRelationship;
         }
     }
-    get [Symbol.toStringTag]() {
-        return 'Collection';
-    }
     static paginator(collection) {
         return collection._meta.pagination;
     }
