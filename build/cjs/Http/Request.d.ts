@@ -6,6 +6,8 @@ export default class Request extends Core {
     dryRun: boolean;
     static cachedResponses: Cache;
     private static pendingRequests;
+    canceled: boolean;
+    cancelReason: string;
     cacheOptions: {
         defaultTTL: number;
         enabled: boolean;
@@ -22,11 +24,13 @@ export default class Request extends Core {
     status: number;
     url: string;
     withCredentials: boolean;
+    private cancelSource;
     constructor(url?: string, options?: Partial<IAttributes>);
     private generateCacheKey;
     private shouldUseCache;
     fetch(method: string | undefined, body: IAttributes | undefined, headers: IAttributes | undefined, ttl: number): Promise<Request>;
     private handleRequest;
+    cancel(reason?: string): boolean;
     xhrFetch(url: string, params: any): any;
     static clearCache(): void;
     static getPendingRequests(): Map<string, Promise<AxiosResponse<any>>>;
@@ -39,5 +43,6 @@ export default class Request extends Core {
     private afterFetch;
     private afterAll;
     private afterAllError;
+    private afterCancel;
     private afterAny;
 }

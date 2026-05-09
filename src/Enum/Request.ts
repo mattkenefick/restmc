@@ -6,6 +6,7 @@
  * @project RestMC
  */
 export enum Request {
+	Cancel = 'cancel',
 	Complete = 'complete',
 	CompleteDelete = 'complete:delete',
 	CompleteGet = 'complete:get',

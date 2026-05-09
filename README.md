@@ -117,7 +117,19 @@ users.on(Events.Cache.Hit, ({ detail }) => {
 });
 ```
 
-Common events: `requesting`, `complete`, `complete:get`, `complete:post`, `error`, `error:get`, `add`, `remove`, `change`, `cache:hit`, `cache:set`, `request:deduped`.
+Common events: `requesting`, `complete`, `complete:get`, `complete:post`, `cancel`, `error`, `error:get`, `add`, `remove`, `change`, `cache:hit`, `cache:set`, `request:deduped`.
+
+## Canceling requests
+
+```ts
+const request = users.fetch();
+
+users.cancelRequest('User navigated away');
+
+await request.catch(({ cancelReason }) => {
+    console.log(cancelReason);              // User navigated away
+});
+```
 
 ## Caching
 

@@ -257,6 +257,14 @@ class ActiveRecord extends Core_js_1.default {
         ActiveRecord.hook(`${this.constructor.name}.reset`, [this]);
         return this;
     }
+    cancelRequest(reason = 'Request canceled') {
+        var _a;
+        const canceled = !!((_a = this.request) === null || _a === void 0 ? void 0 : _a.cancel(reason));
+        if (canceled) {
+            this.loading = false;
+        }
+        return canceled;
+    }
     addLoadingHooks(view, preHook = undefined, postHook = undefined) {
         this.removeLoadingHooks();
         this.loadingHookPre = () => {
@@ -571,6 +579,10 @@ class ActiveRecord extends Core_js_1.default {
             request.on('error', (e) => {
                 this.loading = false;
                 return this.dispatch('error', e.detail);
+            });
+            request.on('cancel', (e) => {
+                this.loading = false;
+                return this.dispatch('cancel', e.detail);
             });
             request.on('finish', (_e) => this.dispatch('finish'));
             request.on('parse:after', (e) => this.FetchParseAfter(e, options || {}));

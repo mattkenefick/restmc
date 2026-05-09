@@ -69,6 +69,7 @@ export default class ActiveRecord<T> extends Core {
     save(attributes?: IAttributes): Promise<HttpRequest>;
     add(attributes: IAttributes): ActiveRecord<T>;
     reset(): this;
+    cancelRequest(reason?: string): boolean;
     addLoadingHooks(view: any, preHook?: IDispatcherCallbackFunction | undefined, postHook?: IDispatcherCallbackFunction | undefined): ActiveRecord<T>;
     removeLoadingHooks(): ActiveRecord<T>;
     cache(ttl: number): ActiveRecord<T>;

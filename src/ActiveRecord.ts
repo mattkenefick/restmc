@@ -758,6 +758,22 @@ export default class ActiveRecord<T> extends Core {
 	}
 
 	/**
+	 * Cancel the active HTTP request, if one exists.
+	 *
+	 * @param string reason
+	 * @return boolean
+	 */
+	public cancelRequest(reason: string = 'Request canceled'): boolean {
+		const canceled = !!this.request?.cancel(reason);
+
+		if (canceled) {
+			this.loading = false;
+		}
+
+		return canceled;
+	}
+
+	/**
 	 * Add loading hooks on a collection for a view
 	 *
 	 * @param ViewBase view
@@ -1494,6 +1510,10 @@ export default class ActiveRecord<T> extends Core {
 		request.on('error', (e: IDispatcherEvent) => {
 			this.loading = false;
 			return this.dispatch('error', e.detail);
+		});
+		request.on('cancel', (e: IDispatcherEvent) => {
+			this.loading = false;
+			return this.dispatch('cancel', e.detail);
 		});
 		request.on('finish', (_e: IDispatcherEvent) => this.dispatch('finish'));
 		request.on('parse:after', (e: IDispatcherEvent) => this.FetchParseAfter(e, options || {}));

@@ -202,6 +202,29 @@ describe('ActiveRecord', () => {
 		expect(record.body.foo).to.equal('bar');
 	});
 
+	it('should cancel the active request through cancelRequest', () => {
+		const record: any = new Model();
+		let cancelReason = '';
+
+		record.loading = true;
+		record.request = {
+			cancel: (reason: string) => {
+				cancelReason = reason;
+				return true;
+			},
+		};
+
+		expect(record.cancelRequest('User navigated away')).to.equal(true);
+		expect(record.loading).to.equal(false);
+		expect(cancelReason).to.equal('User navigated away');
+	});
+
+	it('should return false from cancelRequest when no request is active', () => {
+		const record: Model = new Model();
+
+		expect(record.cancelRequest()).to.equal(false);
+	});
+
 	it('should clone a Model into a separate instance with identical attributes', () => {
 		const original: Model = new Model({ foo: 'bar', x: 10 });
 		const cloned: any = original.clone();

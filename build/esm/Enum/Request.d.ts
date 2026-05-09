@@ -1,4 +1,5 @@
 export declare enum Request {
+    Cancel = "cancel",
     Complete = "complete",
     CompleteDelete = "complete:delete",
     CompleteGet = "complete:get",

@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import axios from 'axios';
 import { Request } from '../../../src/index';
 
 /**
@@ -96,5 +97,58 @@ describe('Http/Request.Features', () => {
 		expect(dryRunDetail).to.be.an('object');
 		expect(dryRunDetail.method).to.equal('GET');
 		expect(dryRunDetail.url).to.equal('http://example.com/never-hit');
+	});
+
+	it('should return false when there is no active request to cancel', () => {
+		const request: Request = new Request('http://example.com');
+
+		expect(request.cancel()).to.equal(false);
+	});
+
+	it('should cancel an in-flight request', async () => {
+		const originalAdapter = (axios.defaults as any).adapter;
+		const request: Request = new Request('http://example.com/slow');
+		let cancelReason = '';
+		let didReject = false;
+
+		(axios.defaults as any).adapter = (config: any) => {
+			return new Promise((resolve, reject) => {
+				config.cancelToken?.promise.then((cancel: any) => reject(cancel));
+
+				setTimeout(() => {
+					resolve({
+						config,
+						data: { data: { ok: true } },
+						headers: {},
+						status: 200,
+						statusText: 'OK',
+					});
+				}, 50);
+			});
+		};
+
+		request.on('cancel', (e: any) => {
+			cancelReason = e.detail.reason;
+		});
+
+		try {
+			const pending = request.fetch('GET', {}, {}, 0);
+
+			expect(request.cancel('No longer needed')).to.equal(true);
+
+			await pending;
+		} catch (canceledRequest) {
+			didReject = true;
+			expect(canceledRequest).to.equal(request);
+		} finally {
+			(axios.defaults as any).adapter = originalAdapter;
+		}
+
+		expect(didReject).to.equal(true);
+		expect(request.canceled).to.equal(true);
+		expect(request.cancelReason).to.equal('No longer needed');
+		expect(request.loading).to.equal(false);
+		expect(request.status).to.equal(0);
+		expect(cancelReason).to.equal('No longer needed');
 	});
 });

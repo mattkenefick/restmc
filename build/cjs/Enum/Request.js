@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Request = void 0;
 var Request;
 (function (Request) {
+    Request["Cancel"] = "cancel";
     Request["Complete"] = "complete";
     Request["CompleteDelete"] = "complete:delete";
     Request["CompleteGet"] = "complete:get";

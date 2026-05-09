@@ -19,6 +19,8 @@ class Request extends Core_js_1.default {
         var _a;
         super();
         this.dryRun = false;
+        this.canceled = false;
+        this.cancelReason = '';
         this.cacheOptions = {
             defaultTTL: 1000 * 60 * 5,
             enabled: true,
@@ -73,6 +75,9 @@ class Request extends Core_js_1.default {
             method,
             params,
         };
+        this.canceled = false;
+        this.cancelReason = '';
+        this.cancelSource = undefined;
         if (typeof ttl !== 'number' || isNaN(ttl)) {
             ttl = this.cacheOptions.defaultTTL;
         }
@@ -129,6 +134,12 @@ class Request extends Core_js_1.default {
             })
                 .catch((error) => {
                 this.response = error.response;
+                if (axios_1.default.isCancel(error)) {
+                    this.afterCancel(error);
+                    this.afterAny();
+                    reject(this);
+                    return;
+                }
                 this.afterAllError(error);
                 this.afterAny();
                 reject(this);
@@ -160,16 +171,20 @@ class Request extends Core_js_1.default {
                     return pendingResponse;
                 }
             }
+            this.cancelSource = axios_1.default.CancelToken.source();
+            params.cancelToken = this.cancelSource.token;
             const requestPromise = (0, axios_1.default)(params)
                 .then((response) => {
                 if (useCache && response.status >= 200 && response.status < 300) {
                     Request.cachedResponses.set(cacheKey, response, ttl);
                     this.dispatch('cache:set', { cacheKey, response });
                 }
+                this.cancelSource = undefined;
                 Request.pendingRequests.delete(cacheKey);
                 return response;
             })
                 .catch((error) => {
+                this.cancelSource = undefined;
                 Request.pendingRequests.delete(cacheKey);
                 throw error;
             });
@@ -177,6 +192,15 @@ class Request extends Core_js_1.default {
             this.dispatch('request:pending', { cacheKey });
             return requestPromise;
         });
+    }
+    cancel(reason = 'Request canceled') {
+        if (!this.cancelSource || !this.loading) {
+            return false;
+        }
+        this.canceled = true;
+        this.cancelReason = reason;
+        this.cancelSource.cancel(reason);
+        return true;
     }
     xhrFetch(url, params) {
         const xhr = new XMLHttpRequest();
@@ -293,6 +317,22 @@ class Request extends Core_js_1.default {
             response: e,
         });
         this.dispatch('error:' + method, {
+            request: this,
+            response: e,
+        });
+    }
+    afterCancel(e) {
+        const reason = e.message || this.cancelReason || 'Request canceled';
+        this.canceled = true;
+        this.cancelReason = reason;
+        this.loading = false;
+        this.responseData = {
+            canceled: true,
+            message: reason,
+        };
+        this.status = 0;
+        this.dispatch('cancel', {
+            reason: reason,
             request: this,
             response: e,
         });

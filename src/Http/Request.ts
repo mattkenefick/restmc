@@ -1,7 +1,7 @@
 import Cache from '../Cache.js';
 import Core from '../Core.js';
 import RequestError from './RequestError.js';
-import axios, { AxiosError, AxiosResponse } from 'axios';
+import axios, { AxiosError, AxiosResponse, CancelTokenSource } from 'axios';
 import { IAttributes, IDispatchData, IProgressEvent, IRequestEvent } from '../Interfaces.js';
 import { compactObjectHash } from '../Utility.js';
 
@@ -40,6 +40,20 @@ export default class Request extends Core {
 	 * @type Map
 	 */
 	private static pendingRequests: Map<string, Promise<AxiosResponse<any>>> = new Map();
+
+	/**
+	 * If the most recent request was canceled.
+	 *
+	 * @type boolean
+	 */
+	public canceled: boolean = false;
+
+	/**
+	 * Human-readable reason supplied to cancel().
+	 *
+	 * @type string
+	 */
+	public cancelReason: string = '';
 
 	/**
 	 * Cache configuration options
@@ -126,6 +140,13 @@ export default class Request extends Core {
 	 * @type boolean
 	 */
 	public withCredentials: boolean = true;
+
+	/**
+	 * Axios cancellation handle for the active request.
+	 *
+	 * @type CancelTokenSource | undefined
+	 */
+	private cancelSource: CancelTokenSource | undefined;
 
 	/**
 	 * @param string url
@@ -215,6 +236,10 @@ export default class Request extends Core {
 			params,
 		};
 
+		this.canceled = false;
+		this.cancelReason = '';
+		this.cancelSource = undefined;
+
 		// Set ttl
 		if (typeof ttl !== 'number' || isNaN(ttl)) {
 			ttl = this.cacheOptions.defaultTTL;
@@ -292,6 +317,14 @@ export default class Request extends Core {
 				})
 				.catch((error: AxiosError<any>) => {
 					this.response = error.response;
+
+					if (axios.isCancel(error)) {
+						this.afterCancel(error);
+						this.afterAny();
+						reject(this);
+						return;
+					}
+
 					this.afterAllError(error);
 					this.afterAny();
 					reject(this);
@@ -348,6 +381,9 @@ export default class Request extends Core {
 			}
 		}
 
+		this.cancelSource = axios.CancelToken.source();
+		params.cancelToken = this.cancelSource.token;
+
 		const requestPromise = axios(params)
 			.then((response) => {
 				if (useCache && response.status >= 200 && response.status < 300) {
@@ -355,10 +391,12 @@ export default class Request extends Core {
 					this.dispatch('cache:set', { cacheKey, response });
 				}
 
+				this.cancelSource = undefined;
 				Request.pendingRequests.delete(cacheKey);
 				return response;
 			})
 			.catch((error) => {
+				this.cancelSource = undefined;
 				Request.pendingRequests.delete(cacheKey);
 				throw error;
 			});
@@ -367,6 +405,24 @@ export default class Request extends Core {
 		this.dispatch('request:pending', { cacheKey });
 
 		return requestPromise;
+	}
+
+	/**
+	 * Cancel the active HTTP request, if one exists.
+	 *
+	 * @param string reason
+	 * @return boolean
+	 */
+	public cancel(reason: string = 'Request canceled'): boolean {
+		if (!this.cancelSource || !this.loading) {
+			return false;
+		}
+
+		this.canceled = true;
+		this.cancelReason = reason;
+		this.cancelSource.cancel(reason);
+
+		return true;
 	}
 
 	/**
@@ -626,6 +682,29 @@ export default class Request extends Core {
 		});
 
 		this.dispatch('error:' + method, {
+			request: this,
+			response: e,
+		});
+	}
+
+	/**
+	 * @param AxiosError<any> e
+	 * @return void
+	 */
+	private afterCancel(e: AxiosError<any>): void {
+		const reason: string = (e as any).message || this.cancelReason || 'Request canceled';
+
+		this.canceled = true;
+		this.cancelReason = reason;
+		this.loading = false;
+		this.responseData = {
+			canceled: true,
+			message: reason,
+		};
+		this.status = 0;
+
+		this.dispatch('cancel', {
+			reason: reason,
 			request: this,
 			response: e,
 		});
